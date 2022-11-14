@@ -1,0 +1,21 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/.env
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/.idea/
+/var/
+/vendor/
+/public/documents/purchase-orders/
+/public/media/
+/public/csv/
+/public/pdf/
+/public/zoho.log
+###< symfony/framework-bundle ###
+
+###> liip/imagine-bundle ###
+/public/media/cache/
+###< liip/imagine-bundle ###
+root@tvg:/var/www/html/fluid#
