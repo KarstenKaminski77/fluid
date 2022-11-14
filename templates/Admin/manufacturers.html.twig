@@ -1,0 +1,123 @@
+{% extends 'Admin/layout.html.twig' %}
+{% block meta_decription %}
+    {{ parent() }}
+{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block content %}
+    <form name="manufacturers_form" id="manufacturers_form" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="manufacturerId" id="manufacturer_id" value="{{ manufacturer.id ? manufacturer.id : 0 }}">
+        <section class="content-header border-bottom ps-4 py-4 admin-header">
+            <div class="row w-100">
+                <div class="col-12 col-md-6">
+                    <h4 class="text-truncate">
+                        {% if manufacturer.id > 0 %}
+                            Editing <b>{{ manufacturer.name }}</b>
+                        {% else %}
+                            New Manufacturer
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="col-12 col-md-6">
+                    <button
+                        class="action-saveAndReturn btn btn-primary action-save w-sm-100 mb-3 mb-sm-0 float-end text-truncate"
+                        type="submit"
+                        name="save_return"
+                    >
+                        <span class="btn-label">Save and exit</span>
+                    </button>
+                    <button
+                        class="action-saveAndContinue btn btn-secondary action-save w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="submit"
+                        name="save_continue"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon far fa-edit"></i>
+                            Save
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="px-4" style="margin-top: 105px">
+            <div class="row mt-4">
+                {# Manufacturer Name #}
+                <div class="col-12">
+                    <label class="ms-2 text-primary">
+                        Manufacturer <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        name="manufacturer_name"
+                        id="manufacturer_name"
+                        class="form-control"
+                        type="text"
+                        value="{{ manufacturer.name }}"
+                        placeholder="Manufacturer Name"
+                    >
+                    <div class="hidden_msg" id="error_manufacturer_name">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+        </section>
+    </form>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+
+    <script>
+
+        $(document).ready(function (){
+
+            {# Save Products #}
+            $(document).on('submit', '#manufacturers_form', function (e){
+
+                e.preventDefault();
+
+                let manufacturer = $('#manufacturer_name').val();
+                let is_valid = true;
+                let btn = document.activeElement.getAttribute('name');
+                let error_manufacturer = $('#error_manufacturer_name');
+
+                error_manufacturer.hide();
+
+                if(manufacturer == '' || manufacturer == 'undefined'){
+
+                    error_manufacturer.show();
+                    is_valid = false;
+                }
+
+                if(is_valid) {
+
+                    let data = new FormData(this);
+
+                    $.ajax({
+                        url: "{{ path('manufacturer_crud') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        success: function (response) {
+
+                            getFlash(response.flash);
+                            $('.content-header-title').empty().append('<h4>Editing '+ response.manufacturer +'</h4>');
+
+                            if(btn == 'save_return'){
+
+                                window.location.assign('{{ path('manufacturers_list',{ 'page_id':1 }) }}');
+                            }
+                        }
+                    });
+                }
+            });
+            {# End Save Products #}
+        });
+
+    </script>
+{% endblock %}
