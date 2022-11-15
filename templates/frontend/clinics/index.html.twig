@@ -523,11 +523,11 @@
                                 data: {
                                     'product-id': productId,
                                 },
-                                complete: function (e, xhr, settings) {
-                                    if (e.status === 500) {
-                                        window.location.href = '{{ path('clinic_error_500') }}';
-                                    }
-                                },
+                                {#complete: function (e, xhr, settings) {#}
+                                {#    if (e.status === 500) {#}
+                                {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                                {#    }#}
+                                {#},#}
                                 success: function (response) {
 
                                     $('#search_result_distributors_'+ productId).empty().append(response);

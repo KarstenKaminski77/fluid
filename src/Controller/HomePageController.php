@@ -35,7 +35,7 @@ class HomePageController extends AbstractController
 
             if($product->getSize() > 1){
 
-                $price = number_format($product->getUnitPrice() / $product->getSize(), 2);
+                $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
 
                 $product->setPriceFrom($price);
             }

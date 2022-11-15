@@ -339,7 +339,7 @@ class ProductsController extends AbstractController
                 if($product->getSize() > 1){
 
                     $dosage = $product->getDosage() . $product->getUnit() .', '. $product->getSize() .' Count';
-                    $price = number_format($product->getUnitPrice() / $product->getSize(), 2);
+                    $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
                     $from = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
                 }
 
@@ -482,7 +482,7 @@ class ProductsController extends AbstractController
                                 $parentProduct = $this->em->getRepository(Products::class)->find($productId);
                                 $distributorProducts = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($productId);
 
-                                $parentProduct->setUnitPrice($distributorProducts[0]['unitPrice']);
+                                $parentProduct->setUnitPrice($distributorProducts[0]['unitPrice'] ?? 0.00);
 
                                 $this->em->persist($parentProduct);
                                 $this->em->flush();
@@ -1007,7 +1007,7 @@ class ProductsController extends AbstractController
         if($product->getSize() > 1){
 
             $dosage = $product->getDosage() . $product->getUnit() .', '. $product->getSize() .' Count';
-            $price = number_format($product->getUnitPrice() / $product->getSize(), 2);
+            $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
             $from = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
         }
         $distributorClinicsRepo = $this->em->getRepository(DistributorClinics::class)->findBy([
@@ -1329,7 +1329,7 @@ class ProductsController extends AbstractController
                                                     Unit Price
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $currency . ' ' . number_format($distributor->getUnitPrice() / $product->getSize(), 2) . '
+                                                    ' . $currency . ' ' . number_format($distributor->getUnitPrice() ?? 0.00 / $product->getSize(), 2) . '
                                                 </div>
                                             </div>
                                         </div>
