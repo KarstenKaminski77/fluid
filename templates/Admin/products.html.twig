@@ -154,7 +154,7 @@
                                 {% for manufacturer in productManufacturers %}
                                     <span class="badge bg-disabled me-3 my-1" id="manufacturer_badge_{{ manufacturer.manufacturers.id }}">
                                         <span id="manufacturer_badge_string_{{ manufacturer.manufacturers.id }}">
-                                            {{ manufacturer.manufacturers.name }}
+                                            {{ nzo_decrypt(manufacturer.manufacturers.name) }}
                                         </span>
                                     </span>
                                 {% endfor %}
@@ -169,7 +169,7 @@
                                         type="hidden"
                                         name="manufacturers[]"
                                         class="manufacturer-hidden"
-                                        data-name="{{ manufacturer.manufacturers.name }}"
+                                        data-name="{{ nzo_decrypt(manufacturer.manufacturers.name) }}"
                                         id="manufacturer_hidden_field_{{ manufacturer.manufacturers.id }}"
                                         value="{{ manufacturer.manufacturers.id }}"
                                     >

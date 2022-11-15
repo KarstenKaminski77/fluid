@@ -8,10 +8,10 @@
 
 {% block content %}
     <form name="manufacturers_form" id="manufacturers_form" method="post" enctype="multipart/form-data">
-        <input type="hidden" name="manufacturerId" id="manufacturer_id" value="{{ manufacturer.id ? manufacturer.id : 0 }}">
+        <input type="hidden" name="manufacturer-id" id="manufacturer_id" value="{{ manufacturer.id ? manufacturer.id : 0 }}">
         <section class="content-header border-bottom ps-4 py-4 admin-header">
             <div class="row w-100">
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-6 content-header-title">
                     <h4 class="text-truncate">
                         {% if manufacturer.id > 0 %}
                             Editing {{ nzo_decrypt(manufacturer.name) }}
@@ -142,9 +142,9 @@
                         placeholder="Telephone"
                         value="{{ nzo_decrypt(manufacturer.telephone) }}"
                     >
-                    <input type="hidden" value="0" name="mobile-no" id="mobile_no">
-                    <input type="hidden" name="iso-code" id="manufacturer_iso_code" value="">
-                    <input type="hidden" name="intl-code" id="manufacturer_intl_code" value="">
+                    <input type="hidden" value="{{ nzo_decrypt(manufacturer.telephone) }}" name="mobile-no" id="mobile_no">
+                    <input type="hidden" name="iso-code" id="manufacturer_iso_code" value="{{ nzo_decrypt(manufacturer.isoCode) }}">
+                    <input type="hidden" name="intl-code" id="manufacturer_intl_code" value="{{ nzo_decrypt(manufacturer.intlCode) }}">
                     <div class="hidden_msg" id="error_telephone">
                         Required Field
                     </div>
@@ -179,24 +179,103 @@
         $(document).ready(function (){
 
             {# Save Products #}
-            $(document).on('submit', '#manufacturers_form', function (e){
+            // International Numbers
+            let input = document.querySelector('#telephone');
+            let iti = window.intlTelInput(input, {
+                {% if manufacturer.isoCode is not null %}
+                    initialCountry: '{{ nzo_decrypt(manufacturer.isoCode|default('ae')) }}',
+                {% else %}
+                    initialCountry: 'ae',
+                    geoIpLookup: function(success, failure) {
+                        $.get("https://ipinfo.io", function() {}, "jsonp").always(function(resp) {
+                            var countryCode = (resp && resp.country) ? resp.country : "ae";
+                            success(countryCode);
+                        });
+                    },
+                {% endif %}
+                preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
+                autoPlaceholder: "polite",
+                nationalMode: true,
+                utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
+                separateDialCode: true,
+                utilsScript: "/js/utils.js",
+            });
+
+            let handleChange = function() {
+                let mobile = $('#mobile_no');
+                let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
+                let textNode = document.createTextNode(mobile_number);
+
+                if(mobile_number != false){
+
+                    let iso_code = iti.getSelectedCountryData().iso2;
+                    let intl_code = iti.getSelectedCountryData().dialCode;
+
+                    mobile.val(mobile_number.substring(1));
+                    $('#manufacturer_iso_code').val(iso_code);
+                    $('#manufacturer_intl_code').val(intl_code);
+
+                }
+            };
+
+            // listen to "keyup", but also "change" to update when the user selects a country
+            input.addEventListener('change', handleChange);
+            input.addEventListener('keyup', handleChange);
+
+            $(document).on('submit','#manufacturers_form', function (e){
 
                 e.preventDefault();
 
-                let manufacturer = $('#manufacturer_name').val();
-                let is_valid = true;
+                let isValid = true;
+                let manufacturerName = $('#manufacturer_name').val();
+                let firstName = $('#first_name').val();
+                let lastName = $('#last_name').val();
+                let email = $('#email').val();
+                let telephone = $('#mobile_no').val();
+                let errorManufacturerName = $('#error_manufacturer_name');
+                let errorFirstName = $('#error_first_name');
+                let errorLastName = $('#error_last_name');
+                let errorEmail = $('#error_email');
+                let errorTelephone = $('#error_telephone');
                 let btn = document.activeElement.getAttribute('name');
-                let error_manufacturer = $('#error_manufacturer_name');
 
-                error_manufacturer.hide();
+                errorManufacturerName.hide();
+                errorFirstName.hide();
+                errorLastName.hide();
+                errorEmail.hide();
+                errorTelephone.hide();
 
-                if(manufacturer == '' || manufacturer == 'undefined'){
+                if(manufacturerName == '' || manufacturerName == 'undefined'){
 
-                    error_manufacturer.show();
-                    is_valid = false;
+                    errorManufacturerName.show();
+                    isValid = false;
                 }
 
-                if(is_valid) {
+                if(firstName == '' || firstName == 'undefined'){
+
+                    errorFirstName.show();
+                    isValid = false;
+                }
+
+                if(lastName == '' || lastName == 'undefined'){
+
+                    errorLastName.show();
+                    isValid = false;
+                }
+
+                if(email == '' || email == 'undefined'){
+
+                    errorEmail.empty().append('Required Field').show();
+                    isValid = false;
+                }
+
+                if(telephone == '' || telephone == 'undefined'){
+
+                    errorTelephone.show();
+                    isValid = false;
+                }
+
+                if(isValid == true){
 
                     let data = new FormData(this);
 
@@ -212,7 +291,7 @@
                         success: function (response) {
 
                             getFlash(response.flash);
-                            $('.content-header-title').empty().append('<h4>Editing '+ response.manufacturer +'</h4>');
+                            $('.content-header-title').empty().append('<h4 class="text-truncate">Editing '+ response.manufacturer +'</h4>');
 
                             if(btn == 'save_return'){
 

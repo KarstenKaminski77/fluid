@@ -22,6 +22,7 @@ use App\Entity\DistributorUserPermissions;
 use App\Entity\DistributorUsers;
 use App\Entity\ListItems;
 use App\Entity\Manufacturers;
+use App\Entity\ManufacturerUsers;
 use App\Entity\Pages;
 use App\Entity\ProductForms;
 use App\Entity\ProductImages;
@@ -1028,51 +1029,108 @@ class AdminDashboardController extends AbstractController
     }
 
     #[Route('/admin/manufacturer/crud', name: 'manufacturer_crud')]
-    public function manufacturerCrudAction(Request $request): Response
+    public function manufacturerCrudAction(Request $request, UserPasswordHasherInterface $passwordHasher, MailerInterface  $mailer): Response
     {
         $data = $request->request;
-        $manufacturerId = $data->get('manufacturerId') ?? $request->request->get('delete');
-        $manufacturer = $this->em->getRepository(Manufacturers::class)->find($manufacturerId);
+        $hashedEmail = md5($data->get('email'));
+        $manufacturer = $this->em->getRepository(Manufacturers::class)->findOneBy([
+            'hashedEmail' => $hashedEmail,
+        ]);
 
-        $response = [];
-
-        if($request->request->get('delete') != null){
-
-            $productManufacturers = $this->em->getRepository(ProductManufacturers::class)->findBy([
-                'manufacturers' => $manufacturerId,
-            ]);
-
-            foreach ($productManufacturers as $productManufacturer) {
-
-                $this->em->remove($productManufacturer);
-            }
-
-            $this->em->flush();
-
-            $this->em->remove($manufacturer);
-            $this->em->flush();
-
-            $flash = '<b><i class="fas fa-check-circle"></i> Manufacturer Successfully Deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-            return new JsonResponse($flash);
+        if($data->get('manufacturer-id') == 0 && $manufacturer == null)
+        {
+            $manufacturer = new Manufacturers();
+            $plainTextPwd = $this->generatePassword();
         }
 
-        if(!empty($data)) {
+        $domainName = explode('@', $data->get('email'));
 
-            if($manufacturer == null){
+        $manufacturer->setName($this->encryptor->encrypt($data->get('manufacturer-name')));
+        $manufacturer->setEmail($this->encryptor->encrypt($data->get('email')));
+        $manufacturer->setHashedEmail(md5($data->get('email')));
+        $manufacturer->setDomainName(md5($domainName[1]));
+        $manufacturer->setTelephone($this->encryptor->encrypt($data->get('telephone')));
+        $manufacturer->setIntlCode($this->encryptor->encrypt($data->get('intl-code')));
+        $manufacturer->setIsoCode($this->encryptor->encrypt($data->get('iso-code')));
+        $manufacturer->setFirstName($this->encryptor->encrypt($data->get('first-name')));
+        $manufacturer->setLastName($this->encryptor->encrypt($data->get('last-name')));
 
-                $manufacturer = new Manufacturers();
+        if(!empty($_FILES['logo']['name'])) {
+
+            $extension = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+            $file = $manufacturer->getId() . '-' . uniqid() . '.' . $extension;
+            $targetFile = __DIR__ . '/../../public/images/logos/' . $file;
+
+            if (move_uploaded_file($_FILES['logo']['tmp_name'], $targetFile)) {
+
+                $manufacturer->setLogo($file);
             }
+        }
 
-            // Clinic Details
-            $manufacturer->setName($data->get('manufacturer_name'));
+        $this->em->persist($manufacturer);
+        $this->em->flush();
 
-            $this->em->persist($manufacturer);
+        $response['flash'] = '<b><i class="fas fa-check-circle"></i> Manufacturer Successfully Updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        if($data->get('manufacturer-id') == 0 && $manufacturer == null)
+        {
+            // Create user
+            $manufacturerUsers = new ManufacturerUsers();
+
+            $hashed_pwd = $passwordHasher->hashPassword($manufacturerUsers, $plainTextPwd);
+
+            $manufacturerUsers->setManufacturer($manufacturer);
+            $manufacturerUsers->setFirstName($this->encryptor->encrypt($data->get('first-name')));
+            $manufacturerUsers->setLastName($this->encryptor->encrypt($data->get('last-name')));
+            $manufacturerUsers->setEmail($this->encryptor->encrypt($data->get('email')));
+            $manufacturerUsers->setHashedEmail(md5($data->get('email')));
+            $manufacturerUsers->setTelephone($this->encryptor->encrypt($data->get('telephone')));
+            $manufacturerUsers->setIsoCode($this->encryptor->encrypt($data->get('iso-code')));
+            $manufacturerUsers->setIsoCode($this->encryptor->encrypt($data->get('intl-code')));
+            $manufacturerUsers->setRoles(['ROLE_MANUFACTURER']);
+            $manufacturerUsers->setPassword($hashed_pwd);
+            $manufacturerUsers->setIsPrimary(1);
+
+            $this->em->persist($manufacturerUsers);
             $this->em->flush();
 
-            $response['flash'] = '<b><i class="fas fa-check-circle"></i> Manufacturer Successfully Updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-            $response['manufacturer'] = $data->get('manufacturer_name');
+
+            // Send Email
+            $body = '<table style="padding: 8px; border-collapse: collapse; border: none; font-family: arial">';
+            $body .= '<tr><td colspan="2">Hi ' . $data->get('first_name') . ',</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr><td colspan="2">Please use the credentials below login to the Fluid Backend.</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr>';
+            $body .= '    <td><b>URL: </b></td>';
+            $body .= '    <td><a href="https://' . $_SERVER['HTTP_HOST'] . '/manufacturers/login">https://' . $_SERVER['HTTP_HOST'] . '/manufacturers/login</a></td>';
+            $body .= '</tr>';
+            $body .= '<tr>';
+            $body .= '    <td><b>Username: </b></td>';
+            $body .= '    <td>' . $data->get('email') . '</td>';
+            $body .= '</tr>';
+            $body .= '<tr>';
+            $body .= '    <td><b>Password: </b></td>';
+            $body .= '    <td>' . $plainTextPwd . '</td>';
+            $body .= '</tr>';
+            $body .= '</table>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html' => $body,
+            ])->getContent();
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($data->get('email'))
+                ->subject('Fluid Login Credentials')
+                ->html($html);
+
+            $mailer->send($email);
+
+            $response['flash'] = '<b><i class="fas fa-check-circle"></i> Manufacturer Successfully Created.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
         }
+
+        $response['manufacturer'] = $data->get('manufacturer-name');
 
         return new JsonResponse($response);
     }
@@ -2514,7 +2572,7 @@ class AdminDashboardController extends AbstractController
 
             $manufacturersList = $this->getMultiDropdownList(
                 $manufacturers, 'manufacturer', ProductManufacturers::class, 'getName',
-                'products', $request->get('productId'), 'getProducts'
+                'products', $request->get('productId'), 'getProducts', true
             );
             $array = '';
             $arr = '[';
@@ -5029,7 +5087,7 @@ class AdminDashboardController extends AbstractController
         return $list;
     }
 
-    private function getMultiDropdownList($repository, $label, $entity, $name, $foreign_key, $entity_id, $method): string
+    private function getMultiDropdownList($repository, $label, $entity, $name, $foreign_key, $entity_id, $method, $isEncrypted = false): string
     {
         $list = '
         <div class="px-3 row">
@@ -5037,6 +5095,13 @@ class AdminDashboardController extends AbstractController
 
         // Loop through all dropdown options
         foreach($repository as $repo){
+
+            $itemName = $repo->$name();
+
+            if($isEncrypted)
+            {
+                $itemName = $this->encryptor->decrypt($repo->$name());
+            }
 
             // Get related records
             $query = $this->em->getRepository($entity)->findBy([
@@ -5077,17 +5142,17 @@ class AdminDashboardController extends AbstractController
                     <div 
                         class="col-10 py-2 d-table-cell align-middle select-row '. $label .'-select-row '. $select .'"
                         data-'. $label .'-id="'. $repo->getId() .'"
-                        data-'. $label .'="'. $repo->$name() .'"
+                        data-'. $label .'="'. $itemName .'"
                         id="'. $label .'_row_id_'. $repo->getId() .'"
                         tabindex="-1"
                     >
                             <span id="'. $label .'_string_'. $repo->getId() .'">
-                                '. $repo->$name() .'
+                                '. $itemName .'
                             </span>
                             <input 
                                 type="text" 
                                 class="form-control form-control-sm '. $label .'-form-ctrl"
-                                value="'. $repo->$name() .'"
+                                value="'. $itemName .'"
                                 data-'. $label .'-field-'. $repo->getId() .'
                                 id="'. $label .'_edit_field_'. $repo->getId() .'"
                                 style="display: none"
