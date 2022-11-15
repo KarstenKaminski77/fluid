@@ -512,9 +512,9 @@
                         $('#in_stock_label').empty().append('('+ response.inStockCount +') In Stock');
                         $('.manage-lists').attr('data-keyword-string', keyword);
 
-                        $(response.productIds).each(function (i) {
+                        $(response.productIds).each(function (index, value) {
 
-                            let productId = $(this)[i];
+                            let productId = value;
 
                             $.ajax({
                                 url: "{{ path('product_get_distributors') }}",

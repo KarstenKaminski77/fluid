@@ -243,7 +243,7 @@ class ProductsController extends AbstractController
 
                 if(count($productManufacturers) == 1){
 
-                    $manufacturer = $productManufacturers[0]->getManufacturers()->getName();
+                    $manufacturer = $this->encryptor->decrypt($productManufacturers[0]->getManufacturers()->getName());
 
                 } else {
 
