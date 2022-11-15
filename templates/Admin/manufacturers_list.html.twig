@@ -68,10 +68,10 @@
                 #{{ manufacturer.id }}
             </div>
             <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Clinic Name
+                Manufacturer Name
             </div>
             <div class="col-8 col-md-6 text-truncate">
-                {{ manufacturer.name }}
+                {{ nzo_decrypt(manufacturer.name) }}
             </div>
             <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                 Modified
