@@ -75,11 +75,6 @@ class Manufacturers
     private $intlCode;
 
     /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $password;
-
-    /**
      * @ORM\OneToMany(targetEntity=ManufacturerUsers::class, mappedBy="manufacturer")
      */
     private $manufacturerUsers;
@@ -287,18 +282,6 @@ class Manufacturers
     public function setIntlCode(string $intlCode): self
     {
         $this->intlCode = $intlCode;
-
-        return $this;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
-
-    public function setPassword(string $password): self
-    {
-        $this->password = $password;
 
         return $this;
     }

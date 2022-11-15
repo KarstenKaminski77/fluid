@@ -39,28 +39,17 @@ class ManufacturerUsersRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return ManufacturerUsers[] Returns an array of ManufacturerUsers objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('m.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @return ManufacturerUsers[] Returns an array of ManufacturerUsers objects
+     */
+    public function findManufacturerUsers($manufacturerId)
+    {
+        $queryBuilder = $this->createQueryBuilder('m')
+            ->andWhere('m.manufacturer = :manufacturerId')
+            ->setParameter('manufacturerId', $manufacturerId)
+            ->orderBy('m.id', 'DESC')
+        ;
 
-//    public function findOneBySomeField($value): ?ManufacturerUsers
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
 }

@@ -21,7 +21,7 @@
                 </label>
                 <input type="checkbox" name="contact_me_by_fax_only" value="1" tabindex="-1" class="hidden" autocomplete="off">
                 <input type="text" name="manufacturer-name" id="manufacturer_name" class="form-control" placeholder="Company Name*">
-                <div class="hidden_msg" id="error_company_name">
+                <div class="hidden_msg" id="error_manufacturer_name">
                     Required Field
                 </div>
             </div>
@@ -66,8 +66,8 @@
                 <label>Business Telephone <span class="text-danger">*</span></label>
                 <input type="text" name="telephone" id="telephone" class="form-control" placeholder="Telephone*">
                 <input type="hidden" value="0" name="mobile-no" id="mobile_no">
-                <input type="hidden" name="iso-code" id="distributor_iso_code" value="">
-                <input type="hidden" name="intl-code" id="distributor_intl_code" value="">
+                <input type="hidden" name="iso-code" id="manufacturer_iso_code" value="">
+                <input type="hidden" name="intl-code" id="manufacturer_intl_code" value="">
                 <div class="hidden_msg" id="error_telephone">
                     Required Field
                 </div>
@@ -119,8 +119,8 @@
                     let intl_code = iti.getSelectedCountryData().dialCode;
 
                     mobile.val(mobile_number.substring(1));
-                    $('#distributor_iso_code').val(iso_code);
-                    $('#distributor_intl_code').val(intl_code);
+                    $('#manufacturer_iso_code').val(iso_code);
+                    $('#manufacturer_intl_code').val(intl_code);
 
                 }
             };
@@ -137,7 +137,7 @@
                 errorEmail.hide();
 
                 $.ajax({
-                    url: "{{ path('distributor_check_email') }}",
+                    url: "{{ path('manufacturer_check_email') }}",
                     type: 'POST',
                     dataType: 'json',
                     data: {
@@ -151,16 +151,18 @@
                     },
                     success: function (response)
                     {
-                        if(!response.response)
-                        {
-                            if(response.restricted)
-                            {
-                                errorEmail.empty().append('Domain name is not allowed').show();
 
-                            } else
-                            {
-                                errorEmail.empty().append('Domain name is associated with another account').show();
-                            }
+                        if(response.restricted)
+                        {
+                            errorEmail.empty().append('Domain name is not allowed').show();
+
+                        } else if(response.duplicate)
+                        {
+                            errorEmail.empty().append('Domain name is associated with another account').show();
+
+                        } else if(response.inValid)
+                        {
+                            errorEmail.empty().append('Email address is invalid').show();
                         }
                     }
                 });

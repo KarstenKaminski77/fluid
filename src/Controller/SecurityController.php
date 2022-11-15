@@ -83,7 +83,7 @@ class SecurityController extends AbstractController
     {
         if (true === $checker->isGranted('ROLE_MANUFACTURER')) {
 
-            header('Location: '. $this->getParameter('app.base_url') . '/manufacturers');
+            header('Location: '. $this->getParameter('app.base_url') . '/manufacturers/analytics');
 
             die();
         }
@@ -94,7 +94,7 @@ class SecurityController extends AbstractController
         $error = $authenticationUtils->getLastAuthenticationError();
         // last username entered by the user
         $lastUsername = $authenticationUtils->getLastUsername();
-dd('xxx');
+
         return $this->render('security/login.html.twig', [
             'last_username' => $lastUsername,
             'error' => $error,
@@ -159,7 +159,7 @@ dd('xxx');
     /**
      * @Route("/manufacturers/logout", name="manufacturers_logout")
      */
-    public function manufacturerrLogout(): void
+    public function manufacturerLogout(): void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }

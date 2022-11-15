@@ -37,6 +37,14 @@ a, a:hover {
     color: #b3b4b2;
 }
 
+.fa-eye{
+    position: absolute;
+    top: 25%;
+    right: 4%;
+    cursor: pointer;
+    color: lightgray;
+}
+
 a.note-link {
     display: block;
     width: 100%;

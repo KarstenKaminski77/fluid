@@ -27,26 +27,26 @@
 {% endblock %}
 
 {% block body %}
-<form method="post" class="container mb-5">
-    <div class="row pt-3">
-        <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
-            <h4 class="text-primary">Fluid Sign In</h4>
-            <span class="text-primary">
-                    Sign in to your Fluid wholesale account or easily create a new account.
-                </span>
-        </div>
-    </div>
-    <div class="row mt-5">
-        {% if error %}
-            <div class="col-12 col-md-10 offset-xs-0 offset-md-1">
-                <div class="alert alert-danger">
-                    {{ error.messageKey|trans(error.messageData, 'security') }}
-                </div>
+    <form method="post" class="container mb-5">
+        <div class="row pt-3">
+            <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
+                <h4 class="text-primary">Fluid Sign In</h4>
+                <span class="text-primary">
+                        Sign in to your Fluid wholesale account or easily create a new account.
+                    </span>
             </div>
-        {% endif %}
+        </div>
+        <div class="row mt-5">
+            {% if error %}
+                <div class="col-12 col-md-10 offset-xs-0 offset-md-1">
+                    <div class="alert alert-danger">
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    </div>
+                </div>
+            {% endif %}
 
-        <div class="col-12 col-md-4 offset-xs-0 offset-md-1">
-            <input
+            <div class="col-12 col-md-4 offset-xs-0 offset-md-1">
+                <input
                     type="text"
                     value="{{ last_username }}"
                     name="email"
@@ -55,10 +55,11 @@
                     placeholder="Email"
                     autocomplete="email"
                     style="margin-bottom: 20px;"
-                    autofocus>
-        </div>
-        <div class="col-12 col-md-4">
-            <input
+                    autofocus
+                >
+            </div>
+            <div class="col-12 col-md-4 position-relative">
+                <input
                     type="password"
                     name="password"
                     placeholder="Password"
@@ -66,43 +67,66 @@
                     class="form-control"
                     style="margin-bottom: 20px;"
                     autocomplete="current-password"
-                    required>
-        </div>
-        <div class="col-12 col-md-2">
-            <button class="btn btn-primary w-100">SIGN IN</button>
-        </div>
-        <input type="hidden" name="_csrf_token"
-               value="{{ csrf_token('authenticate') }}"
-        >
-    </div>
-    <div class="row text-center">
-
-        {% set url = 'app_forgot_password_request' %}
-        {% set url_register = 'distributor_reg' %}
-        {% if user_type == 'clinics' %}
-            {% set url = 'clinic_forgot_password_request' %}
-            {% set url_register = 'clinic_reg' %}
-        {% elseif user_type == 'distributors' %}
-            {% set url = 'distributors_forgot_password_request' %}
-            {% set url_register = 'distributor_reg' %}
-        {% elseif user_type == 'manufacturer' %}
-            {% set url = 'manufacturer_forgot_password_request' %}
-            {% set url_register = 'distributor_reg' %}
-        {% endif %}
-
-        <div class="col-12 col-md-10 offset-xs-0 offset-md-1 mt-3 mt-md-5">
-            <a
-                href="{{ path(url) }}"
-                type="submit"
-                class="fs-6"
+                    required
+                >
+                <i class="fa-solid fa-eye" id="eye"></i>
+            </div>
+            <div class="col-12 col-md-2">
+                <button class="btn btn-primary w-100">SIGN IN</button>
+            </div>
+            <input type="hidden" name="_csrf_token"
+                   value="{{ csrf_token('authenticate') }}"
             >
-                Forgot Password
-            </a>
-            <span class="px-2">|</span>
-            <a href="{{ path(url_register) }}" class="fs-6">
-                Create Account
-            </a>
         </div>
-    </div>
-</form>
+        <div class="row text-center">
+
+            {% set url = 'app_forgot_password_request' %}
+            {% set url_register = 'distributor_reg' %}
+            {% if user_type == 'clinics' %}
+                {% set url = 'clinic_forgot_password_request' %}
+                {% set url_register = 'clinic_reg' %}
+            {% elseif user_type == 'distributors' %}
+                {% set url = 'distributors_forgot_password_request' %}
+                {% set url_register = 'distributor_reg' %}
+            {% elseif user_type == 'manufacturers' %}
+                {% set url = 'manufacturer_forgot_password_request' %}
+                {% set url_register = 'distributor_reg' %}
+            {% endif %}
+
+            <div class="col-12 col-md-10 offset-xs-0 offset-md-1 mt-3 mt-md-5">
+                <a
+                    href="{{ path(url) }}"
+                    type="submit"
+                    class="fs-6"
+                >
+                    Forgot Password
+                </a>
+                <span class="px-2">|</span>
+                <a href="{{ path(url_register) }}" class="fs-6">
+                    Create Account
+                </a>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function () {
+
+            $(document).on('click', '#eye', function (e) {
+
+                let pwdField = $('#inputPassword');
+
+                if(pwdField.attr('type') == 'password')
+                {
+                    pwdField.attr('type', 'text');
+                }
+                else
+                {
+                    pwdField.attr('type', 'password');
+                };
+            });
+        });
+    </script>
 {% endblock %}

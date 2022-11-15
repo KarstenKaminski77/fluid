@@ -47,7 +47,7 @@ class ManufacturersAuthenticator extends AbstractLoginFormAuthenticator
 
         if($manufacturerUser != null) {
 
-            $username = $this->encryptor->decrypt($manufacturerUser->getEmail());
+            $username = $manufacturerUser->getEmail();
         }
 
         $request->getSession()->set(Security::LAST_USERNAME, $email);
@@ -69,9 +69,7 @@ class ManufacturersAuthenticator extends AbstractLoginFormAuthenticator
 
         // For example:
         //return new RedirectResponse($this->urlGenerator->generate('some_route'));
-        return new RedirectResponse($this->urlGenerator->generate('distributor_order_list',[
-            'distributor_id' => $token->getUser()->getDistributor()->getId()
-        ]));
+        return new RedirectResponse($this->urlGenerator->generate('manufacturer_analytics'));
     }
 
     protected function getLoginUrl(Request $request): string
