@@ -76,9 +76,9 @@
                             }, "", '{{ app.request.baseUrl }}/clinics/inventory');
                             $.session.set('search_key', keyword);
 
-                            $(response.productIds).each(function (i) {
+                            $(response.productIds).each(function (index, value) {
 
-                                let productId = $(this)[i];
+                                let productId = value;
 
                                 $.ajax({
                                     url: "{{ path('product_get_distributors') }}",
@@ -87,14 +87,15 @@
                                     data: {
                                         'product-id': productId,
                                     },
-                                    complete: function (e, xhr, settings) {
-                                        if (e.status === 500) {
-                                            //window.location.href = '{{ path('clinic_error_500') }}';
-                                        }
-                                    },
+                                    {#complete: function (e, xhr, settings) {#}
+                                    {#    if (e.status === 500) {#}
+                                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                                    {#    }#}
+                                    {#},#}
                                     success: function (response) {
 
-                                        $('#search_result_distributors_'+ productId).empty().append(response);
+                                        $('#search_result_distributors_'+ productId).empty().append(response.html);
+                                        $('.from_'+ productId).closest().empty().append(response.from);
                                         popOver();
                                     }
                                 });
@@ -523,11 +524,11 @@
                                 data: {
                                     'product-id': productId,
                                 },
-                                {#complete: function (e, xhr, settings) {#}
-                                {#    if (e.status === 500) {#}
-                                {#        window.location.href = '{{ path('clinic_error_500') }}';#}
-                                {#    }#}
-                                {#},#}
+                                complete: function (e, xhr, settings) {
+                                    if (e.status === 500) {
+                                        window.location.href = '{{ path('clinic_error_500') }}';
+                                    }
+                                },
                                 success: function (response) {
 
                                     $('#search_result_distributors_'+ productId).empty().append(response);

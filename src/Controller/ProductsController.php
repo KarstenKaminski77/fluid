@@ -390,7 +390,7 @@ class ProductsController extends AbstractController
                                     <!-- Description -->
                                     <div class="col-12 col-sm-10 pt-3 pb-3">
                                        <h4>'. $name . $dosage .'</h4>
-                                       <p><span class="pe-2">'. $manufacturer .' '. $from . $manufacturerNo .'</p>
+                                       <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'">'. $from .'</span></p>
                                         <!-- Product rating -->
                                         <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
                                             <i class="star star-under fa fa-star">
@@ -471,23 +471,7 @@ class ProductsController extends AbstractController
                                 <div class="position-relative">
                                     <img src="/images/distributor-skeleton.png" class="img-fluid">
                                     <i class="fa-regular fa-shield stock-icon position-absolute start-0 end-0 text-center" style="color: #cecece; line-height: 65px !important;"></i>
-                                </div>';
-
-                                $productId = $product->getId();
-
-                                // Update stock levels and unit prices
-                                $this->em->flush();
-
-                                // Update product parent with the lowest price
-                                $parentProduct = $this->em->getRepository(Products::class)->find($productId);
-                                $distributorProducts = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($productId);
-
-                                $parentProduct->setUnitPrice($distributorProducts[0]['unitPrice'] ?? 0.00);
-
-                                $this->em->persist($parentProduct);
-                                $this->em->flush();
-
-                            $html .= '
+                                </div>
                             </div>
             
                             <!-- Panels -->
@@ -982,34 +966,9 @@ class ProductsController extends AbstractController
 
             $firstImage = $firstImage->getImage();
         }
-        $per = strtolower($product->getForm());
+
         $name = $product->getName() .': ';
         $dosage = '';
-        $price = number_format($product->getUnitPrice(), 3);
-        $pieces = explode('.', $price);
-
-        // Format Price
-        if(substr($pieces[1], 2,1) == 0){
-
-            $pieces[1] = substr($pieces[1],0,2);
-        }
-
-        $price = $pieces[0] .'.'. $pieces[1];
-
-        if($product->getForm() == 'Each'){
-
-            $per = strtolower($product->getUnit());
-            $dosage = $product->getSize() . $product->getUnit();
-        }
-
-        $from = '';
-
-        if($product->getSize() > 1){
-
-            $dosage = $product->getDosage() . $product->getUnit() .', '. $product->getSize() .' Count';
-            $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
-            $from = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
-        }
         $distributorClinicsRepo = $this->em->getRepository(DistributorClinics::class)->findBy([
             'clinic' => $this->getUser()->getClinic()->getId(),
             'isActive' => 1,
@@ -1159,7 +1118,7 @@ class ProductsController extends AbstractController
                     $this->em->persist($distributor);
                 }
 
-                $html = '
+                $response['html'] = '
                 <a href=""
                    class="basket_link"
                    data-product-id="' . $product->getId() . '"
@@ -1202,7 +1161,7 @@ class ProductsController extends AbstractController
                     ($trackingId == 2 || $trackingId == 3)
                 ) {
 
-                    $html .= '
+                    $response['html'] .= '
                     <form name="form_add_to_basket" id="form_add_to_basket_' . $productId . '_' . $distributorId . '" method="post">
                         <input type="hidden" name="product_id" value="' . $product->getId() . '">
                         <input type="hidden" name="distributor_id" value="' . $distributorId . '">
@@ -1272,7 +1231,7 @@ class ProductsController extends AbstractController
 
                     if (!in_array(1, $permissions)) {
 
-                        $html .= '
+                        $response['html'] .= '
                         <span
                             class="btn btn-disabled w-100 text-truncate"
                             data-bs-trigger="hover"
@@ -1287,7 +1246,7 @@ class ProductsController extends AbstractController
 
                     } else {
 
-                        $html .= '
+                        $response['html'] .= '
                         <button
                             type="submit"
                             class="btn btn-primary w-100 text-truncate ' . $btnDisabled . '"
@@ -1297,7 +1256,7 @@ class ProductsController extends AbstractController
                         </button>';
                     }
 
-                    $html .= '
+                    $response['html'] .= '
                                         </div>
                                     </div>
                                 </div>
@@ -1451,7 +1410,7 @@ class ProductsController extends AbstractController
                         $logo = 'image-not-found.jpg';
                     }
 
-                    $html .= '
+                    $response['html'] .= '
                     <div class="row">
                         <div class="col-12 text-center pt-2 pb-4">
                             <img src="/images/logos/' . $logo . '" class="img-fluid" style="max-width: 150px">
@@ -1472,14 +1431,32 @@ class ProductsController extends AbstractController
                     ';
                 }
 
-                $html .= '
+                $response['html'] .= '
                     </div>
                 </div>
             </div>';
             }
         }
 
-        return new JsonResponse($html);
+        // Get the lowest price
+        $per = strtolower($product->getForm());
+        $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($productId);
+        $price = number_format($lowestPrice[0]['unitPrice'], 3);
+
+        if($product->getForm() == 'Each')
+        {
+            $per = strtolower($product->getUnit());
+        }
+
+        $response['from'] = '';
+
+        if($product->getSize() > 1)
+        {
+            $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
+            $response['from'] = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
+        }
+
+        return new JsonResponse($response);
     }
 
     #[Route('/clinics/product/get-gallery', name: 'product_gallery')]
