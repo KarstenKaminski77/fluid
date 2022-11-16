@@ -949,15 +949,16 @@ class ProductsController extends AbstractController
     public function getProductDistributors(Request $request): Response
     {
         $productId = $request->request->get('product-id') ?? 18;
+        $clinicId = $this->getUser()->getClinic()->getId();
         $product = $this->em->getRepository(Products::class)->find($productId);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
-        $priceStockLevels = [];
         $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
             'product' => $product->getId(),
             'isDefault' => 1
         ]);
 
+        // Get default image
         if($firstImage == null){
 
             $firstImage = 'image-not-found.jpg';
@@ -969,8 +970,10 @@ class ProductsController extends AbstractController
 
         $name = $product->getName() .': ';
         $dosage = '';
+
+        // Check if clinic is connected to distributor
         $distributorClinicsRepo = $this->em->getRepository(DistributorClinics::class)->findBy([
-            'clinic' => $this->getUser()->getClinic()->getId(),
+            'clinic' => $clinicId,
             'isActive' => 1,
         ]);
         $distributorClinics = '';
@@ -984,9 +987,6 @@ class ProductsController extends AbstractController
                 $distributorClinics[] = (int) $value->getDistributor()->getId();
             }
         }
-
-        $c = 0;
-        $distributors = [];
 
         // Permissions
         $permissions = [];
@@ -1002,57 +1002,56 @@ class ProductsController extends AbstractController
             $basketPermission = false;
         }
 
-        foreach ($product->getDistributorProducts() as $distributor) {
-
-            $trackingId = $distributor->getDistributor()->getTracking()->getId();
-
-            if ($distributor->getDistributor()->getApiDetails() != null && $trackingId == 1) {
-
-                $c++;
-
-                if (!array_key_exists($distributor->getDistributor()->getId(), $distributors)) {
-
-                    ${$distributor->getDistributor()->getId()} = 0;
-
-                    $distributors[$distributor->getDistributor()->getId()][${$distributor->getDistributor()->getId()}] = $distributor->getItemId();
-
-                } else {
-
-                    ${$distributor->getDistributor()->getId()}++;
-                    $distributors[$distributor->getDistributor()->getId()][${$distributor->getDistributor()->getId()}] = $distributor->getItemId();
-                }
-            }
-        }
-
-        foreach($distributors as $key => $distributor){
-
-            $idString = implode(',', $distributor);
-
-            $priceStockLevels[$key] = $this->zohoRetrieveItemsByIds($key, $idString);
-        }
-
         foreach($product->getDistributorProducts() as $distributor) {
 
             $trackingId = $distributor->getDistributor()->getTracking()->getId();
+            $distributorId = $distributor->getDistributor()->getId();
+            $unitPrice = $distributor->getUnitPrice() ?? 0.00;
+            $stockLevel = $distributor->getStockCount() ?? 0;
 
             if (
                 ($distributor->getDistributor()->getApiDetails() != null && $trackingId == 1)
                 || ($trackingId == 2 || $trackingId == 3)
             ) {
 
-                // Only show stock levels if fully tracked
-                if($trackingId == 3){
+                // Only show stock levels if fully / semi tracked
+                if($trackingId == 1){
 
-                    $stockLevel = '';
+                    // Retrieve price & stock from api
+                    $priceStockLevels = $this->zohoRetrieveItem($distributorId, $distributor->getItemId());
 
-                } else {
+                    If($priceStockLevels != null && is_array($priceStockLevels)){
 
-                    $stockLevel = $distributor->getStockCount() ?? 0;
+                        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+                            'distributor' => $distributorId,
+                            'product' => $distributor->getProduct()->getId()
+                        ]);
+
+                        // Update price & stock
+                        $distributorProduct->setUnitPrice($priceStockLevels['unitPrice']);
+                        $distributorProduct->setStockCount($priceStockLevels['stockLevel']);
+
+                        $this->em->persist($distributorProduct);
+                        $this->em->flush();
+
+                        $stockLevel = $priceStockLevels['stockLevel'];
+                        $unitPrice = $priceStockLevels['unitPrice'];
+                    }
+
+                // Semi tracked
+                } elseif($trackingId == 2){
+
+                    $stockLevel = $distributor->getStockCount();
+                    $unitPrice = $distributor->getUnitPrice();
+
+                // Not tracked
+                } elseif($trackingId == 3){
+
+                    $stockLevel = 0;
+                    $unitPrice = $distributor->getUnitPrice();
+
                 }
 
-
-                $distributorId = $distributor->getDistributor()->getId();
-                $unitPrice = $distributor->getUnitPrice();
                 $disabled = '';
                 $btnDisabled = '';
 
@@ -1085,16 +1084,6 @@ class ProductsController extends AbstractController
                     $logo = '<p><i class="fa-thin fa-image-slash fs-4 mh-30" style="line-height: 30px"></i></p>';
                 }
 
-                if (count($priceStockLevels) > 0 && $trackingId == 1) {
-
-                    $zoho = $priceStockLevels[$distributorId];
-                    $unitPrice = $zoho[0]['unitPrice'] ?? 0;
-                    $stockLevel = $zoho[0]['stockLevel'] ?? 0;
-
-                    // Remove the first array element
-                    array_shift($priceStockLevels[$distributorId]);
-                }
-
                 if ($stockLevel == 0 && ($trackingId == 1 || $trackingId == 2)) {
 
                     $stockIcon = 'fa-shield-xmark out-of-stock';
@@ -1107,15 +1096,6 @@ class ProductsController extends AbstractController
                 if (!$basketPermission) {
 
                     $disabled = 'disabled';
-                }
-
-                // Update price & stock levels
-                if($trackingId == 1) {
-
-                    $distributor->setStockCount($stockLevel);
-                    $distributor->setUnitPrice($unitPrice);
-
-                    $this->em->persist($distributor);
                 }
 
                 $response['html'] = '
@@ -1452,7 +1432,7 @@ class ProductsController extends AbstractController
 
         if($product->getSize() > 1)
         {
-            $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
+            $price = number_format($price ?? 0.00 / $product->getSize(), 2);
             $response['from'] = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
         }
 
@@ -1632,7 +1612,7 @@ class ProductsController extends AbstractController
             }
 
             $curl = curl_init();
-            $organizationId = $api->getOrganizationId();
+            $organizationId = $this->encryptor->decrypt($api->getOrganizationId());
 
             curl_setopt_array($curl, array(
                 CURLOPT_URL => 'https://inventory.zoho.com/api/v1/items/' . $itemId . '?organization_id=' . $organizationId,
