@@ -95,7 +95,7 @@
                                     success: function (response) {
 
                                         $('#search_result_distributors_'+ productId).empty().append(response.html);
-                                        $('.from_'+ productId).closest().empty().append(response.from);
+                                        $('.from_'+ productId).empty().append(response.from);
                                         popOver();
                                     }
                                 });
@@ -531,7 +531,8 @@
                                 },
                                 success: function (response) {
 
-                                    $('#search_result_distributors_'+ productId).empty().append(response);
+                                    $('#search_result_distributors_'+ productId).empty().append(response.html);
+                                    $('.from_'+ productId).empty().append(response.from);
                                     popOver();
                                 }
                             });
