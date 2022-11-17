@@ -686,6 +686,8 @@ class DistributorsController extends AbstractController
             ]
         );
         $tracking = false;
+        $response['unitPrice'] = 0.00;
+        $response['stockLevel'] = 0;
 
         if($distributorProducts == null){
 
@@ -735,29 +737,28 @@ class DistributorsController extends AbstractController
                     'itemId' => $data['itemId'],
                 ])->getContent(), true);
 
-                $distributorProducts->setUnitPrice($priceStockLevels['unitPrice'] ?? 0.00);
-                $distributorProducts->setStockCount($priceStockLevels['stockLevel'] ?? 0);
+                $response['unitPrice'] = $priceStockLevels['unitPrice'] ?? 0.00;
+                $response['stockLevel'] = $priceStockLevels['stockLevel'] ?? 0;
+
+                $distributorProducts->setUnitPrice($response['unitPrice']);
+                $distributorProducts->setStockCount($response['stockLevel']);
             }
 
             $this->em->persist($distributorProducts);
             $this->em->flush();
 
             // Update parent stock level
-            if($distributor->getTracking()->getId() > 1)
-            {
-                $stockCount = $this->em->getRepository(DistributorProducts::class)->getProductStockCount($product->getId());
+            $stockCount = $this->em->getRepository(DistributorProducts::class)->getProductStockCount($product->getId());
 
-                $product->setStockCount($stockCount[0][1]);
+            $product->setStockCount($stockCount[0][1]);
 
-                // Get the lowest price
-                $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($product->getId());
+            // Get the lowest price
+            $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($product->getId());
 
-                $product->setUnitPrice($lowestPrice[0]['unitPrice'] ?? 0.00);
+            $product->setUnitPrice($lowestPrice[0]['unitPrice'] ?? 0.00);
 
-                $this->em->persist($product);
-                $this->em->flush();
-
-            }
+            $this->em->persist($product);
+            $this->em->flush();
 
             // Availability Tracker
             $availabilityTracker = '';
@@ -848,11 +849,11 @@ class DistributorsController extends AbstractController
                 }
             }
 
-            $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> '. $product->getName() .' successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $response['flash'] = '<b><i class="fa-solid fa-circle-check"></i></i></b> '. $product->getName() .' successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
         } else {
 
-            $response = 'An error occurred';
+            $response['flash'] = 'An error occurred';
         }
 
         return new JsonResponse($response);

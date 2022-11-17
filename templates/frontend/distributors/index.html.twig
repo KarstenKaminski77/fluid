@@ -2993,7 +2993,9 @@
                             }
                         },
                         success: function (response) {
-                            getFlash(response);
+                            getFlash(response.flash);
+                            $('#unit_price').val(response.unitPrice);
+                            $('#stock_count').val(response.stockLevel);
                             isLoading(false);
                         }
                     });
