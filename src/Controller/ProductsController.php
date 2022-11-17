@@ -315,7 +315,15 @@ class ProductsController extends AbstractController
                 }
 
                 $name = $product->getName();
+
+                // Dosage
                 $dosage = '';
+
+                if($product->getDosage() != null && $product->getDosageUnit() != null)
+                {
+                    $dosage = '<p id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
+                    $dosage .= $product->getDosageUnit() .' '. $product->getActiveIngredient() .' / '. $product->getForm() .'</p>';
+                }
 
                 $html .= '
                 <div class="row">
@@ -357,7 +365,7 @@ class ProductsController extends AbstractController
                                     <div class="col-12 col-sm-10 pt-3 pb-3">
                                        <h4>'. $name .'</h4>
                                        <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
-                                       <p class="hidden" id="dosage_'. $product->getId() .'"></p>
+                                       '. $dosage .'
                                         <!-- Product rating -->
                                         <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
                                             <i class="star star-under fa fa-star">
@@ -1399,13 +1407,6 @@ class ProductsController extends AbstractController
         {
             $price = number_format($price ?? 0.00 / $product->getSize(), 2);
             $response['from'] = 'From <b>'. $currency .' '. $price .' </b>/ '. $product->getUnit();
-        }
-
-        // Dosage
-        $response['dosage'] = '';
-        if($product->getDosage() != null && $product->getDosageUnit() != null)
-        {
-            $response['dosage'] = '<b>Dosage:</b> '. $product->getDosage() . $product->getDosageUnit() .' '. $product->getActiveIngredient() .' / '. $product->getForm();
         }
 
         return new JsonResponse($response);
