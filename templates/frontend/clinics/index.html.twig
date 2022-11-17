@@ -96,6 +96,7 @@
 
                                         $('#search_result_distributors_'+ productId).empty().append(response.html);
                                         $('.from_'+ productId).empty().append(response.from);
+                                        $('#dosage_'+ productId).empty().append(response.dosage).show(700);
                                         popOver();
                                     }
                                 });
@@ -497,11 +498,11 @@
                     beforeSend: function (){
                         isLoading(true);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            //window.location.href = '{{ path('clinic_error_500') }}';
-                        }
-                    },
+                    {#complete: function(e, xhr, settings){#}
+                    {#    if(e.status === 500){#}
+                    {#        //window.location.href = '{{ path('clinic_error_500') }}';#}
+                    {#    }#}
+                    {#},#}
                     success: function (response) {
 
                         $('#inventory').empty().append(response.html).show();
@@ -524,15 +525,16 @@
                                 data: {
                                     'product-id': productId,
                                 },
-                                {#complete: function (e, xhr, settings) {#}
-                                {#    if (e.status === 500) {#}
-                                {#        window.location.href = '{{ path('clinic_error_500') }}';#}
-                                {#    }#}
-                                {#},#}
+                                complete: function (e, xhr, settings) {
+                                    if (e.status === 500) {
+                                        window.location.href = '{{ path('clinic_error_500') }}';
+                                    }
+                                },
                                 success: function (response) {
 
                                     $('#search_result_distributors_'+ productId).empty().append(response.html);
                                     $('.from_'+ productId).empty().append(response.from);
+                                    $('#dosage_'+ productId).empty().append(response.dosage).show(700);
                                     popOver();
                                 }
                             });

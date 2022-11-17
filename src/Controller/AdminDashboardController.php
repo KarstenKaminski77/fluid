@@ -215,6 +215,7 @@ class AdminDashboardController extends AbstractController
             $product->setSku($data->get('serial_no'));
             $product->setActiveIngredient(trim($activeIngredients, ','));
             $product->setDosage($data->get('dosage'));
+            $product->setDosageUnit($data->get('dosage-unit'));
             $product->setSize($data->get('size'));
             $product->setUnit($data->get('unit'));
             $product->setUnitPrice($data->get('price'));

@@ -314,42 +314,8 @@ class ProductsController extends AbstractController
                     $note = '<i class="fa-solid fa-pen-to-square"></i> <b>Notes From '. $firstName .' '. $lastLame .':</b> '. $noteString;
                 }
 
-                $per = strtolower($product->getForm());
-                $name = $product->getName() .': ';
+                $name = $product->getName();
                 $dosage = '';
-                $price = number_format($product->getUnitPrice(), 3);
-                $pieces = explode('.', $price);
-
-                // Format Price
-                if(substr($pieces[1], 2,1) == 0){
-
-                    $pieces[1] = substr($pieces[1],0,2);
-                }
-
-                $price = $pieces[0] .'.'. $pieces[1];
-
-                if($product->getForm() == 'Each'){
-
-                    $per = strtolower($product->getUnit());
-                    $dosage = $product->getSize() . $product->getUnit();
-                }
-
-                $from = '';
-
-                if($product->getSize() > 1){
-
-                    $dosage = $product->getDosage() . $product->getUnit() .', '. $product->getSize() .' Count';
-                    $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
-                    $from = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
-                }
-
-                // Manufacturer Number
-                $manufacturerNo = '';
-
-                if($product->getSku() != null){
-
-                    $manufacturerNo = ' - '. $product->getSku();
-                }
 
                 $html .= '
                 <div class="row">
@@ -389,8 +355,9 @@ class ProductsController extends AbstractController
                                     </div>
                                     <!-- Description -->
                                     <div class="col-12 col-sm-10 pt-3 pb-3">
-                                       <h4>'. $name . $dosage .'</h4>
-                                       <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'">'. $from .'</span></p>
+                                       <h4>'. $name .'</h4>
+                                       <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
+                                       <p class="hidden" id="dosage_'. $product->getId() .'"></p>
                                         <!-- Product rating -->
                                         <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
                                             <i class="star star-under fa fa-star">
@@ -1424,19 +1391,21 @@ class ProductsController extends AbstractController
         // Get the lowest price
         $per = strtolower($product->getForm());
         $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($productId);
-        $price = number_format($lowestPrice[0]['unitPrice'], 3);
-
-        if($product->getForm() == 'Each')
-        {
-            $per = strtolower($product->getUnit());
-        }
+        $price = number_format($lowestPrice[0]['unitPrice'], 3) / $product->getSize();
 
         $response['from'] = '';
 
-        if($product->getSize() > 1)
+        if($product->getSize() != null && $product->getUnit())
         {
             $price = number_format($price ?? 0.00 / $product->getSize(), 2);
-            $response['from'] = 'From <b>'. $currency .' '. $price .' </b>/ '. $per;
+            $response['from'] = 'From <b>'. $currency .' '. $price .' </b>/ '. $product->getUnit();
+        }
+
+        // Dosage
+        $response['dosage'] = '';
+        if($product->getDosage() != null && $product->getDosageUnit() != null)
+        {
+            $response['dosage'] = '<b>Dosage:</b> '. $product->getDosage() . $product->getDosageUnit() .' '. $product->getActiveIngredient() .' / '. $product->getForm();
         }
 
         return new JsonResponse($response);

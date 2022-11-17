@@ -214,12 +214,12 @@
                             {% if productSpecies|length > 0 %}
                                 {% for species in productSpecies %}
                                     <input
-                                            type="hidden"
-                                            name="species[]"
-                                            class="species-hidden"
-                                            data-name="{{ species.species.name }}"
-                                            id="species_hidden_field_{{ species.species.id }}"
-                                            value="{{ species.species.id }}"
+                                        type="hidden"
+                                        name="species[]"
+                                        class="species-hidden"
+                                        data-name="{{ species.species.name }}"
+                                        id="species_hidden_field_{{ species.species.id }}"
+                                        value="{{ species.species.id }}"
                                     >
                                 {% endfor %}
                             {% endif %}
@@ -306,12 +306,12 @@
                                 {% set subCategory = product.category2.name %}
                             {% endif %}
                             <input
-                                    type="hidden"
-                                    name="sub-category-id"
-                                    id="sub_category_id"
-                                    class="sub-category-hidden"
-                                    data-name="{{ subCategory }}"
-                                    value="{{ subCategoryId }}"
+                                type="hidden"
+                                name="sub-category-id"
+                                id="sub_category_id"
+                                class="sub-category-hidden"
+                                data-name="{{ subCategory }}"
+                                value="{{ subCategoryId }}"
                             >
                             <div id="sub_category_list_container">
                                 {{ subCategoriesList|raw }}
@@ -368,92 +368,58 @@
                 </div>
             </div>
 
-            {# Active Ingredient + Dosage #}
+            {# Dosage + Dosage Unit #}
             <div class="row mt-4">
-
-                {# Active Ingredient #}
-                <div class="col-12 col-md-6">
-                    <label for="active_ingredient" class="text-primary mb-2">Active Ingredient</label>
-                    <div class="position-relative">
-                        <div
-                                class="form-control cursor-text text-placeholder multi-select"
-                                id="ingredient"
-                                tabindex="9"
-                        >
-                            {% if selectedIngredients|count > 0 %}
-                                {% for key, ingredient in selectedIngredientsTwig %}
-                                    <span
-                                        class="badge bg-disabled me-3 my-1"
-                                        id="ingredient_badge_{{ key }}"
-                                        data-ingredient="{{ ingredient }}"
-                                    >
-                                        {{ ingredient }}
-                                    </span>
-                                {% endfor %}
-                            {% else %}
-                                Select an Active Ingredient
-                            {% endif %}
-                        </div>
-                        <div class="row" id="ingredient_list" style="display: none">
-                            {% set formValue = '' %}
-                            {% if product.form is not null %}
-                                {% set formValue = product.form %}
-                            {% endif %}
-                            <div id="ingredient_list_container">
-                                {% if selectedIngredientsTwig|count > 0 %}
-                                    {% for key, ingredient in selectedIngredientsTwig %}
-                                        <input
-                                            type="hidden"
-                                            name="ingredient[]"
-                                            class="ingredient_hidden"
-                                            data-name="{{ ingredient }}"
-                                            value="{{ ingredient }}"
-                                            id="ingredient_hidden_{{ key }}"
-                                            data-ingredient-id="{{ key }}"
-                                        >
-                                    {% endfor %}
-                                {% endif %}
-                                {{ activeIngredientList|raw }}
-                            </div>
-                        </div>
-                        <div class="hidden_msg" id="error_active_ingredient">
-                            Required Field
-                        </div>
-                    </div>
-                </div>
 
                 {# Dosage #}
                 <div class="col-12 col-md-6">
                     <label for="dosage" class="text-primary mb-2">Dosage</label>
                     <input
-                            type="text"
-                            class="form-control"
-                            name="dosage"
-                            id="dosage"
-                            value="{{ product.dosage }}"
-                            placeholder="e.g: 22.7"
-                            tabindex="10"
+                        type="text"
+                        class="form-control"
+                        name="dosage"
+                        id="dosage"
+                        value="{{ product.dosage }}"
+                        placeholder="e.g: 22.7"
+                        tabindex="9"
                     >
                     <div class="hidden_msg" id="error_dosage">
                         Required Field
                     </div>
                 </div>
+
+                {# Dosage Unit #}
+                <div class="col-12 col-md-6">
+                    <label for="dosage_unit" class="text-primary mb-2">Dosage Unit</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="dosage-unit"
+                        id="dosage_unit"
+                        value="{{ product.dosageUnit }}"
+                        placeholder="e.g: mg"
+                        tabindex="10"
+                    >
+                    <div class="hidden_msg" id="error_dosage_unit">
+                        Required Field
+                    </div>
+                </div>
             </div>
 
-            {# Size + Unit #}
+            {# Size + Size Unit #}
             <div class="row mt-4">
 
                 {# Size #}
                 <div class="col-12 col-md-6">
                     <label for="size" class="text-primary mb-2">Size <span class="text-danger">*</span></label>
                     <input
-                            type="text"
-                            class="form-control"
-                            name="size"
-                            id="size"
-                            value="{{ product.size }}"
-                            placeholder="Product Size"
-                            tabindex="11"
+                        type="text"
+                        class="form-control"
+                        name="size"
+                        id="size"
+                        value="{{ product.size }}"
+                        placeholder="Product Size"
+                        tabindex="11"
                     >
                     <div class="hidden_msg" id="error_size">
                         Required Field
@@ -461,15 +427,15 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label for="unit" class="text-primary mb-2">Dosage Unit </label>
+                    <label for="unit" class="text-primary mb-2">Size Unit </label>
                     <input
-                            type="text"
-                            class="form-control"
-                            name="unit"
-                            id="unit"
-                            value="{{ product.unit }}"
-                            placeholder="e.g: mg"
-                            tabindex="12"
+                        type="text"
+                        class="form-control"
+                        name="unit"
+                        id="unit"
+                        value="{{ product.unit }}"
+                        placeholder="e.g: mg"
+                        tabindex="12"
                     >
                     <div class="hidden_msg" id="error_unit">
                         Required Field
@@ -540,12 +506,12 @@
                             {% if selectedTags|length > 0 %}
                                 {% for key,tag in selectedTags %}
                                     <input
-                                            type="hidden"
-                                            name="tag[]"
-                                            class="tag_hidden"
-                                            data-name="{{ key }}"
-                                            value="{{ tag }}"
-                                            data-tag-hidden-id="{{ tag }}"
+                                        type="hidden"
+                                        name="tag[]"
+                                        class="tag_hidden"
+                                        data-name="{{ key }}"
+                                        value="{{ tag }}"
+                                        data-tag-hidden-id="{{ tag }}"
                                     >
                                 {% endfor %}
                             {% endif %}
@@ -554,6 +520,60 @@
                             </div>
                         </div>
                         <div class="hidden_msg" id="error_subCategory">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+
+                {# Active Ingredient #}
+                <div class="col-12 col-md-6">
+                    <label for="active_ingredient" class="text-primary mb-2">Active Ingredient</label>
+                    <div class="position-relative">
+                        <div
+                            class="form-control cursor-text text-placeholder multi-select"
+                            id="ingredient"
+                            tabindex="15"
+                        >
+                            {% if selectedIngredients|count > 0 %}
+                                {% for key, ingredient in selectedIngredientsTwig %}
+                                    <span
+                                        class="badge bg-disabled me-3 my-1"
+                                        id="ingredient_badge_{{ key }}"
+                                        data-ingredient="{{ ingredient }}"
+                                    >
+                                        {{ ingredient }}
+                                    </span>
+                                {% endfor %}
+                            {% else %}
+                                Select an Active Ingredient
+                            {% endif %}
+                        </div>
+                        <div class="row" id="ingredient_list" style="display: none">
+                            {% set formValue = '' %}
+                            {% if product.form is not null %}
+                                {% set formValue = product.form %}
+                            {% endif %}
+                            <div id="ingredient_list_container">
+                                {% if selectedIngredientsTwig|count > 0 %}
+                                    {% for key, ingredient in selectedIngredientsTwig %}
+                                        <input
+                                            type="hidden"
+                                            name="ingredient[]"
+                                            class="ingredient_hidden"
+                                            data-name="{{ ingredient }}"
+                                            value="{{ ingredient }}"
+                                            id="ingredient_hidden_{{ key }}"
+                                            data-ingredient-id="{{ key }}"
+                                        >
+                                    {% endfor %}
+                                {% endif %}
+                                {{ activeIngredientList|raw }}
+                            </div>
+                        </div>
+                        <div class="hidden_msg" id="error_active_ingredient">
                             Required Field
                         </div>
                     </div>

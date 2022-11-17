@@ -907,12 +907,12 @@ class ListsController extends AbstractController
                                 $this->em->persist($item);
                                 $this->em->flush();
                             }
-                            elseif($distributorId == 2)
+                            elseif($trackingId == 2)
                             {
                                 $stockLevel = $item->getDistributorProduct()->getStockCount() ?? 0;
                                 $unitPrice = $item->getDistributorProduct()->getUnitPrice() ?? 0.00;
                             }
-                            elseif($distributorId == 3)
+                            elseif($trackingId == 3)
                             {
                                 $stockLevel = 0;
                                 $unitPrice = $item->getDistributorProduct()->getUnitPrice() ?? 0.00;
@@ -920,7 +920,18 @@ class ListsController extends AbstractController
 
                             $subTotal = $unitPrice * $item->getQty();
                             $total += $subTotal;
-                            $image = $item->getProduct()->getProductImages()->first()->getImage() ?? 'image-not-found.jpg';
+                            $image = 'image-not-found.jpg';
+                            $dosage = '';
+
+                            if(!is_bool($item->getProduct()->getProductImages()->first()))
+                            {
+                                $image = $item->getProduct()->getProductImages()->first()->getImage() ?? 'image-not-found.jpg';
+                            }
+
+                            if($item->getProduct()->getDosage() != null && $item->getProduct()->getDosageUnit() != null)
+                            {
+                                $dosage = '<p class="info"><b>Dosage: </b>'. $item->getProduct()->getDosage() . $item->getProduct()->getDosageUnit() .' / '. $item->getProduct()->getSize() . $item->getProduct()->getUnit() .'</p>';
+                            }
 
                             $html .= '
                             <div class="row">
@@ -938,8 +949,9 @@ class ListsController extends AbstractController
                                                     '. $this->encryptor->decrypt($item->getDistributor()->getDistributorName()) .'
                                                 </span>
                                                 <h6 class="fw-bold text-primary lh-base mb-0">
-                                                    '. $item->getProduct()->getName() . ': ' . $item->getProduct()->getDosage() . ' ' . $item->getProduct()->getUnit() .'
+                                                    '. $item->getProduct()->getName() .'
                                                 </h6>
+                                                '. $dosage .'
                                             </div>
                                         </div>
                                         <!-- Product Quantity -->

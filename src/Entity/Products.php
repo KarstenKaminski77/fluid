@@ -214,6 +214,11 @@ class Products
      */
     private $priceFrom;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $dosageUnit;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -906,6 +911,18 @@ class Products
     public function setPriceFrom(float $priceFrom): self
     {
         $this->priceFrom = $priceFrom;
+
+        return $this;
+    }
+
+    public function getDosageUnit(): ?string
+    {
+        return $this->dosageUnit;
+    }
+
+    public function setDosageUnit(?string $dosageUnit): self
+    {
+        $this->dosageUnit = $dosageUnit;
 
         return $this;
     }
