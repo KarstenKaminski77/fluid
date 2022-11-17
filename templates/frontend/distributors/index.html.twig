@@ -2942,7 +2942,6 @@
 
             if(trackingId == 1)
             {
-                $('#tracking_row').hide(700).css('display', 'flex');
                 $('#unit_price').attr('disabled', true);
                 $('#stock_count').attr('disabled', true);
             }
@@ -3114,7 +3113,6 @@
                             if(trackingId == 1)
                             {
                                 $('#semi_tracked_row').hide(700);
-                                $('#tracking_row').hide(700).css('display', 'flex');
                                 $('#unit_price').attr('disabled', true);
                                 $('#stock_count').attr('disabled', true);
                                 $('#zoho_container').hide(700);
@@ -3125,7 +3123,6 @@
                             if(trackingId == 2)
                             {
                                 $('#semi_tracked_row').show(700);
-                                $('#tracking_row').hide(700);
                                 $('#unit_price').attr('disabled', true);
                                 $('#stock_count').attr('disabled', true);
                                 $('#import_products_row').hide(700);
@@ -3134,7 +3131,6 @@
                             if(trackingId == 3)
                             {
                                 $('#semi_tracked_row').hide(700);
-                                $('#tracking_row').show(700);
                                 $('#unit_price').attr('disabled', false);
                                 $('#stock_count').attr('disabled', false);
                                 $('#zoho_container').hide(700);

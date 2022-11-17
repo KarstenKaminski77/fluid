@@ -1021,7 +1021,7 @@ class ProductsController extends AbstractController
                     $priceStockLevels = json_decode($this->forward('App\Controller\ProductsController::zohoRetrieveItem',[
                         'distributorId' => $distributorId,
                         'itemId' => $distributor->getItemId(),
-                    ])->getContent(), true);;
+                    ])->getContent(), true);
 
                     If($priceStockLevels != null && is_array($priceStockLevels)){
 

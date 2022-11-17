@@ -677,7 +677,6 @@ class DistributorsController extends AbstractController
     public function distributorUpdateInventoryAction(Request $request, MailerInterface $mailer): Response
     {
         $data = $request->request->get('distributor_products_form');
-
         $product = $this->em->getRepository(Products::class)->find($data['product']);
         $distributor = $this->em->getRepository(Distributors::class)->find($data['distributor']);
         $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findOneBy(
@@ -704,12 +703,6 @@ class DistributorsController extends AbstractController
 
             $trackingId = $distributor->getTracking()->getId();
 
-            if($trackingId == 3)
-            {
-                $distributorProducts->setUnitPrice($data['unitPrice']);
-                $distributorProducts->setStockCount((int)$data['stockCount']);
-            }
-
             $distributorProducts->setDistributor($distributor);
             $distributorProducts->setProduct($product);
             $distributorProducts->setSku($data['sku']);
@@ -726,12 +719,32 @@ class DistributorsController extends AbstractController
 
             $distributorProducts->setTaxExempt($taxExempt);
 
+            if($trackingId == 3)
+            {
+                $distributorProducts->setUnitPrice($data['unitPrice']);
+                $distributorProducts->setStockCount((int)$data['stockCount']);
+            }
+
+            // Get stock and price from API
+            if($trackingId == 1){
+
+                // Retrieve price & stock from api
+                $distributorId = $distributor->getId();
+                $priceStockLevels = json_decode($this->forward('App\Controller\ProductsController::zohoRetrieveItem',[
+                    'distributorId' => $distributorId,
+                    'itemId' => $data['itemId'],
+                ])->getContent(), true);
+
+                $distributorProducts->setUnitPrice($priceStockLevels['unitPrice'] ?? 0.00);
+                $distributorProducts->setStockCount($priceStockLevels['stockLevel'] ?? 0);
+            }
+
             $this->em->persist($distributorProducts);
             $this->em->flush();
 
+            // Update parent stock level
             if($distributor->getTracking()->getId() > 1)
             {
-                // Update parent stock level
                 $stockCount = $this->em->getRepository(DistributorProducts::class)->getProductStockCount($product->getId());
 
                 $product->setStockCount($stockCount[0][1]);
@@ -739,10 +752,11 @@ class DistributorsController extends AbstractController
                 // Get the lowest price
                 $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($product->getId());
 
-                $product->setUnitPrice($lowestPrice[0]['unitPrice']);
+                $product->setUnitPrice($lowestPrice[0]['unitPrice'] ?? 0.00);
 
                 $this->em->persist($product);
                 $this->em->flush();
+
             }
 
             // Availability Tracker
