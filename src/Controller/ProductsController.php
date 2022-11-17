@@ -314,7 +314,7 @@ class ProductsController extends AbstractController
                     $note = '<i class="fa-solid fa-pen-to-square"></i> <b>Notes From '. $firstName .' '. $lastLame .':</b> '. $noteString;
                 }
 
-                $name = $product->getName();
+                $name = $product->getName() .' - '. $product->getSize() . $product->getUnit();
 
                 // Dosage
                 $dosage = '';
@@ -322,7 +322,7 @@ class ProductsController extends AbstractController
                 if($product->getDosage() != null && $product->getDosageUnit() != null)
                 {
                     $dosage = '<p id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
-                    $dosage .= $product->getDosageUnit() .' '. $product->getActiveIngredient() .' / '. $product->getForm() .'</p>';
+                    $dosage .= $product->getDosageUnit() .' '. $product->getForm() .' / '. $product->getActiveIngredient() .'</p>';
                 }
 
                 $html .= '
