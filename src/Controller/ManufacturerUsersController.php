@@ -423,7 +423,7 @@ class ManufacturerUsersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/manufacturers/forgot-password', name: 'manufacturers_forgot_password_request')]
+    #[Route('/manufacturer/forgot-password', name: 'manufacturers_forgot_password_request')]
     public function clinicForgotPasswordAction(Request $request, MailerInterface $mailer): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
