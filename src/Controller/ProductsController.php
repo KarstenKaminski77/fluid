@@ -1018,7 +1018,10 @@ class ProductsController extends AbstractController
                 if($trackingId == 1){
 
                     // Retrieve price & stock from api
-                    $priceStockLevels = $this->zohoRetrieveItem($distributorId, $distributor->getItemId());
+                    $priceStockLevels = json_decode($this->forward('App\Controller\ProductsController::zohoRetrieveItem',[
+                        'distributorId' => $distributorId,
+                        'itemId' => $distributor->getItemId(),
+                    ])->getContent(), true);;
 
                     If($priceStockLevels != null && is_array($priceStockLevels)){
 
@@ -1591,7 +1594,7 @@ class ProductsController extends AbstractController
         return $response;
     }
 
-    private function zohoRetrieveItem($distributorId, $itemId)
+    public function zohoRetrieveItem($distributorId, $itemId): Response
     {
         $response = [];
         $session = $this->requestStack->getSession();
@@ -1643,8 +1646,11 @@ class ProductsController extends AbstractController
 
                 $this->zohoRetrieveItem($distributorId, $itemId);
             }
+
             $response['unitPrice'] = $array['item']['rate'];
             $response['stockLevel'] = $array['item']['available_stock'];
+
+            return new JsonResponse($response);
 
             curl_close($curl);
         }

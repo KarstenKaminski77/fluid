@@ -169,7 +169,7 @@ class ManufacturerUsersController extends AbstractController
 
         $html = '
         <div class="row" id="users">
-            <div class="col-12 mb-3">
+            <div class="col-12 mb-3 d-flex d-md-none">
                 <button type="button" class="btn btn-secondary btn-sm float-end" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_new">
                     <i class="fa-solid fa-circle-plus"></i>
                     ADD COLLEAGUE
@@ -198,7 +198,9 @@ class ManufacturerUsersController extends AbstractController
                         Telephone
                     </div>
                     <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-right border-top">
-
+                        <button type="button" class="bg-transparent float-end border-0 p-0 m-0" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_new">
+                        <i class="fa-regular fa-square-plus float-end edit-icon"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -414,7 +416,9 @@ class ManufacturerUsersController extends AbstractController
         $this->em->remove($user);
         $this->em->flush();
 
-        $response = '<b><i class="fas fa-check-circle"></i> User successfully deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        // Get Users List
+        $response['html'] = json_decode($this->forward('App\Controller\ManufacturerUsersController::manufacturerGetUsersAction')->getContent());
+        $response['flash'] = '<b><i class="fas fa-check-circle"></i> User successfully deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
         return new JsonResponse($response);
     }

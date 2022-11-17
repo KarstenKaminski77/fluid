@@ -720,7 +720,7 @@ class ListsController extends AbstractController
             $basketItem = new BasketItems();
             $product = $this->em->getRepository(Products::class)->find($item->getProduct());
             $distributor = $this->em->getRepository(Distributors::class)->find($item->getDistributor());
-            $total = $item->getQty() * $product->getUnitPrice();
+            $total = $item->getQty() * $item->getDistributorProduct()->getUnitPrice();
             $basketTotal += $total;
 
             $basketItem->setBasket($basket);
@@ -882,10 +882,45 @@ class ListsController extends AbstractController
 
                         foreach ($list[0]->getListItems() as $item){
 
-                            $subTotal = $item->getDistributorProduct()->getUnitPrice() * $item->getQty();
+                            // If tracked get price & stock
+                            $trackingId = $item->getDistributor()->getTracking()->getId();
+
+                            if($trackingId == 1)
+                            {
+                                $itemId = $item->getProduct()->getDistributorProducts()[0]->getItemId();
+                                $distributorId = $item->getDistributor()->getId();
+                                $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+                                    'distributor' => $distributorId,
+                                    'product' => $item->getProduct()->getId()
+                                ]);
+                                $itemLevels = json_decode($this->forward('App\Controller\ProductsController::zohoRetrieveItem',[
+                                    'distributorId' => $distributorId,
+                                    'itemId' => $itemId,
+                                ])->getContent(), true);
+
+                                $stockLevel = $itemLevels['stockLevel'] ?? 0;
+                                $unitPrice = $itemLevels['unitPrice'] ?? 0.00;
+
+                                $distributorProduct->setStockCount($stockLevel);
+                                $distributorProduct->setUnitPrice($unitPrice);
+
+                                $this->em->persist($item);
+                                $this->em->flush();
+                            }
+                            elseif($distributorId == 2)
+                            {
+                                $stockLevel = $item->getDistributorProduct()->getStockCount() ?? 0;
+                                $unitPrice = $item->getDistributorProduct()->getUnitPrice() ?? 0.00;
+                            }
+                            elseif($distributorId == 3)
+                            {
+                                $stockLevel = 0;
+                                $unitPrice = $item->getDistributorProduct()->getUnitPrice() ?? 0.00;
+                            }
+
+                            $subTotal = $unitPrice * $item->getQty();
                             $total += $subTotal;
                             $image = $item->getProduct()->getProductImages()->first()->getImage() ?? 'image-not-found.jpg';
-                            $trackingId = $item->getDistributor()->getTracking()->getId();
 
                             $html .= '
                             <div class="row">
@@ -911,7 +946,7 @@ class ListsController extends AbstractController
                                         <div class="col-12 col-sm-4 col-md-12 col-lg-4 pt-3 pb-3 d-table">
                                             <div class="row d-table-cell align-bottom">
                                                 <div class="col-3 text-center text-sm-end text-md-start text-lg-start d-table-cell align-bottom">
-                                                    '. number_format($item->getDistributorProduct()->getUnitPrice(),2) .'
+                                                    '. number_format($unitPrice,2) .'
                                                 </div>
                                                 <div class="col-4 d-table-cell">
                                                     <input 
@@ -959,15 +994,15 @@ class ListsController extends AbstractController
                                     <div class="row">
                                         <div class="col-12">
                                             <!-- In Stock -->';
-                                            if($item->getDistributorProduct()->getStockCount() == 0 && ($trackingId == 1 || $trackingId == 2)){
+                                            if($stockLevel == 0 && ($trackingId == 1 || $trackingId == 2)){
 
                                                 $string = 'Out of Stock';
                                                 $colour = 'danger';
                                                 $moveToBasket = false;
 
-                                            } elseif($item->getDistributorProduct()->getStockCount() < $item->getQty() && ($trackingId == 1 || $trackingId == 2)) {
+                                            } elseif($stockLevel < $item->getQty() && ($trackingId == 1 || $trackingId == 2)) {
 
-                                                $string = 'Only '. $item->getDistributorProduct()->getStockCount() .' In Stock';
+                                                $string = 'Only '. $stockLevel .' In Stock';
                                                 $colour = 'warning';
                                                 $moveToBasket = false;
 

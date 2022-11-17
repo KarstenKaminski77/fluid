@@ -36,6 +36,7 @@ class ManufacturersController extends AbstractController
 
     #[Route('/manufacturers/analytics', name: 'manufacturer_analytics')]
     #[Route('/manufacturers/users/1', name: 'manufacturer_users')]
+    #[Route('/manufacturers/company-information', name: 'manufacturer_company_information')]
     public function manufacturerDashboardAction(Request $request): Response
     {
         $manufacturer = '';
@@ -418,6 +419,172 @@ class ManufacturersController extends AbstractController
             'id' => $id,
 
         ]);
+    }
+
+    #[Route('/manufacturers/get-company-information', name: 'manufacturer_get_company_information')]
+    public function getManufacturerInformationAction(Request $request): Response
+    {
+        $manufacturerId = $this->getUser()->getManufacturer()->getId();
+        $manufacturer = $this->em->getRepository(Manufacturers::class)->find($manufacturerId);
+        $response = '<h4 class="w-100 text-center mt-5 pt-5"><i class="fa-light fa-face-frown me-3"></i>Something went wrong...</h4>';
+
+        if($manufacturer != null)
+        {
+            $response = '
+            <form name="manufacturers_form" id="manufacturers_form" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="manufacturer-id" id="manufacturer_id" value="'. $manufacturerId .'">
+                <div class="row pt-3">
+                    <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
+                        <h4 class="text-primary">Company Information</h4>
+                    </div>
+                </div>
+        
+                <div class="row pb-3 pt-3 bg-light border-left border-right border-top">
+                    <div class="col-12 col-sm-6">
+                        <label>
+                            Business Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="checkbox" name="contact_me_by_fax_only" value="1" tabindex="-1" class="hidden" autocomplete="off">
+                        <input 
+                            type="text" 
+                            name="manufacturer-name" 
+                            id="manufacturer_name" 
+                            class="form-control" 
+                            placeholder="Company Name"
+                            value="'. $this->encryptor->decrypt($manufacturer->getName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_manufacturer_name">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <div class="col-12 col-sm-6">
+                        <div class="row">
+                            <div class="col-11">
+                                <label>Logo <span class="text-danger">*</span></label>
+                                <input type="file" name="logo" id="logo" class="form-control" placeholder="Business Logo*">
+                            </div>
+                            <div class="col-1">
+                                <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
+                                    <i class="fa-light fa-image img-icon float-end"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row pb-3 bg-light border-left border-right">
+                    <div class="col-12 col-sm-6">
+                        <label>First Name <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="first-name" 
+                            id="first_name" 
+                            class="form-control" 
+                            placeholder="First Name"
+                            value="'. $this->encryptor->decrypt($manufacturer->getFirstName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_first_name">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <div class="col-12 col-sm-6">
+                        <label>Last Name <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="last-name" 
+                            id="last_name" 
+                            class="form-control" 
+                            placeholder="Last Name"
+                            value="'. $this->encryptor->decrypt($manufacturer->getLastName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_last_name">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row pb-3 bg-light border-left border-right">
+                    <div class="col-12 col-sm-6">
+                        <label>Business Email <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="email" 
+                            id="email" 
+                            class="form-control" 
+                            placeholder="Email"
+                            value="'. $this->encryptor->decrypt($manufacturer->getEmail()) .'"
+                        >
+                        <div class="hidden_msg" id="error_email">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <div class="col-12 col-sm-6">
+                        <label>Business Telephone <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="telephone" 
+                            id="telephone" 
+                            class="form-control" 
+                            placeholder="Telephone"
+                            value="'. $this->encryptor->decrypt($manufacturer->getTelephone()) .'"
+                        >
+                        <input 
+                            type="hidden" 
+                            value="'. $this->encryptor->decrypt($manufacturer->getTelephone()) .'" 
+                            name="mobile-no" 
+                            id="mobile_no"
+                        >
+                        <input 
+                            type="hidden" 
+                            name="iso-code" 
+                            id="manufacturer_iso_code" 
+                            value="'. $this->encryptor->decrypt($manufacturer->getIsoCode()) .'"
+                        >
+                        <input 
+                            type="hidden" 
+                            name="intl-code" 
+                            id="manufacturer_intl_code" 
+                            value="'. $this->encryptor->decrypt($manufacturer->getIntlCode()) .'"
+                        >
+                        <div class="hidden_msg" id="error_telephone">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row">
+                    <div class="col-12 ps-0 pe-0">
+                        <button id="form_save" type="submit" class="btn btn-primary float-end w-100">SAVE</button>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Modal Logo -->
+            <div class="modal fade" id="modal_logo" tabindex="-1" aria-labelledby="product_delete_label" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header" style="border: none; padding-bottom: 0">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" style="padding: 0">
+                            <div class="row">
+                                <div class="col-12 mb-0 text-center">
+                                    <img 
+                                        src="'. $this->getParameter('app.base_url') .'/images/logos/'. $manufacturer->getLogo() .'" 
+                                        id="logo_img" class="img-fluid"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>';
+        }
+
+        return new JsonResponse($response);
     }
 
     private function generatePassword()

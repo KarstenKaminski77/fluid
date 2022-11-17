@@ -1029,15 +1029,15 @@ class AdminDashboardController extends AbstractController
     }
 
     #[Route('/admin/manufacturer/crud', name: 'manufacturer_crud')]
+    #[Route('/manufacturers/crud', name: 'update_manufacturer')]
     public function manufacturerCrudAction(Request $request, UserPasswordHasherInterface $passwordHasher, MailerInterface  $mailer): Response
     {
         $data = $request->request;
-        $hashedEmail = md5($data->get('email'));
-        $manufacturer = $this->em->getRepository(Manufacturers::class)->findOneBy([
-            'hashedEmail' => $hashedEmail,
-        ]);
+        $manufacturerId = $data->get('manufacturer-id') ?? 0;
+        $manufacturer = $this->em->getRepository(Manufacturers::class)->find($manufacturerId);
+        $response['manufacturerLogo'] = '';
 
-        if($data->get('manufacturer-id') == 0 && $manufacturer == null)
+        if($manufacturerId == 0 && $manufacturer == null)
         {
             $manufacturer = new Manufacturers();
             $plainTextPwd = $this->generatePassword();
@@ -1064,6 +1064,8 @@ class AdminDashboardController extends AbstractController
             if (move_uploaded_file($_FILES['logo']['tmp_name'], $targetFile)) {
 
                 $manufacturer->setLogo($file);
+
+                $response['manufacturerLogo'] = $this->getParameter('app.base_url') .'/images/logos/'. $manufacturer->getLogo();
             }
         }
 

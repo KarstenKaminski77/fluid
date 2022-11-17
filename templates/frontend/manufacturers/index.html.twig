@@ -10,9 +10,9 @@
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
                         <li class="nav-item py-3 w-100">
-                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="customers_link">
-                                <i class="fa-regular fa-users fa-fw"></i>
-                                <span class="ms-1 d-none d-sm-inline">Customers</span>
+                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="company_information_link">
+                                <i class="fa-regular fa-screwdriver-wrench fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">Company Information</span>
                             </a>
                         </li>
                         <li class="w-100">
@@ -78,16 +78,22 @@
             let uri = window.location.pathname;
             let isAnalytics = uri.match('/manufacturers/analytics');
             let isUsers = uri.match('/manufacturers/users/[0-9]+');
+            let isCompanyInformation = uri.match('/manufacturers/company-information');
 
             {# Handle Page Rload #}
-            if(isAnalytics != null) {
-
+            if(isAnalytics != null)
+            {
                 getAnalytics();
             }
 
-            if(isUsers != null) {
-
+            if(isUsers != null)
+            {
                 getUsers();
+            }
+
+            if(isCompanyInformation != null)
+            {
+                getCompanyInformation();
             }
 
             {# Analyics #}
@@ -327,7 +333,181 @@
                 input.addEventListener('change', handleChange);
                 input.addEventListener('keyup', handleChange);
             });
+            $(document).on('click', '.delete-user', function () {
+
+                $('#delete_user').attr('data-user-id', $(this).attr('data-user-id'));
+            });
+            $(document).on('click', '#delete_user', function () {
+
+                let user_id = $(this).attr('data-user-id');
+
+                $.ajax({
+                    url: "{{ path('manufacturer_user_delete') }}",
+                    type: 'POST',
+                    data: {
+                        id: user_id
+                    },
+                    beforeSend: function(){
+                        isLoading(true);
+                    },
+                    complete: function(e, xhr, settings){
+                        if(e.status === 500){
+                            window.location.href = '{{ path('distributor_error_500') }}';
+                        }
+                    },
+                    success: function (response) {
+
+                        getFlash(response.flash);
+                        $('#modal_user_delete').modal('hide');
+                        $('#manufacturer_container').empty().append(response.html);
+                        isLoading(false);
+                    }
+                });
+            });
             {# End Users #}
+
+            {# Company Information #}
+            function getCompanyInformation() {
+
+                $.ajax({
+                    url: "{{ path('manufacturer_get_company_information') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    beforeSend: function (){
+
+                        isLoading(true);
+                    },
+                    success: function (response) {
+
+                        isLoading(false);
+                        $('#manufacturer_container').empty().append(response);
+                        window.history.pushState(null, "Fluid", '/manufacturers/company-information');
+
+                        // International Numbers
+                        let input = document.querySelector('#telephone');
+                        let iso_code = $('#manufacturer_iso_code').val();
+
+                        let iti = window.intlTelInput(input, {
+                            initialCountry: iso_code,
+                            preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
+                            autoPlaceholder: "polite",
+                            nationalMode: true,
+                            utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
+                            separateDialCode: true,
+                            utilsScript: "/js/utils.js",
+                        });
+
+                        let handleChange = function() {
+                            let mobile = $('#mobile_no');
+                            let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
+                            let textNode = document.createTextNode(mobile_number);
+
+                            if(mobile_number != false){
+
+                                let isoCode = iti.getSelectedCountryData().iso2;
+                                let intlCode = iti.getSelectedCountryData().dialCode;
+
+                                mobile.val(mobile_number.substring(1));
+                                $('#manufacturer_iso_code').val(isoCode);
+                                $('#manufacturer_intl_code').val(intlCode);
+                            }
+                        };
+
+                        // listen to "keyup", but also "change" to update when the user selects a country
+                        input.addEventListener('change', handleChange);
+                        input.addEventListener('keyup', handleChange);
+                    }
+                });
+            }
+            $(document).on('click', '#company_information_link', function (e) {
+
+                getCompanyInformation();
+            });
+            $(document).on('submit','#manufacturers_form', function (e){
+
+                e.preventDefault();
+
+                let isValid = true;
+                let manufacturerName = $('#manufacturer_name').val();
+                let firstName = $('#first_name').val();
+                let lastName = $('#last_name').val();
+                let email = $('#email').val();
+                let telephone = $('#mobile_no').val();
+                let errorManufacturerName = $('#error_manufacturer_name');
+                let errorFirstName = $('#error_first_name');
+                let errorLastName = $('#error_last_name');
+                let errorEmail = $('#error_email');
+                let errorTelephone = $('#error_telephone');
+                let btn = document.activeElement.getAttribute('name');
+
+                errorManufacturerName.hide();
+                errorFirstName.hide();
+                errorLastName.hide();
+                errorEmail.hide();
+                errorTelephone.hide();
+
+                if(manufacturerName == '' || manufacturerName == 'undefined'){
+
+                    errorManufacturerName.show();
+                    isValid = false;
+                }
+
+                if(firstName == '' || firstName == 'undefined'){
+
+                    errorFirstName.show();
+                    isValid = false;
+                }
+
+                if(lastName == '' || lastName == 'undefined'){
+
+                    errorLastName.show();
+                    isValid = false;
+                }
+
+                if(email == '' || email == 'undefined'){
+
+                    errorEmail.empty().append('Required Field').show();
+                    isValid = false;
+                }
+
+                if(telephone == '' || telephone == 'undefined'){
+
+                    errorTelephone.show();
+                    isValid = false;
+                }
+
+                if(isValid == true){
+
+                    let data = new FormData(this);
+
+                    $.ajax({
+                        url: "{{ path('update_manufacturer') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        success: function (response) {
+
+                            getFlash(response.flash);
+                            $('.content-header-title').empty().append('<h4 class="text-truncate">Editing '+ response.manufacturer +'</h4>');
+
+                            if(response.manufacturerLogo != '')
+                            {
+                                $('#logo_img').attr('src', response.manufacturerLogo);
+                            }
+
+                            if(btn == 'save_return')
+                            {
+                                window.location.assign('{{ path('manufacturers_list',{ 'page_id':1 }) }}');
+                            }
+                        }
+                    });
+                }
+            });
+            {# End Company Information #}
 
             {# Popovers #}
             function popOver() {
