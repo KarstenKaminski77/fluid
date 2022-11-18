@@ -550,7 +550,7 @@ label {
     font-size: 40px !important;
 }
 
-.star-raiting-container {
+.star-rating-container {
     width: 300px;
     margin-right: auto;
     margin-left: auto;
@@ -566,6 +566,7 @@ label {
     float: left;
     width: 216px;
     display: list-item;
+    list-style-type: none !important;
 }
 
 .progress-outer {

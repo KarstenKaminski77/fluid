@@ -862,7 +862,15 @@
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Name:
                                         </div>
-                                        <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3">
+                                        <div
+                                            class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                                            data-bs-trigger="hover"
+                                            data-bs-container="body"
+                                            data-bs-toggle="popover"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            data-bs-content="{{ distributorProduct.product.name }}"
+                                        >
                                             {{ distributorProduct.product.name }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">

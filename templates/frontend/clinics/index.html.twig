@@ -3291,11 +3291,11 @@
                         }
                     });
 
-                    $('#search_panels_container_'+ product_id).show();
+                    $('#notes_'+ product_id).show();
+                    $('#search_panels_container_'+ product_id).slideDown(700);
                     $('#details_'+ product_id).slideUp(700);
                     $('#lists_'+ product_id).slideUp(700);
                     $('#track_'+ product_id).slideUp(700);
-                    $('#notes_'+ product_id).slideDown(700);
                     $('#reviews_'+ product_id).slideUp(700);
                     $('#btn_details_'+ product_id).removeClass('active');
                     $('#btn_lists_'+ product_id).removeClass('active');
@@ -3736,19 +3736,46 @@
 
                 let review_id = $(this).data('review-id');
 
+                $('#leave_comment_container_'+ review_id).slideUp(700);
+
                 if($('#comment_container_'+ review_id +':visible').length) {
 
                     $('#comment_icon_'+ review_id).removeClass('text-secondary');
                     $('#comment_span_'+ review_id).removeClass('text-secondary');
                     $('.review-comments-row').removeClass('mb-3');
-                    $('#comment_container_'+ review_id).hide(700);
+                    $('#comment_container_'+ review_id).slideUp(700);
 
                 } else {
 
                     $('#comment_icon_'+ review_id).addClass('text-secondary');
                     $('#comment_span_'+ review_id).addClass('text-secondary');
                     $('.review-comments-row').addClass('mb-3');
-                    $('#comment_container_'+ review_id).show(700);
+                    $('#comment_container_'+ review_id).slideDown(700);
+                }
+            });
+            $(document).on('click', '.btn-leave-comment', function (e){
+
+                e.preventDefault();
+
+                $('.hidden_msg').hide();
+
+                let review_id = $(this).data('review-id');
+
+                $('#comment_container_'+ review_id).slideUp(700);
+
+                if($('#leave_comment_container_'+ review_id +':visible').length) {
+
+                    $('#leave_comment_icon_'+ review_id).removeClass('text-secondary');
+                    $('#leave_comment_span_'+ review_id).removeClass('text-secondary');
+                    $('.review-comments-row').removeClass('mb-3');
+                    $('#leave_comment_container_'+ review_id).slideUp(700);
+
+                } else {
+
+                    $('#leave_comment_icon_'+ review_id).addClass('text-secondary');
+                    $('#leave_comment_span_'+ review_id).addClass('text-secondary');
+                    $('.review-comments-row').addClass('mb-3');
+                    $('#leave_comment_container_'+ review_id).slideDown(700);
                 }
             });
             $(document).on('submit', '.form-comment', function (e){
@@ -3796,6 +3823,9 @@
                                 success: function (response) {
 
                                     $('#comment_span_'+ review_id).empty().append('Comments'+ response);
+                                    $('#comment_'+ review_id).val('');
+                                    $('#leave_comment_container_'+ review_id).slideUp(700);
+                                    $('#comment_container_'+ review_id).slideDown(700);
                                 }
                             });
                         }
