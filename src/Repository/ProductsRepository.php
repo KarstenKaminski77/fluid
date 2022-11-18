@@ -66,6 +66,7 @@ class ProductsRepository extends ServiceEntityRepository
             ->select('p','dp','d','c','pm','pi')
             ->join('p.distributorProducts', 'dp')
             ->join('dp.distributor', 'd')
+            ->join('p.productsSpecies', 'ps')
             ->leftJoin('p.category', 'c')
             ->leftJoin('p.productManufacturers', 'pm')
             ->leftJoin('p.productFavourites', 'pf')
@@ -75,6 +76,7 @@ class ProductsRepository extends ServiceEntityRepository
             ->andWhere('d.addressCountry = :countryId')
             ->setParameter('countryId', $countryId)
             ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
             ->andWhere("dp.itemId != ''");
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];

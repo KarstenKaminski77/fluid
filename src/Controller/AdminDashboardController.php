@@ -164,11 +164,13 @@ class AdminDashboardController extends AbstractController
             }
 
             $product->setName($data->get('name'));
+            $productSpeciesSlug = '';
 
             foreach($data->get('species') as $species){
 
                 $productSpecies = new ProductsSpecies();
                 $specie = $this->em->getRepository(Species::class)->find($species);
+                $productSpeciesSlug .= ' '. $specie->getName();
 
                 $productSpecies->setProducts($product);
                 $productSpecies->setSpecies($specie);
@@ -177,10 +179,11 @@ class AdminDashboardController extends AbstractController
             }
 
             // Tags
+            $slug = '';
+
             if($data->get('tag') != null){
 
                 $selectedTags = [];
-                $slug = '';
 
                 foreach($data->get('tag') as $tag){
 
@@ -192,7 +195,6 @@ class AdminDashboardController extends AbstractController
                         $slug .= $tagRepo->getName() . ' ';
 
                         $product->setTags($selectedTags);
-                        $product->setSlug(trim($slug));
                     }
                 }
             }
@@ -221,6 +223,7 @@ class AdminDashboardController extends AbstractController
             $product->setUnitPrice($data->get('price'));
             $product->setStockCount($data->get('stock'));
             $product->setForm($data->get('form'));
+            $product->setSlug(trim($slug .' '. $productSpeciesSlug));
 
             // Image
             // File Types
@@ -1577,7 +1580,8 @@ class AdminDashboardController extends AbstractController
                 $species = new Species();
             }
 
-            $species->setName($data->get('species_name'));
+            $species->setName($data->get('species-name'));
+            $species->setIcon($data->get('species-icon'));
 
             $this->em->persist($species);
             $this->em->flush();

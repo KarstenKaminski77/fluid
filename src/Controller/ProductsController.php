@@ -321,8 +321,21 @@ class ProductsController extends AbstractController
 
                 if($product->getDosage() != null && $product->getDosageUnit() != null)
                 {
-                    $dosage = '<p id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
+                    $dosage = '<p class="" id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
                     $dosage .= $product->getDosageUnit() .' '. $product->getForm() .' / '. $product->getActiveIngredient() .'</p>';
+                }
+
+                // Species
+                $species = '';
+
+                if($product->getProductSpecies() != null)
+                {
+                    foreach($product->getProductSpecies() as $productSpecies)
+                    {
+                        $species .= '<button class="btn bg-transparent border-xy ms-3">';
+                        $species .= '   <i class="'. $productSpecies->getSpecies()->getIcon() .' fa-fw info" style="font-size: 20px !important;"></i>';
+                        $species .= '</button>';
+                    }
                 }
 
                 $html .= '
@@ -363,9 +376,21 @@ class ProductsController extends AbstractController
                                     </div>
                                     <!-- Description -->
                                     <div class="col-12 col-sm-10 pt-3 pb-3">
-                                       <h4>'. $name .'</h4>
-                                       <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
-                                       '. $dosage .'
+                                       <div class="row">
+                                           <div class="col-12">
+                                                <h4>'. $name .'</h4>
+                                                <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
+                                            </div>
+                                       </div>
+                                       <div class="row">
+                                           <div class="col-12 col-md-6">
+                                                '. $dosage .'
+                                            </div>
+                                            <div class="col-12 col-md-6 text-end">
+                                                '. $species .'
+                                            </div>
+                                       </div>
+                                       
                                         <!-- Product rating -->
                                         <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
                                             <i class="star star-under fa fa-star">
@@ -475,6 +500,13 @@ class ProductsController extends AbstractController
             
                                     <!-- Track -->
                                     <div class="collapse" id="track_'. $product->getId() .'">
+                                        <h5 class="pb-3 pt-3">Availability Tracker</h5>
+                                        Create custom alerts when a backordered item comes back in stock. Set a notification 
+                                        for how you would like to be notified and which suppliers you would like to track. 
+                                        Once an item comes back in stock and you are notified, the tracker will automatically 
+                                        turn off. You can also view a list of all tracked items in your shopping list. 
+                                        Note: Fluid cannot track the availability of items that are drop shipped directly 
+                                        from the vendor.
                                     </div>
             
                                     <!-- Notes -->

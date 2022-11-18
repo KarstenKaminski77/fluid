@@ -3025,7 +3025,7 @@
             $(document).on('click', '.btn_track', function(){
 
                 product_id = $(this).data('product-id');
-
+                $('#track_'+ product_id).show(700);
                 if($('#track_'+ product_id +':visible').length) {
 
                     $('#track_'+ product_id).hide(700);
@@ -3043,19 +3043,19 @@
                         },
                         success: function (response) {
 
-                            $('#track_'+ product_id).empty().append(response.html).append(response.list);
+                            //$('#track_'+ product_id).empty().append(response.html).append(response.list);
                         }
                     });
 
                     $('#search_panels_container_'+ product_id).show(700);
                     $('#details_'+ product_id).hide(700);
                     $('#lists_'+ product_id).hide(700);
-                    $('#track_'+ product_id).show(700);
+                    //$('#track_'+ product_id).show(700);
                     $('#notes_'+ product_id).hide(700);
                     $('#reviews_'+ product_id).hide(700);
                     $('#btn_details_'+ product_id).removeClass('active');
                     $('#btn_lists_'+ product_id).removeClass('active');
-                    $('#btn_track_'+ product_id).addClass('active');
+                    //$('#btn_track_'+ product_id).addClass('active');
                     $('#btn_notes_'+ product_id).removeClass('active');
                     $('#btn_reviews_'+ product_id).removeClass('active');
                 }

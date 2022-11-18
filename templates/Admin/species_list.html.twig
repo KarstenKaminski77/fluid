@@ -25,8 +25,11 @@
             <div class="col-1 fw-bold ps-4 text-truncate">
                 #ID
             </div>
-            <div class="col-6 fw-bold text-truncate">
+            <div class="col-3 fw-bold text-truncate">
                 Species
+            </div>
+            <div class="col-3 fw-bold text-truncate">
+                Icon
             </div>
             <div class="col-2 fw-bold text-truncate">
                 Modified
@@ -46,8 +49,16 @@
             <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                 Species
             </div>
-            <div class="col-8 col-md-6 text-truncate">
+            <div class="col-8 col-md-3 text-truncate">
                 {{ specie.name }}
+            </div>
+            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                Icon
+            </div>
+            <div class="col-8 col-md-3 text-truncate">
+                {% if specie.icon|length > 0 %}
+                    <i class="{{ specie.icon }} fs-5"></i>
+                {% endif %}
             </div>
             <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                 Modified
