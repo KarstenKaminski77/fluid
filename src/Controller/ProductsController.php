@@ -501,12 +501,14 @@ class ProductsController extends AbstractController
                                     <!-- Track -->
                                     <div class="collapse" id="track_'. $product->getId() .'">
                                         <h5 class="pb-3 pt-3">Availability Tracker</h5>
+                                        <p>
                                         Create custom alerts when a backordered item comes back in stock. Set a notification 
                                         for how you would like to be notified and which suppliers you would like to track. 
                                         Once an item comes back in stock and you are notified, the tracker will automatically 
                                         turn off. You can also view a list of all tracked items in your shopping list. 
                                         Note: Fluid cannot track the availability of items that are drop shipped directly 
                                         from the vendor.
+                                        </p>
                                     </div>
             
                                     <!-- Notes -->

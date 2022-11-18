@@ -8,6 +8,7 @@ use App\Entity\ProductReviewLikes;
 use App\Entity\ProductReviews;
 use App\Entity\Products;
 use Doctrine\ORM\EntityManagerInterface;
+use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,9 +18,11 @@ use Symfony\Component\Routing\Annotation\Route;
 class ProductReviewsController extends AbstractController
 {
     private $em;
+    private $encryptor;
 
-    public function __construct(EntityManagerInterface $em) {
+    public function __construct(EntityManagerInterface $em, Encryptor $encryptor) {
         $this->em = $em;
+        $this->encryptor = $encryptor;
     }
 
     #[Route('clinics/create-review', name: 'create_review')]
@@ -309,6 +312,8 @@ class ProductReviewsController extends AbstractController
                 }
 
                 $viewAllReviews = '';
+                $firstName = $this->encryptor->decrypt($review->getClinicUser()->getFirstName());
+                $lastName = $this->encryptor->decrypt($review->getClinicUser()->getLastName());
 
                 if(count($reviews) == $c){
 
@@ -332,7 +337,7 @@ class ProductReviewsController extends AbstractController
                     </div>
                     <div class="row">
                         <div class="col-12 mb-2">
-                            Written on '. $review->getCreated()->format('d M Y') .' by <b>'. $review->getClinicUser()->getReviewUsername() .', '. $review->getPosition() .'</b>
+                            Written on '. $review->getCreated()->format('d M Y') .' by <b>'. $firstName .' '. $lastName .', '. $review->getPosition() .'</b>
                         </div>
                     </div>
                     <div class="row">
@@ -399,11 +404,15 @@ class ProductReviewsController extends AbstractController
 
                                             foreach ($productReviewComments as $comment) {
 
+                                                $firstName = $this->encryptor->decrypt($comment->getClinicUser()->getFirstName());
+                                                $lastName = $this->encryptor->decrypt($comment->getClinicUser()->getLastName());
+                                                $position = $this->encryptor->decrypt($comment->getClinic()->getClinicUsers()[0]->getPosition());
+
                                                 $response .= '
                                                 <div class="row mt-4">
                                                     <div class="col-12">
-                                                        <b>' . $comment->getClinic()->getClinicUsers()[0]->getReviewUsername() . '</b> 
-                                                        ' . $comment->getClinic()->getClinicUsers()[0]->getPosition() . ' '. $comment->getCreated()->format('dS M Y H:i') .'
+                                                        <b>' . $firstName .' '. $lastName . '</b> 
+                                                        ' . $position . ' '. $comment->getCreated()->format('dS M Y H:i') .'
                                                     </div>
                                                     <div class="col-12">
                                                         ' . $comment->getComment() . '
