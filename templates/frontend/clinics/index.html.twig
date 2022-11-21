@@ -2670,7 +2670,7 @@
 
                             if(response.is_favourite != undefined){
 
-                                $('#favourite_'+ product_id).removeClass('icon-unchecked').addClass('text-secondary')
+                                $('#favourite_'+ product_id).removeClass('icon-unchecked').addClass('text-danger')
                                     .attr('data-favourite', true).attr('data-distributor-id', distributor_id);
 
                             } else {
@@ -2683,7 +2683,7 @@
 
                                     if (response == true) {
 
-                                        $('#favourite_' + product_id).removeClass('icon-unchecked').addClass('text-secondary');
+                                        $('#favourite_' + product_id).removeClass('icon-unchecked').addClass('text-danger');
 
                                     } else {
 

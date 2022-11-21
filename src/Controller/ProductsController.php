@@ -300,7 +300,7 @@ class ProductsController extends AbstractController
 
                     if($listItem != null) {
 
-                        $favouriteIcon = 'text-secondary';
+                        $favouriteIcon = 'text-danger';
                         $dataFavourite = 'true';
                         $dataDistributor = 'data-distributor-id="' . $listItem->getDistributor()->getId() . '"';
                     }

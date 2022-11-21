@@ -242,6 +242,7 @@ class ClinicsController extends AbstractController
         $domainName = explode('@', $email);
         $response['response'] = true;
         $restrictedDomains = $this->em->getRepository(RestrictedDomains::class)->arrayFindAll();
+        $firstName = '';
 
         foreach($restrictedDomains as $restrictedDomain)
         {
@@ -277,6 +278,26 @@ class ClinicsController extends AbstractController
         $clinicUsers = $this->em->getRepository(ClinicUsers::class)->findOneBy([
             'hashedEmail' => md5($email),
         ]);
+
+        if($clinicDomain != null)
+        {
+            $user = $this->em->getRepository(ClinicUsers::class)->findOneBy([
+                'clinic' => $clinicDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        if($distributorDomain != null)
+        {
+            $user = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+                'distributor' => $distributorDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        $response['firstName'] = $firstName;
 
         if($distributor != null || $distributorUsers != null || $clinic != null || $clinicUsers != null || $clinicDomain != null || $distributorDomain != null){
 
