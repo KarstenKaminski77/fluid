@@ -148,6 +148,29 @@
                             {{ nzo_decrypt(clinic.clinicName) }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" id="account_menu" style="min-width: 250px">
+                            {% if 3 or 4 in permissions %}
+                                {% set opening_tag = 'a href="#"' %}
+                                {% set closing_tag = 'a' %}
+                                {% set class = 'dropdown-item manage-lists' %}
+                                {% set id = 'analytics_link' %}
+                            {% else %}
+                                {% set opening_tag = 'span' %}
+                                {% set closing_tag = 'span' %}
+                                {% set class = 'text-disabled dropdown-item-disabled' %}
+                                {% set id = '' %}
+                            {% endif %}
+                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
+                                <{{ opening_tag}} class="dropdown-item orders_link" data-clinic-id="{{ clinic_id }}" id="orders_link">
+                                    <i class="fa-regular fa-file-invoice pe-2 fa-width"></i>
+                                    Orders
+                                </{{ opening_tag }}>
+                            </li>
+                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
+                                <{{ opening_tag}} href="#" class="{{ class }}" data-keyword-string="" id="orders_link">
+                                    <i class="fa-regular fa-cart-flatbed-boxes pe-2 fa-width"></i>
+                                    Order Lists
+                                </{{ opening_tag }}>
+                            </li>
                             {% if 7 in permissions %}
                                 {% set opening_tag = 'a href="#"' %}
                                 {% set closing_tag = 'a' %}
@@ -165,29 +188,14 @@
                                     Analytics
                                 </{{ closing_tag }}>
                             </li>
-                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <a href="#" class="dropdown-item orders_link" data-clinic-id="{{ clinic_id }}" id="orders_link">
-                                    <i class="fa-regular fa-file-invoice pe-2 fa-width"></i>
-                                    Orders
-                                </a>
+
+                            {# Divider #}
+                            <li class="py-0 px-3">
+                                <hr>
+                            </{{ closing_tag }}>
                             </li>
-                            {% if 3 or 4 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
-                                {% set class = 'dropdown-item manage-lists' %}
-                                {% set id = 'analytics_link' %}
-                            {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
-                                {% set class = 'text-disabled dropdown-item-disabled' %}
-                                {% set id = '' %}
-                            {% endif %}
-                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag}} href="#" class="{{ class }}" data-keyword-string="" id="orders_link">
-                                    <i class="fa-regular fa-cart-flatbed-boxes pe-2 fa-width"></i>
-                                    Order Lists
-                                </{{ opening_tag }}>
-                            </li>
+
+                            {# Company Information #}
                             {% if 10 in permissions %}
                                 {% set opening_tag = 'a href="#"' %}
                                 {% set closing_tag = 'a' %}
@@ -202,9 +210,30 @@
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
                                 <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
                                     <i class="fa-regular fa-screwdriver-wrench pe-2 fa-width"></i>
-                                    Account & Settings
+                                    Company Information
                                 </{{ closing_tag }}>
                             </li>
+
+                            {# Addresses #}
+                            {% if 12 in permissions %}
+                                {% set opening_tag = 'a href="#"' %}
+                                {% set closing_tag = 'a' %}
+                                {% set class = 'dropdown-item' %}
+                                {% set id = 'addresses_link' %}
+                            {% else %}
+                                {% set opening_tag = 'span' %}
+                                {% set closing_tag = 'span' %}
+                                {% set class = 'text-disabled dropdown-item-disabled' %}
+                                {% set id = '' %}
+                            {% endif %}
+                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
+                                <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
+                                <i class="fa-regular fa-address-book pe-2 fa-width"></i>
+                                Addresses
+                            </{{ closing_tag }}>
+                            </li>
+
+                            {# Users #}
                             {% if 6 in permissions %}
                                 {% set opening_tag = 'a href="#"' %}
                                 {% set closing_tag = 'a' %}
@@ -222,23 +251,8 @@
                                     Users
                                 </{{ closing_tag }}>
                             </li>
-                            {% if 12 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
-                                {% set class = 'dropdown-item' %}
-                                {% set id = 'addresses_link' %}
-                            {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
-                                {% set class = 'text-disabled dropdown-item-disabled' %}
-                                {% set id = '' %}
-                            {% endif %}
-                            <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
-                                    <i class="fa-regular fa-address-book pe-2 fa-width"></i>
-                                    Addresses
-                                </{{ closing_tag }}>
-                            </li>
+
+                            {# Communication Methods #}
                             {% if 13 in permissions %}
                                 {% set opening_tag = 'a href="#"' %}
                                 {% set closing_tag = 'a' %}

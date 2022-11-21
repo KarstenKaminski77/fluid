@@ -27,6 +27,7 @@ use App\Entity\Pages;
 use App\Entity\ProductForms;
 use App\Entity\ProductImages;
 use App\Entity\ProductManufacturers;
+use App\Entity\ProductReviews;
 use App\Entity\Products;
 use App\Entity\ProductsSpecies;
 use App\Entity\RestrictedDomains;
@@ -152,6 +153,8 @@ class AdminDashboardController extends AbstractController
             $product->setIsActive(1);
             $product->setExpiryDateRequired($data->get('expiry-date') ?? 0);
 
+            $manufacturerIds = [];
+
             foreach($data->get('manufacturers') as $manufacturer){
 
                 $productManufacturer = new ProductManufacturers();
@@ -159,6 +162,8 @@ class AdminDashboardController extends AbstractController
 
                 $productManufacturer->setProducts($product);
                 $productManufacturer->setManufacturers($manu);
+
+                $manufacturerIds[] = $manufacturer;
 
                 $this->em->persist($productManufacturer);
             }
@@ -224,6 +229,7 @@ class AdminDashboardController extends AbstractController
             $product->setStockCount($data->get('stock'));
             $product->setForm($data->get('form'));
             $product->setSlug(trim($slug .' '. $productSpeciesSlug));
+            $product->setManufacturerIds($manufacturerIds);
 
             // Image
             // File Types
@@ -1218,6 +1224,25 @@ class AdminDashboardController extends AbstractController
 
             $response['flash'] = '<b><i class="fas fa-check-circle"></i> Tag Successfully Updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
             $response['tag'] = $data->get('tag_name');
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/review/crud', name: 'review_crud')]
+    public function reviewCrudAction(Request $request): Response
+    {
+        $data = $request->request;
+        $reviewId = $data->get('review-id') ?? 0;
+        $review = $this->em->getRepository(ProductReviews::class)->find($reviewId);
+        $response = [];
+
+        if(!empty($data)) {
+
+            $review->setIsApproved($data->get('is-approved'));
+
+            $this->em->persist($review);
+            $this->em->flush();
         }
 
         return new JsonResponse($response);
@@ -2880,6 +2905,75 @@ class AdminDashboardController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/reviews/{page_id}', name: 'reviews_list')]
+    public function ReviewsList(Request $request): Response
+    {
+        $isApproved = $request->request->get('is-approved') ?? 0;
+        $reviews = $this->em->getRepository(ProductReviews::class)->adminFindByApproval($isApproved);
+        $results = $this->page_manager->paginate($reviews[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/reviews/');
+        $isStatusChange = $request->request->get('is-status-change') ?? 0;
+        $response = '';
+
+        if($isStatusChange == 0)
+        {
+            return $this->render('Admin/reviews_list.html.twig',[
+                'reviews' => $results,
+                'pagination' => $pagination
+            ]);
+        }
+
+        foreach($results as $review)
+        {
+            $firstName = $this->encryptor->decrypt($review->getClinicUser()->getFirstName());
+            $lastName = $this->encryptor->decrypt($review->getClinicUser()->getLastName());
+            $response .= '
+            <div class="row py-3 border-bottom-dashed" id="row_'. $review->getId() .'">
+                <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                    #ID
+                </div>
+                <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #'. $review->getId() .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Product
+                </div>
+                <div class="col-8 col-md-4 text-truncate">
+                    '. $review->getProduct()->getName() .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Reviewed By
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $firstName .' '. $lastName .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Modified
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $review->getModified()->format('Y-m-d vH:i:s') .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Created
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $review->getCreated()->format('Y-m-d') .'
+                </div>
+                <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                    <a
+                        href="'. $this->getParameter('app.base_url') . '/admin/review/'. $review->getId() .'"
+                        class="float-end open-review-modal"
+                    >
+                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                    </a>
+                </div>
+            </div>';
+        }
+
+        return new JsonResponse($response);
+
+    }
+
     #[Route('/admin/active-ingredients/{page_id}', name: 'active_ingredients_list')]
     public function activeIngredientsList(Request $request): Response
     {
@@ -3807,11 +3901,27 @@ class AdminDashboardController extends AbstractController
 
         if($tag == null){
 
-            $tag = new Manufacturers();
+            $tag = new Tags();
         }
 
         return $this->render('Admin/tags.html.twig',[
             'tag' => $tag,
+        ]);
+    }
+
+    #[Route('/admin/review/{reviewId}', name: 'reviews', requirements: ['reviewId' => '\d+'])]
+    public function reviewCrud(Request $request, $reviewId = 0): Response
+    {
+        $reviewId = $request->get('reviewId') ?? 0;
+        $review = $this->em->getRepository(ProductReviews::class)->find($reviewId);
+
+        if($review == null){
+
+            $review = new ProductReviews();
+        }
+
+        return $this->render('Admin/reviews.html.twig',[
+            'review' => $review,
         ]);
     }
 
@@ -4247,6 +4357,7 @@ class AdminDashboardController extends AbstractController
 
                     $tag = 'a';
                     $href = 'href="' . $this->generateUrl('products_list', ['page_id' => 1]) . '"';
+                    $hrefReview = 'href="' . $this->generateUrl('reviews_list', ['page_id' => 1]) . '"';
                     $disabled = '';
                     $textPrimary = 'text-primary';
 
@@ -4254,6 +4365,7 @@ class AdminDashboardController extends AbstractController
 
                     $tag = 'span';
                     $href = '';
+                    $hrefReview = '';
                     $disabled = 'text-disabled admin-nav-disabled';
                     $textPrimary = '';
                 }
@@ -4266,6 +4378,17 @@ class AdminDashboardController extends AbstractController
                     >
                         <i class="menu-icon fa-fw fa-regular fa-boxes-stacked fa-fw"></i>
                         <span class="ms-1 d-none d-sm-inline">Products</span>
+                    </' . $tag . '>
+                </li>';
+
+                $response .= '
+                <li class="w-100 admin-nav ' . $disabled . '">
+                    <' . $tag . '
+                      ' . $hrefReview . '
+                       class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
+                    >
+                        <i class="menu-icon fa-fw fa-regular fa-comment-question fa-fw"></i>
+                        <span class="ms-1 d-none d-sm-inline">Product Reviews</span>
                     </' . $tag . '>
                 </li>';
 

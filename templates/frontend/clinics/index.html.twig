@@ -497,11 +497,11 @@
                     beforeSend: function (){
                         isLoading(true);
                     },
-                    {#complete: function(e, xhr, settings){#}
-                    {#    if(e.status === 500){#}
-                    {#        //window.location.href = '{{ path('clinic_error_500') }}';#}
-                    {#    }#}
-                    {#},#}
+                    complete: function(e, xhr, settings){
+                        if(e.status === 500){
+                            //window.location.href = '{{ path('clinic_error_500') }}';
+                        }
+                    },
                     success: function (response) {
 
                         $('#inventory').empty().append(response.html).show();
@@ -3615,23 +3615,14 @@
                 e.preventDefault();
 
                 let rating = $('#rating').val();
-                let title = $('#review_title').val();
                 let review = $('#review').val();
-                let username = $('#review_username').val();
-                let position = $('#review_position').val();
                 let error_rating = $('#error_rating');
-                let error_title = $('#error_review_title');
                 let error_review = $('#error_review');
-                let error_username = $('#error_review_username');
-                let error_position = $('#error_review_position');
                 let data = new FormData(this);
                 let is_valid = true;
 
                 error_rating.hide();
-                error_title.hide();
                 error_review.hide();
-                error_username.hide();
-                error_position.hide();
 
                 if(rating == 0 || rating == 'undefined' || rating == ''){
 
@@ -3639,27 +3630,9 @@
                     is_valid = false;
                 }
 
-                if(title == '' || title == 'undefined'){
-
-                    error_title.show();
-                    is_valid = false;
-                }
-
                 if(review == '' || review == 'undefined'){
 
                     error_review.show();
-                    is_valid = false;
-                }
-
-                if(username == '' || username == 'undefined'){
-
-                    error_username.show();
-                    is_valid = false;
-                }
-
-                if(position == '' || position == 'undefined'){
-
-                    error_position.show();
                     is_valid = false;
                 }
 

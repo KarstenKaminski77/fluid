@@ -24,6 +24,9 @@
                             >
                                 <i class="fa-regular fa-user-gear fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">My Account</span>
+                                <span class="float-end">
+                                    <i class="fa-solid fa-caret-down"></i>
+                                </span>
                             </a>
                             <ul class="nav flex-column collapse" id="submenu1" data-bs-parent="#menu" style="">
                                 <li class="w-100 mb-3">
@@ -825,6 +828,44 @@
                                 <span class="text-primary d-none d-sm-inline">
                                 Manage Your Inventory
                             </span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 bg-light border-top border-left border-right">
+                                <div class="row">
+                                    <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
+                                        <select
+                                            class="form-control"
+                                            name="manufacturer-id"
+                                            id="manufacturer_id"
+                                        >
+                                            <option value="0">
+                                                Select a Manufacturer
+                                            </option>
+                                            {% for manufacturer in manufacturers %}
+                                                <option value="{{ manufacturer.manufacturers.id }}">
+                                                    {{ nzo_decrypt(manufacturer.manufacturers.name) }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3 py-3">
+                                        <select
+                                            class="form-control"
+                                            name="species-id"
+                                            id="species_id"
+                                        >
+                                            <option value="0">
+                                                Select a Species
+                                            </option>
+                                            {% for specie in species %}
+                                                <option value="{{ specie.species.id }}">
+                                                    {{ specie.species.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="row">
@@ -2353,9 +2394,9 @@
                     }
                 });
             }
-            function getInventoryList()
+            function getInventoryList(distributorId = false, manufacturerId = false)
             {
-                let distributorId = '{{ app.user.distributor.id|default(0) }}';
+                distributorId = '{{ app.user.distributor.id|default(0) }}';
 
                 if(distributorId > 0 && distributorId != 'undefined')
                 {
@@ -2374,6 +2415,7 @@
 
                             $('#inventory_list').empty().append(response.html);
                             isLoading(false);
+                            popOver();
                         }
                     });
                 }
@@ -2391,6 +2433,7 @@
                 brand.empty().hide();
 
                 window.history.pushState(null, "Fluid", '/distributors/inventory/list/1');
+                popOver();
             }
             $('#inventory_link').click(function (e){
 
@@ -2403,6 +2446,33 @@
 
                 e.preventDefault();
                 getInventoryList();
+            });
+            $(document).on('change', '#manufacturer_id', function () {
+
+                let manufacturerId = $('#manufacturer_id').val() ? $('#manufacturer_id').val() : 0;
+
+                if(manufacturerId > 0)
+                {
+                    $.ajax({
+                        url: "{{ path('get_distributor_products') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'manufacturer-id': manufacturerId
+                            //'distributor-id': distributorId,
+                        },
+                        beforeSend: function () {
+
+                            isLoading(true);
+                        },
+                        success: function (response) {
+
+                            $('#inventory_list').empty().append(response.html);
+                            isLoading(false);
+                            popOver();
+                        }
+                    });
+                }
             });
             $(document).on('click', '.update-product', function (e) {
 
@@ -3720,6 +3790,14 @@
                     $("div.spanner").removeClass("show");
                     $("div.overlay").removeClass("show");
                 }
+            }
+
+            {# Popovers #}
+            function popOver() {
+                var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl)
+                })
             }
         });
 

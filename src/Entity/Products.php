@@ -219,6 +219,11 @@ class Products
      */
     private $dosageUnit;
 
+    /**
+     * @ORM\Column(type="json", nullable=true)
+     */
+    private $manufacturerIds = [];
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -923,6 +928,18 @@ class Products
     public function setDosageUnit(?string $dosageUnit): self
     {
         $this->dosageUnit = $dosageUnit;
+
+        return $this;
+    }
+
+    public function getManufacturerIds(): ?array
+    {
+        return $this->manufacturerIds;
+    }
+
+    public function setManufacturerIds(?array $manufacturerIds): self
+    {
+        $this->manufacturerIds = $manufacturerIds;
 
         return $this;
     }

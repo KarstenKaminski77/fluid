@@ -301,10 +301,11 @@ class DistributorProductsController extends AbstractController
         $response = [];
         $html = '';
         $distributorId = $request->request->get('distributor-id');
-        $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId);
+        $manufacturerId = $request->request->get('manufacturer-id') ?? 0;
+        $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId, $manufacturerId);
         $distributorProductsResults = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
         $response['distributorProductsPagination'] = $this->getPagination(1, $distributorProductsResults, $distributorId);
-
+        //dd($distributorProductsRepo[1]);
         foreach ($distributorProductsResults as $distributorProduct)
         {
             $html .= '
@@ -312,7 +313,15 @@ class DistributorProductsController extends AbstractController
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Name:
                 </div>
-                <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3">
+                <div 
+                    class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                    data-bs-trigger="hover"
+                    data-bs-container="body"
+                    data-bs-toggle="popover"
+                    data-bs-placement="top"
+                    data-bs-html="true"
+                    data-bs-content="'. $distributorProduct->getProduct()->getName() .'"
+                >
                     '. $distributorProduct->getProduct()->getName() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">

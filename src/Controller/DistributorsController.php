@@ -16,7 +16,9 @@ use App\Entity\DistributorUsers;
 use App\Entity\Notifications;
 use App\Entity\OrderItems;
 use App\Entity\Orders;
+use App\Entity\ProductManufacturers;
 use App\Entity\Products;
+use App\Entity\ProductsSpecies;
 use App\Entity\RefreshTokens;
 use App\Entity\RestrictedDomains;
 use App\Entity\Tracking;
@@ -297,6 +299,8 @@ class DistributorsController extends AbstractController
         $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId);
         $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
         $distributorProductsPagination = $this->getPagination(1, $distributorProducts, $distributorId);
+        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
+        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
         $form = $this->createRegisterForm();
         $inventoryForm = $this->createDistributorInventoryForm();
         $addressForm = $this->createDistributorAddressesForm();
@@ -345,6 +349,8 @@ class DistributorsController extends AbstractController
             'tracking' => $traking,
             'distributorProducts' => $distributorProducts,
             'distributorProductsPagination' => $distributorProductsPagination,
+            'manufacturers' => $manufacturers,
+            'species' => $species,
         ]);
     }
 
