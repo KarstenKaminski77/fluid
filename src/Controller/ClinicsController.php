@@ -14,6 +14,7 @@ use App\Entity\Distributors;
 use App\Entity\DistributorUsers;
 use App\Entity\Lists;
 use App\Entity\RestrictedDomains;
+use App\Entity\Species;
 use App\Entity\UserPermissions;
 use App\Form\AddressesFormType;
 use App\Form\ClinicCommunicationMethodsFormType;
@@ -368,9 +369,10 @@ class ClinicsController extends AbstractController
     #[Route('/clinics/get-company-information', name: 'get_company_information')]
     public function clinicsGetCompanyInformationAction(Request $request): Response
     {
-        // Permissions
+        $species = $this->em->getRepository(Species::class)->findByNameAsc();
         $permissions = json_decode($request->get('permissions'), true);
 
+        // Permissions
         if(!in_array(10, $permissions)){
 
             $response = '
@@ -480,68 +482,23 @@ class ClinicsController extends AbstractController
         
                     <label class="mb-4 d-block">
                         Select All Species Treated By Your Practice
-                    </label>
-        
-                    <!-- Canine -->
-                    <div class="col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_canine">
-                            <label class="custom-control-label" for="species_canine">
-                                <i class="fa-solid fa-dog species-icon" id="icon_canine"></i>
-                            </label>
-                        </div>
-                    </div>
-        
-                    <!-- Feline -->
-                    <div class=" col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_feline">
-                            <label class="custom-control-label" for="species_feline">
-                                <i class="fa-solid fa-cat species-icon" id="icon_feline"></i>
-                            </label>
-                        </div>
-                    </div>
-        
-                    <!-- Equine -->
-                    <div class="mt-5 mt-sm-0 col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_equine">
-                            <label class="custom-control-label" for="species_equine">
-                                <i class="fa-solid fa-horse species-icon" id="icon_equine"></i>
-                            </label>
-                        </div>
-                    </div>
-        
-                    <!-- Bovine -->
-                    <div class="mt-5 mt-sm-5 mt-md-0 col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_bovine">
-                            <label class="custom-control-label" for="species_bovine">
-                                <i class="fa-solid fa-hippo species-icon" id="icon_bovine"></i>
-                            </label>
-                        </div>
-                    </div>
-        
-                    <!-- Porcine -->
-                    <div class="mt-5 mt-sm-5 mt-md-0 col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_porcine">
-                            <label class="custom-control-label" for="species_porcine">
-                                <i class="fa-solid fa-piggy-bank species-icon" id="icon_porcine"></i>
-                            </label>
-                        </div>
-                    </div>
-        
-                    <!-- Exotic -->
-                    <div class="mt-5 mt-sm-5 mt-md-0 col-6 col-sm-4 col-md-2 text-center">
-                        <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                            <input type="checkbox" class="custom-control-input species-checkbox" id="species_exotic">
-                            <label class="custom-control-label" for="species_exotic">
-                                <i class="fa-solid fa-dragon species-icon" id="icon_exotic"></i>
-                            </label>
-                        </div>
-                    </div>
-        
+                    </label>';
+
+                    foreach($species as $specie)
+                    {
+                        $response .= '
+                        <!-- '. $specie->getName() .' -->
+                        <div class="col-6 col-sm-4 col-md-2 text-center">
+                            <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
+                                <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
+                                <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
+                                    <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
+                                </label>
+                            </div>
+                        </div>';
+                    }
+
+                $response .= '
                 </div>
         
                 <div class="row mb-3">

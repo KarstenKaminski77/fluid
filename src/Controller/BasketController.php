@@ -1198,7 +1198,7 @@ class BasketController extends AbstractController
                                                     </div>
                                                     <div class="col-4">
                                                         <input
-                                                            type="text"
+                                                            type="number"
                                                             list="qty_list_' . $product->getId() . '"
                                                             data-basket-item-id="' . $item->getId() . '"
                                                             name="qty"
@@ -1207,29 +1207,6 @@ class BasketController extends AbstractController
                                                             ng-value="' . $item->getQty() . '"
                                                             '. $disabled .'
                                                         >
-                                                        <datalist id="qty_list_' . $product->getId() . '">
-                                                            <option>1</option>
-                                                            <option>2</option>
-                                                            <option>3</option>
-                                                            <option>4</option>
-                                                            <option>5</option>
-                                                            <option>6</option>
-                                                            <option>7</option>
-                                                            <option>8</option>
-                                                            <option>9</option>
-                                                            <option>10</option>
-                                                            <option>11</option>
-                                                            <option>12</option>
-                                                            <option>13</option>
-                                                            <option>14</option>
-                                                            <option>15</option>
-                                                            <option>16</option>
-                                                            <option>17</option>
-                                                            <option>18</option>
-                                                            <option>19</option>
-                                                            <option>20</option>
-                                                            <option id="qty_custom">Enter Quantity</option>
-                                                        </datalist>
                                                         <div class="hidden_msg" id="stock_count_error_'. $item->getId() .'"></div>
                                                     </div>
                                                     <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate">' . $currency .' '. number_format($item->getTotal(),2) . '</div>

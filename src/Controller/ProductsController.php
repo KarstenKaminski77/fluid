@@ -146,6 +146,7 @@ class ProductsController extends AbstractController
         $filterLists['manufacturersList'] = null;
         $filterLists['favouriteCount'] = null;
         $filterLists['inStockCount'] = null;
+        $productIds = null;
 
         if($arraySearch != null) {
 
@@ -933,7 +934,7 @@ class ProductsController extends AbstractController
             $firstImage = $firstImage->getImage();
         }
 
-        $name = $product->getName() .': ';
+        $name = $product->getName() .' ';
         $dosage = '';
 
         // Check if clinic is connected to distributor
@@ -973,6 +974,8 @@ class ProductsController extends AbstractController
             $distributorId = $distributor->getDistributor()->getId();
             $unitPrice = $distributor->getUnitPrice() ?? 0.00;
             $stockLevel = $distributor->getStockCount() ?? 0;
+            $shippingPolicy = $distributor->getDistributor()->getShippingPolicy() ?? '<p>Shipping policy has not been updated</p>';
+            $taxPolicy = $distributor->getDistributor()->getSalesTaxPolicy() ?? '<p>Sales tax policy has not been updated</p>';
 
             if (
                 ($distributor->getDistributor()->getApiDetails() != null && $trackingId == 1)
@@ -1097,7 +1100,7 @@ class ProductsController extends AbstractController
 
             <!-- Modal Add To Basket -->
             <div class="modal fade" action="" id="modal_add_to_basket_' . $productId . '_' . $distributorId . '" tabindex="-1" aria-labelledby="basket_label" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
                         <div class="modal-header basket-modal-header">
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1134,39 +1137,13 @@ class ProductsController extends AbstractController
                                     <div class="row">
                                         <div class="col-6">
                                             <input
-                                                type="text"
-                                                list="qty_list_' . $productId . '_' . $distributorId . '"
+                                                type="number"
                                                 name="qty"
                                                 id="qty_' . $productId . '_' . $distributorId . '"
                                                 class="form-control modal-basket-qty"
                                                 value="1"
                                                 ' . $disabled . '
                                             />
-                                            <datalist
-                                                id="qty_list_' . $productId . '_' . $distributorId . '"
-                                            >
-                                                <option>1</option>
-                                                <option>2</option>
-                                                <option>3</option>
-                                                <option>4</option>
-                                                <option>5</option>
-                                                <option>6</option>
-                                                <option>7</option>
-                                                <option>8</option>
-                                                <option>9</option>
-                                                <option>10</option>
-                                                <option>11</option>
-                                                <option>12</option>
-                                                <option>13</option>
-                                                <option>14</option>
-                                                <option>15</option>
-                                                <option>16</option>
-                                                <option>17</option>
-                                                <option>18</option>
-                                                <option>19</option>
-                                                <option>20</option>
-                                                <option id="qty_custom">Enter Quantity</option>
-                                            </datalist>
                                             <div class="hidden_msg" id="error_qty_' . $productId . '_' . $distributorId . '">
                                                 Required Field
                                             </div>
@@ -1224,7 +1201,7 @@ class ProductsController extends AbstractController
                                     </a>
                                 </div>
                                 <div class="col-12 col-sm-6 text-end" style="padding-bottom: 0.75rem">
-                                    <i class="fa-regular fa-user me-3"></i> <b>' . $distributorId . ' - ' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '</b>
+                                    <i class="fa-regular fa-user me-3"></i> <b>' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '</b>
                                 </div>
 
                                 <!-- Panel Item Facts -->
@@ -1282,7 +1259,7 @@ class ProductsController extends AbstractController
                                         <div class="col-12 col-sm-5">
                                             <div class="row">
                                                 <div class="col-4 fw-bold">
-                                                    Seller Profile
+                                                    <span class="text-truncate">Seller Profile</span>
                                                 </div>
                                                 <div class="col-8 text-end">
                                                     <a href="">' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '</a>
@@ -1305,43 +1282,12 @@ class ProductsController extends AbstractController
 
                                 <!-- Panel shipping -->
                                 <div class="col-12" id="panel_shipping_' . $productId . '_' . $distributorId . '">
-                                    <div class="row">
-                                        <div class="col-12 modal_availability">
-                                            Standard shipping transit times vary depending on location.
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-4 fw-bold">
-                                            Shipping Speed
-                                        </div>
-                                        <div class="col-4 fw-bold">
-                                            Cost
-                                        </div>
-                                        <div class="col-4 fw-bold">
-                                            Free Over
-                                        </div>
-                                    </div>
-                                    <div class="row mb-4">
-                                        <div class="col-4">
-                                            Default
-                                        </div>
-                                        <div class="col-4">
-                                            $6.99
-                                        </div>
-                                        <div class="col-4">
-                                            $100
-                                        </div>
-                                    </div>
+                                    '. $shippingPolicy .'
                                 </div>
 
                                 <!-- Panel Taxes -->
                                 <div class="col-12 modal_availability border-bottom-0" id="panel_taxes_' . $productId . '_' . $distributorId . '">
-                                    Med-Vet Collects Sales Tax in states where we have physical
-                                    presence (or nexus), including but not limited to Alabama,
-                                    Colorado, Connecticut, Hawaii, Illinois, Indiana, Kentucky,
-                                    Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi,
-                                    New Jersey, North Carolina, North Dakota, Ohio, Oklahoma,
-                                    Pennsylvania, Rhode Island, South Dakota, Vermont, & Wisconsin.
+                                    '. $taxPolicy .'
                                 </div>
                             </div>
                         </div>

@@ -27,6 +27,15 @@ class SpeciesRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
+    public function findByNameAsc()
+    {
+        return $this->createQueryBuilder('s')
+            ->select('s')
+            ->orderBy('s.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     // /**
     //  * @return Species[] Returns an array of Species objects
     //  */

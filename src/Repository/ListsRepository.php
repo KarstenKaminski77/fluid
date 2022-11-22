@@ -41,6 +41,8 @@ class ListsRepository extends ServiceEntityRepository
             ->leftJoin('dp.distributor', 'd')
             ->andWhere('l.id = :list_id')
             ->setParameter('list_id', $list_id)
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
             ->andWhere("li.itemId != ''")
             ->orderBy('p.name', 'ASC');
         return $queryBuilder->getQuery()->getResult();
@@ -49,8 +51,11 @@ class ListsRepository extends ServiceEntityRepository
     public function findWithItemId($clinicId): array
     {
         $queryBuilder = $this->createQueryBuilder('l')
-            ->select('l','li')
+            ->select('l','li','p')
             ->leftJoin('l.listItems', 'li')
+            ->join('li.product', 'p')
+            ->andWhere('p.isActive = 1')
+            ->andWhere('p.isPublished = 1')
             ->andWhere('l.clinic = :clinicId')
             ->setParameter('clinicId', $clinicId);
 

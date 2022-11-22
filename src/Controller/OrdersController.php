@@ -1643,9 +1643,6 @@ class OrdersController extends AbstractController
             <div class="row">
                 <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
                     <h4 class="text-primary text-truncate">Manage Fluid Orders</h4>
-                    <span class="text-primary d-none d-sm-inline">
-                        Manage All Your Orders In One Place
-                    </span>
                 </div>
             </div>';
 

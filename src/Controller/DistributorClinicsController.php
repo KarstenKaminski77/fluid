@@ -105,9 +105,6 @@ class DistributorClinicsController extends AbstractController
         <div class="row">
             <div class="col-12 text-center mt-1 pt-3 pb-3" id="customer_header">
                 <h4 class="text-primary text-truncate">Manage Fluid Customers</h4>
-                <span class="text-primary d-none d-sm-inline">
-                    Manage Your Customers
-                </span>
             </div>
         </div>';
 

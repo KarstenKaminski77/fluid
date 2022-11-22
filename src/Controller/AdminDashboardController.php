@@ -1437,7 +1437,7 @@ class AdminDashboardController extends AbstractController
         $articleDetailId = $data->get('article-detail-id') ?? $data->get('delete');
         $article = $this->em->getRepository(Articles::class)->find($articleId);
         $articleDetails = $this->em->getRepository(ArticleDetails::class)->find((int) $articleDetailId);
-        $user = $this->em->getRepository(User::class)->find($data->get('user-id') ?? 0);
+        $user = $this->em->getRepository(User::class)->find($this->getUser()->getId() ?? 0);
         $response = [];
 
         if($data->get('delete') != null){
@@ -1486,6 +1486,8 @@ class AdminDashboardController extends AbstractController
 
                     $i++;
                     $borderBottom = '';
+                    $firstName = $this->encryptor->decrypt($articleDetail->getUser()->getFirstName());
+                    $lastName = $this->encryptor->decrypt($articleDetail->getUser()->getLastName());
 
                     if(count($article->getArticleDetails()) == $i){
 
@@ -1515,7 +1517,7 @@ class AdminDashboardController extends AbstractController
                         </div>
                         <div class="col-8 col-md-2 text-truncate px-0">
                             <div class="border-top ps-2 py-2 bg-white '. $borderBottom .'">
-                                '. $articleDetail->getUser()->getFirstName() .' '. $articleDetail->getUser()->getLastName() .'
+                                '. $firstName .' '. $lastName .'
                             </div>
                         </div>
                         <div class="col-4 d-block d-md-none fw-bold text-truncate">

@@ -28,6 +28,7 @@ class ProductReviewsRepository extends ServiceEntityRepository
             ->select('AVG(p.rating), COUNT(p.id)')
             ->andWhere('p.product = :product_id')
             ->setParameter('product_id', $product_id)
+            ->andWhere('p.isApproved = 1')
             ->orderBy('p.id', 'ASC')
             ->setMaxResults(10)
             ->getQuery()

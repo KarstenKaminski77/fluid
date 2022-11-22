@@ -808,6 +808,7 @@
                                 $('#modal_add_to_basket_' + response.product_id + '_' + response.distributor_id).modal('toggle').modal('hide');
                                 $('.modal-backdrop').removeClass('modal-backdrop');
                                 $('.fade').removeClass('fade');
+                                $('.modal-basket-qty').val(1);
 
                             } else {
 
@@ -905,10 +906,9 @@
                 });
             }
             let basket_qty = '';
-            $(document).on('click', '.basket-qty, .modal-basket-qty', function (){
+            $(document).on('change', '.basket-qty, .modal-basket-qty', function (){
 
                 basket_qty = $(this).val();
-                $(this).val('');
             });
             $(document).on('change', '.basket-qty', function (){
 
@@ -917,6 +917,8 @@
                 let is_valid = true;
 
                 if(is_valid) {
+
+                    $(this).val(1);
 
                     $.ajax({
                         async: "true",
@@ -2531,9 +2533,9 @@
                         window.history.pushState(null, "Fluid", '/clinics/inventory/lists');
                     },
                     complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
-                        }
+                        {#if(e.status === 500){#}
+                        {#    window.location.href = '{{ path('clinic_error_500') }}';#}
+                        {#}#}
 
                         isLoading(false);
                     }
@@ -2573,11 +2575,11 @@
 
                         window.history.pushState(null, "Fluid", '/clinics/inventory/manage/list/'+ list_id);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
-                        }
-                    },
+                    {#complete: function(e, xhr, settings){#}
+                    {#    if(e.status === 500){#}
+                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                    {#    }#}
+                    {#},#}
                 });
             }
             $(document).on('click', '.view-list', function (){
@@ -2660,22 +2662,6 @@
                         $('#inventory_container').append(response);
                         $('#modal_list_distributors').modal('toggle');
                         $('body').css('overflow', '');
-
-                        var s = document.getElementById('list_distributor_id').options,
-                            l = 0,
-                            d = '';
-                        for(i = 0; i < s.length; i++){
-                            if(s[i].text.length > l) l = s[i].text.length;
-                        }
-                        for(i = 0; i < s.length; i++){
-                            d = '';
-                            line = s[i].text.split(';');
-                            l1 = (l - line[0].length);
-                            for(j = 0; j < l1; j++){
-                                d += '\u00a0';
-                            }
-                            s[i].text = line[0] + d + line[1];
-                        }
                     }
                 });
             });
@@ -5553,12 +5539,12 @@
                 if(checkbox.is(':checked')) {
 
                     checkbox.attr('checked', true);
-                    checkbox.hide();
+                    $(this).next('.custom-control-label').find('.species-icon').removeClass('fa-light').addClass('fa-solid');
 
                 } else {
 
                     checkbox.attr('checked', false);
-                    checkbox.show();
+                    $(this).next('.custom-control-label').find('fa-light').removeClass('.species-icon').addClass('fa-solid');
                 }
             });
             {# End Species #}
