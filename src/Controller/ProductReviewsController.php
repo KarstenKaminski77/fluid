@@ -126,7 +126,12 @@ class ProductReviewsController extends AbstractController
             'isApproved' => 1,
         ]);
         $product = $this->em->getRepository(Products::class)->find($productId);
-        $reviews = $this->em->getRepository(ProductReviews::class)->findBy(['product' => $product],['id' => 'DESC'], $limit);
+        $reviews = $this->em->getRepository(ProductReviews::class)->findBy([
+            'product' => $product,
+            'isApproved' => 1,
+        ],[
+            'id' => 'DESC'
+        ], $limit);
         $rating1 = $this->em->getRepository(ProductReviews::class)->getProductRating($product->getId(),1);
         $rating2 = $this->em->getRepository(ProductReviews::class)->getProductRating($product->getId(),2);
         $rating3 = $this->em->getRepository(ProductReviews::class)->getProductRating($product->getId(),3);
