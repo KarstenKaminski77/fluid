@@ -629,7 +629,7 @@ class ClinicUsersController extends AbstractController
         if($sendEmail){
 
             $email = (new Email())
-                ->from($this->getParameter('app.email_from'))
+                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                 ->addTo($data['email'])
                 ->subject('Fluid Login Credentials')
                 ->html($body);
@@ -683,7 +683,7 @@ class ClinicUsersController extends AbstractController
                 ]);
 
                 $email = (new Email())
-                    ->from($this->getParameter('app.email_from'))
+                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                     ->addTo($this->encryptor->decrypt($clinic_user->getEmail()))
                     ->subject('Fluid Password Reset')
                     ->html($html->getContent());
@@ -741,7 +741,7 @@ class ClinicUsersController extends AbstractController
             ]);
 
             $email = (new Email())
-                ->from($this->getParameter('app.email_from'))
+                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                 ->addTo($this->encryptor->decrypt($clinic_user->getEmail()))
                 ->subject('Fluid Login Credentials')
                 ->html($html->getContent());
@@ -811,7 +811,7 @@ class ClinicUsersController extends AbstractController
         $body .= '</table>';
 
         $email = (new Email())
-            ->from($this->getParameter('app.email_from'))
+            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
             ->addTo($data['email'])
             ->subject('Fluid Login Credentials')
             ->html($body);

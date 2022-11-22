@@ -114,7 +114,7 @@ class ManufacturerUsersController extends AbstractController
                 ])->getContent();
 
                 $email = (new Email())
-                    ->from($this->getParameter('app.email_from'))
+                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                     ->addTo($data->get('user-email'))
                     ->subject('Fluid Login Credentials')
                     ->html($html);
@@ -459,7 +459,7 @@ class ManufacturerUsersController extends AbstractController
                 ]);
 
                 $email = (new Email())
-                    ->from($this->getParameter('app.email_from'))
+                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                     ->addTo($this->encryptor->decrypt($manufacturerUser->getEmail()))
                     ->subject('Fluid Password Reset')
                     ->html($html->getContent());
@@ -517,7 +517,7 @@ class ManufacturerUsersController extends AbstractController
             ]);
 
             $email = (new Email())
-                ->from($this->getParameter('app.email_from'))
+                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                 ->addTo($this->encryptor->decrypt($manufacturerUser->getEmail()))
                 ->subject('Fluid Login Credentials')
                 ->html($html->getContent());
@@ -587,7 +587,7 @@ class ManufacturerUsersController extends AbstractController
         $body .= '</table>';
 
         $email = (new Email())
-            ->from($this->getParameter('app.email_from'))
+            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
             ->addTo($data['email'])
             ->subject('Fluid Login Credentials')
             ->html($body);

@@ -77,7 +77,7 @@ class DistributorClinicsController extends AbstractController
             ]);
 
             $email = (new Email())
-                ->from($this->getParameter('app.email_from'))
+                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
                 ->addTo($this->encryptor->decrypt($distributor->getEmail()))
                 ->subject('New Fluid Connection Request')
                 ->html($html->getContent());
@@ -339,7 +339,7 @@ class DistributorClinicsController extends AbstractController
         <a href="'. $this->getParameter('app.base_url') .'/inventory">Back To Fluid</a>';
 
         $email = (new Email())
-            ->from($this->getParameter('app.email_from'))
+            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
             ->addTo($this->encryptor->decrypt($clinic->getEmail()))
             ->subject('Fluid Connection Activated')
             ->html($html);
