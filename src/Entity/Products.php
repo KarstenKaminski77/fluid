@@ -25,13 +25,10 @@ class Products
     private $id;
 
     /**
-     * Relation with category entity
-     * @var blogCategory
-     *
      * @ORM\ManyToMany(targetEntity="App\Entity\Species", inversedBy="product", cascade={"remove"})
      * @ORM\JoinTable(name="products_species")
      */
-    protected $productsSpecies;
+    protected $productsSpecie;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Manufacturers", inversedBy="product", cascade={"remove"})
@@ -163,6 +160,11 @@ class Products
      * @ORM\OneToMany(targetEntity=ProductManufacturers::class, mappedBy="products")
      */
     private $productManufacturers;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=ProductsSpecies::class, mappedBy="products")
+     */
+    protected $productsSpecies;
 
     /**
      * @ORM\OneToMany(targetEntity=ProductImages::class, mappedBy="product")

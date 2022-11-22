@@ -79,28 +79,15 @@ class DistributorProductsRepository extends ServiceEntityRepository
     /**
      * @return DistributorProducts[] Returns an array of DistributorUsers objects
      */
-    public function findDistributorProducts($distributor_id, $manufacturerId = 0)
+    public function findDistributorProducts($distributor_id)
     {
         $queryBuilder = $this->createQueryBuilder('d')
-            ->select('d','p','pm')
+            ->select('d','p')
             ->join('d.product', 'p')
-            ->join('p.productManufacturers', 'pm')
-            ->andWhere('d.distributor = :distributor_id')
-            ->andWhere('p.isActive = 1')
             ->andWhere('p.isPublished = 1')
-            ->setParameter('distributor_id', $distributor_id);
-
-//        if($manufacturerId > 0)
-//        {
-//            $ids = [
-//                16,
-//            ];
-//            $queryBuilder
-//                ->andWhere('pm.manufacturers in (:manufacturerIds)')
-//                ->setParameter('manufacturerIds', $ids);
-//        }
-
-        $queryBuilder
+            ->andWhere('p.isActive = 1')
+            ->andWhere('d.distributor = :distributor_id')
+            ->setParameter('distributor_id', $distributor_id)
             ->orderBy('p.name', 'DESC')
         ;
 

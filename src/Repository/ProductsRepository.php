@@ -206,4 +206,40 @@ class ProductsRepository extends ServiceEntityRepository
 
         return $res;
     }
+
+    public function findByManufacturer($distributorId, $manufacturerId, $speciesId):array
+    {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->select('p','dp','d','pm')
+            ->join('p.distributorProducts', 'dp')
+            ->join('dp.distributor', 'd')
+            ->leftJoin('p.productsSpecies', 'ps')
+            ->leftJoin('p.productManufacturers', 'pm')
+            ->andWhere('p.isActive = 1')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('dp.distributor = :distributorId')
+            ->setParameter('distributorId', $distributorId);
+
+        if($manufacturerId > 0)
+        {
+            $ids = [$manufacturerId];
+            $queryBuilder
+                ->andWhere('pm.manufacturers in (:manufacturerIds)')
+                ->setParameter('manufacturerIds', $ids);
+        }
+
+        if($speciesId > 0)
+        {
+            $ids = [$speciesId];
+            $queryBuilder
+                ->andWhere('ps.species in (:speciesIds)')
+                ->setParameter('speciesIds', $ids);
+        }
+
+        $queryBuilder
+            ->orderBy('p.name', 'DESC')
+        ;
+
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
 }

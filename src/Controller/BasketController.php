@@ -62,7 +62,7 @@ class BasketController extends AbstractController
         $basket->setDistributor($distributor);
         $basket->setName($request->get('basket_name'));
         $basket->setStatus($request->get('status'));
-        $basket->setSavedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+        $basket->setSavedBy($this->encryptor->encrypt($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName()));
 
         $this->em->persist($basket);
         $this->em->flush();
@@ -204,7 +204,7 @@ class BasketController extends AbstractController
 
         if($basket->getBasketItems()->count() > 0){
 
-            $basket->setTotal(number_format($totals[0]['total'],2));
+            $basket->setTotal((float) number_format($totals[0]['total'],2));
 
             $this->em->persist($basket);
             $this->em->flush();
@@ -522,8 +522,10 @@ class BasketController extends AbstractController
     {
         $basketName = $request->request->get('basket_name');
         $basketId = $request->request->get('basket_id');
-        $saved_by = $this->setSavedBy();
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
+        $savedBy = $this->encryptor->encrypt($firstName .' '. $lastName);
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
         $create = false;
@@ -534,7 +536,7 @@ class BasketController extends AbstractController
         $basketNew->setName($basketName);
         $basketNew->setClinic($clinic);
         $basketNew->setTotal($basket->getTotal());
-        $basketNew->setSavedBy($saved_by);
+        $basketNew->setSavedBy($savedBy);
         $basketNew->setStatus('active');
         $basketNew->setIsDefault(0);
 
@@ -564,7 +566,7 @@ class BasketController extends AbstractController
         if((int) $request->request->get('clear') == 1){
 
             $basket->setTotal('0.00');
-            $basket->setSavedBy($saved_by);
+            $basket->setSavedBy($savedBy);
 
             foreach($basketItems as $item){
 
@@ -677,7 +679,11 @@ class BasketController extends AbstractController
     public function updateSavedBasketsAction(Request $request): Response
     {
         $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket_id'));
+        $firstName = $this->getUser()->getFirstName();
+        $lastName = $this->getUser()->getLastName();
+
         $basket->setName($request->request->get('basket_name'));
+        $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($basket);
         $this->em->flush();
@@ -717,36 +723,38 @@ class BasketController extends AbstractController
 
             foreach ($savedBaskets as $basket) {
 
-                if ($basket->getName() != 'Fluid Commerce') {
+                if ($basket->getName() == 'Fluid Commerce') {
 
-                    $response .= '
-                    <!-- Saved Baskets -->
-                    <div class="row border-bottom-dashed saved_basket_header" role="button" id="saved_basket_header_' . $basket->getId() . '">
-                        <div class="col-3 pt-3 pb-3 saved-basket-link text-truncate" id="saved_basket_first_' . $basket->getId() . '" data-basket-id="' . $basket->getId() . '">
-                            <span id="basket_name_string_' . $basket->getId() . '">' . $basket->getName() . '</span>
-                            <span id="basket_name_input_' . $basket->getId() . '" style="display:none"><input type="text" class="form-control form-control-sm" id="basket_name_' . $basket->getId() . '" value="' . $basket->getName() . '"></span>
-                        </div>
-                        <div class="col-3 pt-3 pb-3 saved-basket-link text-truncate" data-basket-id="' . $basket->getId() . '">
-                            ' . $basket->getSavedBy() . '
-                        </div>
-                        <div class="col-2 pt-3 pb-3 saved-basket-link" data-basket-id="' . $basket->getId() . '">
-                           ' . number_format($basket->getTotal(), 2) . '
-                        </div>
-                        <div class="col-1 pt-3 pb-3 saved-basket-link" data-basket-id="' . $basket->getId() . '">
-                            ' . $basket->getBasketItems()->count() . '
-                        </div>
-                        <div class="col-3 pt-3 pb-3">
-                            <a href="" class="basket-edit" data-basket-id="' . $basket->getId() . '">
-                                <i class="fa-solid fa-pencil float-end me-0 me-sm-3"></i>
-                            </a>
-                            <a href="" class="basket-delete" data-basket-id="' . $basket->getId() . '">
-                                <i class="fa-solid fa-trash-can text-danger float-end me-4 me-sm-4"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Baskets -->
-                    <div class="saved-basket-panel" id="saved_basket_panel_' . $basket->getId() . '" style="display: none">This basket is empty...</div>';
+                    continue;
                 }
+
+                $response .= '
+                <!-- Saved Baskets -->
+                <div class="row border-bottom-dashed saved_basket_header" role="button" id="saved_basket_header_' . $basket->getId() . '">
+                    <div class="col-3 pt-3 pb-3 saved-basket-link text-truncate" id="saved_basket_first_' . $basket->getId() . '" data-basket-id="' . $basket->getId() . '">
+                        <span id="basket_name_string_' . $basket->getId() . '">' . $basket->getName() . '</span>
+                        <span id="basket_name_input_' . $basket->getId() . '" style="display:none"><input type="text" class="form-control form-control-sm" id="basket_name_' . $basket->getId() . '" value="' . $basket->getName() . '"></span>
+                    </div>
+                    <div class="col-3 pt-3 pb-3 saved-basket-link text-truncate" data-basket-id="' . $basket->getId() . '">
+                        ' . $this->encryptor->decrypt($basket->getSavedBy()) . '
+                    </div>
+                    <div class="col-2 pt-3 pb-3 saved-basket-link" data-basket-id="' . $basket->getId() . '">
+                       ' . number_format($basket->getTotal(), 2) . '
+                    </div>
+                    <div class="col-1 pt-3 pb-3 saved-basket-link" data-basket-id="' . $basket->getId() . '">
+                        ' . $basket->getBasketItems()->count() . '
+                    </div>
+                    <div class="col-3 pt-3 pb-3">
+                        <a href="" class="basket-edit" data-basket-id="' . $basket->getId() . '">
+                            <i class="fa-solid fa-pencil float-end me-0 me-sm-3"></i>
+                        </a>
+                        <a href="" class="basket-delete" data-basket-id="' . $basket->getId() . '">
+                            <i class="fa-solid fa-trash-can text-danger float-end me-4 me-sm-4"></i>
+                        </a>
+                    </div>
+                </div>
+                <!-- Baskets -->
+                <div class="saved-basket-panel" id="saved_basket_panel_' . $basket->getId() . '" style="display: none">This basket is empty...</div>';
             }
 
         } else {

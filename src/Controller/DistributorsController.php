@@ -317,7 +317,7 @@ class DistributorsController extends AbstractController
         $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy(['isDistributor' => 1]);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
         $usersPagination = $this->getPagination(1, $userResults, $distributorId);
-        $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId);
+        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,0,0);
         $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
         $distributorProductsPagination = $this->getPagination(1, $distributorProducts, $distributorId);
         $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
