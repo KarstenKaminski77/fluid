@@ -1470,7 +1470,15 @@ class OrdersController extends AbstractController
                                         <span class="info '. $opacity .'">
                                             '. $this->encryptor->decrypt($order->getDistributor()->getDistributorName()) .'
                                         </span>
-                                        <h6 class="fw-bold text-primary lh-base mb-0 '. $opacity .'">
+                                        <h6 
+                                            class="fw-bold text-primary lh-base mb-0 text-truncate '. $opacity .'"
+                                            data-bs-html="true" 
+                                            data-bs-trigger="hover" 
+                                            data-bs-container="body" 
+                                            data-bs-toggle="popover" 
+                                            data-bs-placement="top" 
+                                            data-bs-content="'. $order->getName() .'"
+                                        >
                                             '. $order->getName() .'
                                         </h6>
                                     </div>
@@ -2133,7 +2141,7 @@ class OrdersController extends AbstractController
                             }
 
                             // Display the qty delivered field if delivered
-                            $colExpDate = 6;
+                            $colExpDate = 3;
                             $colQtyDelivered = '
                             <div class="col-12 col-sm-1 d-table-cell align-bottom alert-text-grey">
                                 <div class="row pb-2">
@@ -2177,7 +2185,7 @@ class OrdersController extends AbstractController
                             <!-- Product Name and Qty -->
                             <div class="row">
                                 <!-- Product Name -->
-                                <div class="col-12 col-md-4 text-center text-sm-start pt-3 pb-3 '. $opacity .'">
+                                <div class="col-12 col-md-5 text-center text-sm-start pt-3 pb-3 '. $opacity .'">
                                     <span class="info">
                                         '. $this->encryptor->decrypt($order->getDistributor()->getDistributorName()) .'
                                     </span>
@@ -2186,7 +2194,7 @@ class OrdersController extends AbstractController
                                     </h6>
                                 </div>
                                 <!-- Expiry Date -->
-                                <div class="col-12 col-md-8 pt-md-3 pb-md-3 d-table '. $opacity .'">
+                                <div class="col-12 col-md-7 pt-md-3 pb-md-3 d-table '. $opacity .'">
                                     <div class="row d-table-row">
                                         <div class="col-12 col-sm-3 col-md-'. $colExpDate .' text-truncate text-start text-md-end d-table-cell align-bottom alert-text-grey" '. $expiryDisplay .'>
                                             <div class="row pb-2">
@@ -2198,7 +2206,7 @@ class OrdersController extends AbstractController
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-12 col-sm-2 text-truncate d-table-cell align-bottom alert-text-grey">
+                                        <div class="col-12 col-sm-3 text-truncate d-table-cell align-bottom alert-text-grey">
                                             <div class="row pb-2">
                                                 <div class="col-5 d-block d-sm-none fw-bold text-truncate">
                                                     Unit Price:
@@ -2219,7 +2227,11 @@ class OrdersController extends AbstractController
                                             </div>
                                         </div>';
 
-                                        $response .= $colQtyDelivered;
+                                        if($orderStatusId > 5)
+                                        {
+                                            $response .= $colQtyDelivered;
+                                        }
+
                                         $popover = '<b>Ordered By</b> '. $this->encryptor->decrypt($order->getOrderPlacedBy()) .'<br>';
 
                                         if($order->getOrderReceivedBy() != null){
@@ -2237,7 +2249,7 @@ class OrdersController extends AbstractController
                                         }
 
                                         $response .= '
-                                        <div class="col-12 col-sm-2 text-truncate text-sm-end fw-bold d-table-cell align-bottom alert-text-grey">
+                                        <div class="col-12 col-sm-4 text-truncate text-sm-end fw-bold d-table-cell align-bottom alert-text-grey">
                                             <div class="row pb-2">
                                                 <div class="col-5 d-block d-sm-none fw-bold text-truncate">
                                                     Total:

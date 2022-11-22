@@ -170,7 +170,7 @@ class BasketController extends AbstractController
 
         if($basket != null){
 
-            $basket->setTotal(number_format($totals[0]['total'],2));
+            $basket->setTotal(number_format((float) $totals[0]['total'],2, '.','') ?? 0.00);
 
             $this->em->persist($basket);
             $this->em->flush();
