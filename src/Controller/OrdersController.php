@@ -800,7 +800,7 @@ class OrdersController extends AbstractController
             ]);
 
             $email = (new Email())
-                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                ->from($this->getParameter('app.email_from'))
                 ->addTo($emailAddress)
                 ->subject($subject)
                 ->html($html->getContent());
@@ -3243,7 +3243,7 @@ class OrdersController extends AbstractController
 
         // Distributor Email
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($this->encryptor->decrypt($distributor->getEmail()))
             ->attachFromPath(__DIR__ . '/../../public/pdf/' . $file)
             ->subject('Fluid Order - PO  '. $order[0]->getPoNumber())
@@ -3257,7 +3257,7 @@ class OrdersController extends AbstractController
 
         // Clinic Email
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($this->encryptor->decrypt($clinic->getEmail()))
             ->attachFromPath(__DIR__ . '/../../public/pdf/' . $file)
             ->subject('Fluid Order - PO  '. $order[0]->getPoNumber())
@@ -3752,7 +3752,7 @@ class OrdersController extends AbstractController
         ]);
 
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($emailAddress)
             ->subject($subject)
             ->html($html->getContent());
@@ -4203,7 +4203,7 @@ class OrdersController extends AbstractController
             ]);
 
             $email = (new Email())
-                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                ->from($this->getParameter('app.email_from'))
                 ->addTo($to)
                 ->subject('Fluid Order - PO  '. $order->getOrderItems()[0]->getPoNumber())
                 ->html($html->getContent());
@@ -4227,7 +4227,7 @@ class OrdersController extends AbstractController
         ]);
 
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($to)
             ->subject('Fluid Order - PO  '. $order->getOrderItems()[0]->getPoNumber())
             ->html($html->getContent());

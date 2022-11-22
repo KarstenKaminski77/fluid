@@ -194,7 +194,7 @@ class ChatMessagesController extends AbstractController
         ]);
 
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($email)
             ->subject('Fluid - New IM')
             ->html($html->getContent());

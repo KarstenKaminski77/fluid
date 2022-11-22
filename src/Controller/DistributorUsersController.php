@@ -122,7 +122,7 @@ class DistributorUsersController extends AbstractController
                 ])->getContent();
 
                 $email = (new Email())
-                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                    ->from($this->getParameter('app.email_from'))
                     ->addTo($data['email'])
                     ->subject('Fluid Login Credentials')
                     ->html($body);
@@ -353,7 +353,7 @@ class DistributorUsersController extends AbstractController
                 ]);
 
                 $email = (new Email())
-                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                    ->from($this->getParameter('app.email_from'))
                     ->addTo($this->encryptor->decrypt($distributorUser->getEmail()))
                     ->subject('Fluid Password Reset')
                     ->html($html->getContent());
@@ -411,7 +411,7 @@ class DistributorUsersController extends AbstractController
             ]);
 
             $email = (new Email())
-                star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                ->from($this->getParameter('app.email_from'))
                 ->addTo($this->encryptor->decrypt($distributorUser->getEmail()))
                 ->subject('Fluid Login Credentials')
                 ->html($html->getContent());
@@ -481,7 +481,7 @@ class DistributorUsersController extends AbstractController
         $body .= '</table>';
 
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($data['email'])
             ->subject('Fluid Login Credentials')
             ->html($body);

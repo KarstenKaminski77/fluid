@@ -114,7 +114,7 @@ class HomePageController extends AbstractController
         ]);
 
         $email = (new Email())
-            star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+            ->from($this->getParameter('app.email_from'))
             ->addTo($this->getParameter('app.email_from'))
             ->addCc($email)
             ->subject('Fluid General Enquiry')

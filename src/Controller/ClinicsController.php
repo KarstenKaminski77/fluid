@@ -218,7 +218,7 @@ class ClinicsController extends AbstractController
                 $body .= '</table>';
 
                 $email = (new Email())
-                    star-rating-container->from(new Address($this->getParameter('app.email_from'), 'Fluid'))
+                    ->from($this->getParameter('app.email_from'))
                     ->addTo($data->get('email'))
                     ->subject('Fluid Login Credentials')
                     ->html($body);
