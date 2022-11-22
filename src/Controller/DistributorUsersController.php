@@ -117,6 +117,10 @@ class DistributorUsersController extends AbstractController
                 $body .= '</tr>';
                 $body .= '</table>';
 
+                $body = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                    'html'  => $body,
+                ])->getContent();
+
                 $email = (new Email())
                     ->from($this->getParameter('app.email_from'))
                     ->addTo($data['email'])
@@ -267,7 +271,7 @@ class DistributorUsersController extends AbstractController
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>';
 
-                    if($user->getIsPrimary != 1) {
+                    if($user->getIsPrimary() != 1) {
 
                         $html .= '
                         <a href="" class="delete-icon float-end delete-user" data-bs-toggle="modal"

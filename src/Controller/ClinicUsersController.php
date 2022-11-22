@@ -525,6 +525,7 @@ class ClinicUsersController extends AbstractController
             $clinicUser = new ClinicUsers();
 
             $plainTextPwd = $this->generatePassword();
+            $sendEmail = true;
 
             if (!empty($plainTextPwd)) {
 
@@ -535,7 +536,7 @@ class ClinicUsersController extends AbstractController
 
                 // Send Email
                 $body = '<table style="padding: 8px; border-collapse: collapse; border: none; font-family: arial">';
-                $body .= '<tr><td colspan="2">Hi '. $this->encryptor->decrypt($data['firstName']) .',</td></tr>';
+                $body .= '<tr><td colspan="2">Hi '. $data['firstName'] .',</td></tr>';
                 $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
                 $body .= '<tr><td colspan="2">Please use the credentials below login to the Fluid Backend.</td></tr>';
                 $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
@@ -552,6 +553,10 @@ class ClinicUsersController extends AbstractController
                 $body .= '    <td>'. $plainTextPwd .'</td>';
                 $body .= '</tr>';
                 $body .= '</table>';
+
+                $body = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                    'html'  => $body,
+                ])->getContent();
 
                 $send_email = true;
             }

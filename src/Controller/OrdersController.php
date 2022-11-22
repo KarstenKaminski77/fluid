@@ -1303,6 +1303,8 @@ class OrdersController extends AbstractController
 
                                         } elseif ($order->getIsRenegotiate() == 1) {
 
+                                            $disabled = '';
+
                                             if($isAuthorised){
 
                                                 $clinicStatus = '

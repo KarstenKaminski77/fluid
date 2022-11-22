@@ -1953,7 +1953,7 @@ input[type="text"]::-webkit-input-placeholder {
 
 .slick-gradient {
     background: rgb(255,255,255);
-    background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(231,231,231,1) 100%);
+    background: linear-gradient(to bottom right,#fff, 80% ,#e7e7e7);
 }
 
 .slick-initialized .slick-slide, .slick-slide img {

@@ -195,9 +195,11 @@ class ProductsRepository extends ServiceEntityRepository
             ->leftJoin('p.productFavourites', 'pf')
             ->leftJoin('p.productImages', 'pi')
             ->andWhere('pi.isDefault = 1')
+            ->andWhere('p.isActive = 1')
+            ->andWhere('p.isPublished = 1')
             //->groupBy('dp.id')
-            //->orderBy('rand')
-            ->setMaxResults(3);
+            ->orderBy('rand')
+            ->setMaxResults(10);
 
         return $queryBuilder->getQuery()->getResult();
 

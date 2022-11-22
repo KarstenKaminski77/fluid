@@ -3429,6 +3429,9 @@
                 $('#user_last_name').val('');
                 $('#user_email').val('');
                 $('#user_mobile').val('');
+                $('#user_telephone').val('');
+                $('#user_iso_code').val('');
+                $('#user_intl_code').val('');
                 $('#user_position').val('');
 
                 $('.form-check-input').each(function () {
@@ -3580,6 +3583,7 @@
                 let user_last_name = $('#user_last_name').val();
                 let user_email = $('#user_email').val();
                 let user_telephone = $('#user_telephone').val();
+                let user_mobile = $('#user_mobile');
                 let error_user_first_name = $('#error_user_first_name');
                 let error_user_last_name = $('#error_user_last_name');
                 let error_user_email = $('#error_user_email');
@@ -3611,6 +3615,7 @@
                 if(user_telephone == '' || user_telephone == 'undefined'){
 
                     error_user_telephone.show();
+                    user_mobile.val('');
                     is_valid = false;
                 }
 
@@ -3645,6 +3650,9 @@
                                 $('#user_last_name').val('');
                                 $('#user_email').val('');
                                 $('#user_telephone').val('');
+                                $('#user_mobile').val('');
+                                $('#user_iso_code').val('');
+                                $('#user_intl_code').val('');
                                 $('#user_position').val('');
                                 $('#create_user').empty().append('SAVE').attr('disabled', false);
 

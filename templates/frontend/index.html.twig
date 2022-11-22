@@ -128,53 +128,6 @@
                         </div>
                     </div>
                 {% endfor %}
-                {% for product in products %}
-                    {% set dosage = '' %}
-                    {% set from = '' %}
-                    {% set per = product.form %}
-                    {% if product.form == 'Each' %}
-                        {% set dosage = product.size ~ product.unit %}
-                    {% endif %}
-                    {% if product.size > 0 %}
-                        {% set dosage = product.dosage ~ product.unit ~ ', ' ~ product.size ~ ' Count' %}
-                        {% set from = 'From ' ~  product.priceFrom|format_currency('AED') ~ ' per ' ~ per %}
-                    {% endif %}
-                    <div class="row">
-                        <div class="col-12 half-border">
-                            <div class="row slick-gradient">
-                                <div class="col-3 text-center py-3">
-                                    <img src="{{ asset('/images/products/' ~ product.productImages[0].image ) }}" class="img-fluid" style="max-height: 80px">
-                                </div>
-                                <div class="col-9 text-start">
-                                    <div class="row">
-                                        <div class="col-12 mt-4 text-truncate">
-                                            <h6 class="text-truncate">
-                                                {{ product.name ~ ' ' ~ dosage }}
-                                            </h6>
-                                        </div>
-                                        <div class="col-12 pb-3 text-truncate">
-                                            <span class="text-truncate">
-                                                {{ from }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% for distributorPoduct in product.distributorProducts %}
-                                    <div class="col-12 text-start my-2">
-                                        <div class="row">
-                                            <div class="col-8 text-truncate">
-                                                <h6 class="text-truncate">{{ nzo_decrypt(distributorPoduct.distributor.distributorName) }}</h6>
-                                            </div>
-                                            <div class="col-4 text-end fw-bold text-truncate">
-                                                {{ distributorPoduct.unitPrice|format_currency('AED') }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
             </section>
         </div>
     </div>

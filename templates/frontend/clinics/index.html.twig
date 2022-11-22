@@ -2483,7 +2483,7 @@
 
                     $('#details_'+ product_id).slideUp(700);
                     $('#search_panels_container_'+ product_id).slideUp(700);
-                    $('#btn_details_'+ product_id).removeClass('active').removeClass('active');
+                    $('#btn_details_'+ product_id).removeClass('active');
 
                 } else {
 
@@ -3104,12 +3104,12 @@
                         success: function (response) {
 
                             $('#track_'+ product_id).empty().append(response.html).append(response.list);
-                            $('#track_'+ product_id).show();
-                            $('#search_panels_container_'+ product_id).slideDown(700);
+                            $('#search_panels_container_'+ product_id).show();
                             $('#details_'+ product_id).slideUp(700);
                             $('#lists_'+ product_id).slideUp(700);
                             $('#notes_'+ product_id).slideUp(700);
                             $('#reviews_'+ product_id).slideUp(700);
+                            $('#track_'+ product_id).slideDown(700);
                             $('#btn_details_'+ product_id).removeClass('active');
                             $('#btn_lists_'+ product_id).removeClass('active');
                             $('#btn_track_'+ product_id).addClass('active');
@@ -3357,12 +3357,12 @@
                         }
                     });
 
-                    $('#notes_'+ product_id).show();
-                    $('#search_panels_container_'+ product_id).slideDown(700);
+                    $('#search_panels_container_'+ product_id).show();
                     $('#details_'+ product_id).slideUp(700);
                     $('#lists_'+ product_id).slideUp(700);
                     $('#track_'+ product_id).slideUp(700);
                     $('#reviews_'+ product_id).slideUp(700);
+                    $('#notes_'+ product_id).slideDown(700);
                     $('#btn_details_'+ product_id).removeClass('active');
                     $('#btn_lists_'+ product_id).removeClass('active');
                     $('#btn_track_'+ product_id).removeClass('active');
@@ -3797,6 +3797,7 @@
 
                 } else {
 
+                    $('.comment-container').slideUp(700);
                     $('#comment_icon_'+ review_id).addClass('text-secondary');
                     $('#comment_span_'+ review_id).addClass('text-secondary');
                     $('.review-comments-row').addClass('mb-3');
@@ -3822,6 +3823,7 @@
 
                 } else {
 
+                    $('.comment-container').slideUp(700);
                     $('#leave_comment_icon_'+ review_id).addClass('text-secondary');
                     $('#leave_comment_span_'+ review_id).addClass('text-secondary');
                     $('.review-comments-row').addClass('mb-3');
@@ -4328,6 +4330,7 @@
                 $('#user_last_name').val('');
                 $('#user_email').val('');
                 $('#user_telephone').val('');
+                $('#user_mobile').val('');
                 $('#user_position').val('');
                 $('#form_users input[type="checkbox"]').attr('checked', false);
 
@@ -4352,6 +4355,7 @@
                 let user_last_name = $('#user_last_name').val();
                 let user_email = $('#user_email').val();
                 let user_telephone = $('#user_telephone').val();
+                let user_mobile = $('#user_mobile');
                 let error_user_first_name = $('#error_user_first_name');
                 let error_user_last_name = $('#error_user_last_name');
                 let error_user_email = $('#error_user_email');
@@ -4383,6 +4387,7 @@
                 if(user_telephone == '' || user_telephone == 'undefined'){
 
                     error_user_telephone.show();
+                    user_mobile.val('');
                     is_valid = false;
                 }
 
@@ -4416,11 +4421,11 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
-                                window.location.href = '{{ path('clinic_error_500') }}';
-                            }
-                        },
+                        {#complete: function(e, xhr, settings){#}
+                        {#    if(e.status === 500){#}
+                        {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                        {#    }#}
+                        {#},#}
                         success: function (response) {
 
                             if (response.response) {
