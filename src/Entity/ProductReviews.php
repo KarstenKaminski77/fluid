@@ -30,11 +30,6 @@ class ProductReviews
     private $clinicUser;
 
     /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $subject;
-
-    /**
      * @ORM\Column(type="text")
      */
     private $review;
@@ -65,11 +60,6 @@ class ProductReviews
     private $created;
 
     /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $position;
-
-    /**
      * @ORM\OneToMany(targetEntity=ProductReviewLikes::class, mappedBy="productReview")
      */
     private $productReviewLikes;
@@ -78,6 +68,11 @@ class ProductReviews
      * @ORM\OneToMany(targetEntity=ProductReviewComments::class, mappedBy="review")
      */
     private $productReviewComments;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $isApproved;
 
     public function __construct()
     {
@@ -114,18 +109,6 @@ class ProductReviews
     public function setClinicUser(?ClinicUsers $clinicUser): self
     {
         $this->clinicUser = $clinicUser;
-
-        return $this;
-    }
-
-    public function getSubject(): ?string
-    {
-        return $this->subject;
-    }
-
-    public function setSubject(string $subject): self
-    {
-        $this->subject = $subject;
 
         return $this;
     }
@@ -202,18 +185,6 @@ class ProductReviews
         return $this;
     }
 
-    public function getPosition(): ?string
-    {
-        return $this->position;
-    }
-
-    public function setPosition(string $position): self
-    {
-        $this->position = $position;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, ProductReviewLikes>
      */
@@ -270,6 +241,18 @@ class ProductReviews
                 $productReviewComment->setReview(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getIsApproved(): ?int
+    {
+        return $this->isApproved;
+    }
+
+    public function setIsApproved(?int $isApproved): self
+    {
+        $this->isApproved = $isApproved;
 
         return $this;
     }

@@ -186,6 +186,8 @@ class OrdersController extends AbstractController
                 }
 
                 $orderItems = new OrderItems();
+                $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+                $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
                 $orderItems->setOrders($order);
                 $orderItems->setDistributor($basketItem->getDistributor());
@@ -196,7 +198,7 @@ class OrdersController extends AbstractController
                 $orderItems->setTotal($basketItem->getTotal());
                 $orderItems->setName($basketItem->getName());
                 $orderItems->setPoNumber($prefix .'-'. $order->getId());
-                $orderItems->setOrderPlacedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+                $orderItems->setOrderPlacedBy($this->encryptor->encrypt($firstName .' '. $lastName));
                 $orderItems->setIsAccepted(0);
                 $orderItems->setIsRenegotiate(0);
                 $orderItems->setIsCancelled(0);
@@ -1441,12 +1443,12 @@ class OrdersController extends AbstractController
                                 $qty = '<span class="'. $opacity .'">'. $quantity .'</span>';
                             }
 
-                            $popover = '<b>Ordered By</b> '. $order->getOrderPlacedBy() .'<br>';
+                            $popover = '<b>Ordered By</b> '. $this->encryptor->decrypt($order->getOrderPlacedBy()) .'<br>';
 
                             if($order->getOrderReceivedBy() != null){
 
                                 $popover .= '
-                                <b>Recieved By</b> '. $order->getOrderReceivedBy();
+                                <b>Recieved By</b> '. $this->encryptor->decrypt($order->getOrderReceivedBy());
                             }
 
                             if($order->getRejectReason() != null){
@@ -2216,12 +2218,12 @@ class OrdersController extends AbstractController
                                         </div>';
 
                                         $response .= $colQtyDelivered;
-                                        $popover = '<b>Ordered By</b> '. $order->getOrderPlacedBy() .'<br>';
+                                        $popover = '<b>Ordered By</b> '. $this->encryptor->decrypt($order->getOrderPlacedBy()) .'<br>';
 
                                         if($order->getOrderReceivedBy() != null){
 
                                             $popover .= '
-                                            <b>Recieved By</b> '. $order->getOrderReceivedBy();
+                                            <b>Recieved By</b> '. $this->encryptor->decrypt($order->getOrderReceivedBy());
                                         }
 
                                         if($order->getRejectReason() != null){
@@ -2849,6 +2851,8 @@ class OrdersController extends AbstractController
         $link = $data->get('link');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($itemId);
         $distributorId = $orderItem->getDistributor()->getId();
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
         $orderItems = $this->em->getRepository(OrderItems::class)->findBy([
             'orders' => $orderId,
             'distributor' => $distributorId
@@ -2888,7 +2892,7 @@ class OrdersController extends AbstractController
             $class = 'bg-danger text-light badge-danger-filled-sm';
         }
 
-        $orderItem->setOrderPlacedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+        $orderItem->setOrderPlacedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($orderItem);
         $this->em->flush();
@@ -3418,6 +3422,8 @@ class OrdersController extends AbstractController
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
         $distributorId = $request->request->get('distributor_id');
         $orderId = $request->request->get('order_id');
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
         if($orderItem->getIsAcceptedOnDelivery() == 1){
 
@@ -3432,7 +3438,7 @@ class OrdersController extends AbstractController
         $orderItem->setIsRejectedOnDelivery(0);
         $orderItem->setIsQuantityAdjust(0);
         $orderItem->setRejectReason('');
-        $orderItem->setOrderReceivedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+        $orderItem->setOrderReceivedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($orderItem);
         $this->em->flush();
@@ -3473,6 +3479,8 @@ class OrdersController extends AbstractController
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
         $distributorId = $request->request->get('distributor_id');
         $orderId = $request->request->get('order_id');
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
         if($orderItem->getIsQuantityAdjust() == 1){
 
@@ -3487,7 +3495,7 @@ class OrdersController extends AbstractController
         $orderItem->setIsQuantityAdjust($is_adjust);
         $orderItem->setIsAcceptedOnDelivery(0);
         $orderItem->setIsRejectedOnDelivery(0);
-        $orderItem->setOrderReceivedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+        $orderItem->setOrderReceivedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($orderItem);
         $this->em->flush();
@@ -3511,14 +3519,15 @@ class OrdersController extends AbstractController
     {
         $orderItemId = $request->request->get('reject_item_id');
         $rejectReason = $request->request->get('reject_reason');
-
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
 
         $orderItem->setIsQuantityAdjust(0);
         $orderItem->setIsAcceptedOnDelivery(0);
         $orderItem->setIsRejectedOnDelivery(1);
         $orderItem->setRejectReason($rejectReason);
-        $orderItem->setOrderReceivedBy($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName());
+        $orderItem->setOrderReceivedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($orderItem);
         $this->em->flush();

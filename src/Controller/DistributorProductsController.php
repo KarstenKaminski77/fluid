@@ -301,62 +301,72 @@ class DistributorProductsController extends AbstractController
         $response = [];
         $html = '';
         $distributorId = $request->request->get('distributor-id');
-        $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId);
-        $distributorProductsResults = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
+        $manufacturerId = (int) $request->request->get('manufacturer-id') ?? 0;
+        $speciesId = (int) $request->request->get('species-id') ?? 0;
+        $productsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId, $manufacturerId, $speciesId);
+        $distributorProductsResults = $this->pageManager->paginate($productsRepo[0], $request, self::ITEMS_PER_PAGE);
         $response['distributorProductsPagination'] = $this->getPagination(1, $distributorProductsResults, $distributorId);
 
-        foreach ($distributorProductsResults as $distributorProduct)
+        foreach ($distributorProductsResults as $product)
         {
             $html .= '
-            <div class="row border-left border-right border-bottom bg-light" id="distributor_product_'. $distributorProduct->getId() .'">
+            <div class="row border-left border-right border-bottom bg-light" id="distributor_product_'. $product->getId() .'">
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Name:
                 </div>
-                <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getProduct()->getName() .'
+                <div 
+                    class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                    data-bs-trigger="hover"
+                    data-bs-container="body"
+                    data-bs-toggle="popover"
+                    data-bs-placement="top"
+                    data-bs-html="true"
+                    data-bs-content="'. $product->getName() .'"
+                >
+                    '. $product->getName() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Active Ingredient:
                 </div>
                 <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getProduct()->getActiveIngredient() .'
+                    '. $product->getActiveIngredient() .'
                 </div>
                 <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Dosage:
                 </div>
                 <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getProduct()->getDosage() .'
+                    '. $product->getDosage() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Size:
                 </div>
                 <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getProduct()->getSize() .'
+                    '. $product->getSize() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Unit:
                 </div>
                 <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getProduct()->getUnit() .'
+                    '. $product->getUnit() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Stock:
                 </div>
                 <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getStockCount() .'
+                    '. $product->getdistributorProducts()[0]->getStockCount() .'
                 </div>
                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Price:
                 </div>
                 <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                    '. $distributorProduct->getUnitPrice() .'
+                    '. $product->getdistributorProducts()[0]->getUnitPrice() .'
                 </div>
                 <div class="col-md-2  t-cell text-truncate border-list pt-3 pb-3">
                     <a
                         href=""
                         class="float-end update-product"
-                        data-product-name="'. $distributorProduct->getProduct()->getName() .'"
-                        data-product-id="'. $distributorProduct->getProduct()->getId() .'"
+                        data-product-name="'. $product->getName() .'"
+                        data-product-id="'. $product->getId() .'"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -364,7 +374,7 @@ class DistributorProductsController extends AbstractController
                         href=""
                         class="delete-icon float-end delete-distributor-product"
                         data-bs-toggle="modal"
-                        data-distributor-product-id="'. $distributorProduct->getId() .'"
+                        data-distributor-product-id="'. $product->getId() .'"
                         data-bs-target="#modal_product_delete"
                         >
                             <i class="fa-solid fa-trash-can"></i>

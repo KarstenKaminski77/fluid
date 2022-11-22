@@ -24,6 +24,9 @@
                             >
                                 <i class="fa-regular fa-user-gear fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">My Account</span>
+                                <span class="float-end">
+                                    <i class="fa-solid fa-caret-down"></i>
+                                </span>
                             </a>
                             <ul class="nav flex-column collapse" id="submenu1" data-bs-parent="#menu" style="">
                                 <li class="w-100 mb-3">
@@ -828,6 +831,44 @@
                             </div>
                         </div>
                         <div class="row">
+                            <div class="col-12 bg-light border-top border-left border-right">
+                                <div class="row">
+                                    <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
+                                        <select
+                                            class="form-control"
+                                            name="manufacturer-id"
+                                            id="manufacturer_id"
+                                        >
+                                            <option value="0">
+                                                Select a Manufacturer
+                                            </option>
+                                            {% for manufacturer in manufacturers %}
+                                                <option value="{{ manufacturer.manufacturers.id }}">
+                                                    {{ nzo_decrypt(manufacturer.manufacturers.name) }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3 py-3">
+                                        <select
+                                            class="form-control"
+                                            name="species-id"
+                                            id="species_id"
+                                        >
+                                            <option value="0">
+                                                Select a Species
+                                            </option>
+                                            {% for specie in species %}
+                                                <option value="{{ specie.species.id }}">
+                                                    {{ specie.species.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-12 d-none d-xl-block">
                                 <div class="row">
                                     <div class="col-md-3 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-left border-top">
@@ -862,51 +903,59 @@
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Name:
                                         </div>
-                                        <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.product.name }}
+                                        <div
+                                            class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                                            data-bs-trigger="hover"
+                                            data-bs-container="body"
+                                            data-bs-toggle="popover"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            data-bs-content="{{ distributorProduct.name }}"
+                                        >
+                                            {{ distributorProduct.name }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Active Ingredient:
                                         </div>
                                         <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.product.activeIngredient }}
+                                            {{ distributorProduct.activeIngredient }}
                                         </div>
                                         <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Dosage:
                                         </div>
                                         <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.product.dosage }}
+                                            {{ distributorProduct.dosage }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Size:
                                         </div>
                                         <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.product.size }}
+                                            {{ distributorProduct.size }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Unit:
                                         </div>
                                         <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.product.unit }}
+                                            {{ distributorProduct.unit }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Stock:
                                         </div>
                                         <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                                            {{ distributorProduct.stockCount }}
+                                            {{ distributorProduct.distributorProducts[0].stockCount }}
                                         </div>
                                         <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                             Price:
                                         </div>
                                         <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
-                                            {{distributorProduct.unitPrice }}
+                                            {{distributorProduct.distributorProducts[0].unitPrice }}
                                         </div>
                                         <div class="col-md-2  t-cell text-truncate border-list pt-3 pb-3">
                                             <a
                                                 href=""
                                                 class="float-end update-product"
-                                                data-product-name="{{ distributorProduct.product.name }}"
-                                                data-product-id="{{ distributorProduct.product.id }}"
+                                                data-product-name="{{ distributorProduct.name }}"
+                                                data-product-id="{{ distributorProduct.id }}"
                                             >
                                                 <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                             </a>
@@ -2345,9 +2394,9 @@
                     }
                 });
             }
-            function getInventoryList()
+            function getInventoryList(distributorId = false, manufacturerId = false)
             {
-                let distributorId = '{{ app.user.distributor.id|default(0) }}';
+                distributorId = '{{ app.user.distributor.id|default(0) }}';
 
                 if(distributorId > 0 && distributorId != 'undefined')
                 {
@@ -2366,6 +2415,7 @@
 
                             $('#inventory_list').empty().append(response.html);
                             isLoading(false);
+                            popOver();
                         }
                     });
                 }
@@ -2383,6 +2433,7 @@
                 brand.empty().hide();
 
                 window.history.pushState(null, "Fluid", '/distributors/inventory/list/1');
+                popOver();
             }
             $('#inventory_link').click(function (e){
 
@@ -2395,6 +2446,36 @@
 
                 e.preventDefault();
                 getInventoryList();
+            });
+            $(document).on('change', '#manufacturer_id, #species_id', function () {
+
+                let manufacturerId = $('#manufacturer_id').val() ? $('#manufacturer_id').val() : 0;
+                let speciesId = $('#species_id').val() ? $('#species_id').val() : 0;
+                let distributorId = '{{ app.user.distributor.id|default(0) }}';
+
+                if(manufacturerId > 0 || speciesId > 0)
+                {
+                    $.ajax({
+                        url: "{{ path('get_distributor_products') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'manufacturer-id': manufacturerId,
+                            'species-id': speciesId,
+                            'distributor-id': distributorId,
+                        },
+                        beforeSend: function () {
+
+                            isLoading(true);
+                        },
+                        success: function (response) {
+
+                            $('#inventory_list').empty().append(response.html);
+                            isLoading(false);
+                            popOver();
+                        }
+                    });
+                }
             });
             $(document).on('click', '.update-product', function (e) {
 
@@ -3712,6 +3793,14 @@
                     $("div.spanner").removeClass("show");
                     $("div.overlay").removeClass("show");
                 }
+            }
+
+            {# Popovers #}
+            function popOver() {
+                var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl)
+                })
             }
         });
 

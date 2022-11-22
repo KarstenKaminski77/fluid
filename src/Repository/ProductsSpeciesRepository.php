@@ -39,20 +39,26 @@ class ProductsSpeciesRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return ProductsSpecies[] Returns an array of ProductsSpecies objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('p.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @return ProductsSpecies[] Returns an array of ProductsSpecies objects
+     */
+    public function findByDistributorProducts($distributorId)
+    {
+        return $this->createQueryBuilder('ps')
+            ->select('ps','p','dp','s')
+            ->join('ps.species', 's')
+            ->join('ps.products', 'p')
+            ->join('p.distributorProducts', 'dp')
+            ->andWhere('dp.distributor = :distributorId')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->setParameter('distributorId', $distributorId)
+            ->groupBy('s.id')
+            ->orderBy('s.name', 'ASC')
+            ->getQuery()
+            ->getArrayResult()
+            ;
+    }
 
 //    public function findOneBySomeField($value): ?ProductsSpecies
 //    {

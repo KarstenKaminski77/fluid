@@ -44,20 +44,39 @@
 
         <section class="px-4" style="margin-top: 105px">
             <div class="row mt-4">
-                {# Species #}
-                <div class="col-12">
+
+                {# Name #}
+                <div class="col-12 col-md-6">
                     <label class="ms-2 text-primary">
                         Species <span class="text-danger">*</span>
                     </label>
                     <input
-                        name="species_name"
+                        name="species-name"
                         id="species_name"
                         class="form-control"
                         type="text"
                         value="{{ species.name }}"
-                        placeholder="Species"
+                        placeholder="Name"
                     >
                     <div class="hidden_msg" id="error_species_name">
+                        Required Field
+                    </div>
+                </div>
+
+                {# Icon #}
+                <div class="col-12 col-md-6">
+                    <label class="ms-2 text-primary">
+                        Icon <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        name="species-icon"
+                        id="species_icon"
+                        class="form-control"
+                        type="text"
+                        value="{{ species.icon }}"
+                        placeholder="Fontawesome Icon"
+                    >
+                    <div class="hidden_msg" id="error_species_icon">
                         Required Field
                     </div>
                 </div>
@@ -78,19 +97,28 @@
                 e.preventDefault();
 
                 let species = $('#species_name').val();
-                let is_valid = true;
+                let icon = $('#species_icon').val();
+                let isValid = true;
                 let btn = document.activeElement.getAttribute('name');
-                let error_species = $('#error_species_name');
+                let errorSpecies = $('#error_species_name');
+                let errorIcon = $('#error_species_icon');
 
-                error_species.hide();
+                errorSpecies.hide();
+                errorIcon.hide();
 
                 if(species == '' || species == 'undefined'){
 
-                    error_species.show();
-                    is_valid = false;
+                    errorSpecies.show();
+                    isValid = false;
                 }
 
-                if(is_valid) {
+                if(icon == '' || icon == 'undefined'){
+
+                    errorIcon.show();
+                    isValid = false;
+                }
+
+                if(isValid) {
 
                     let data = new FormData(this);
 

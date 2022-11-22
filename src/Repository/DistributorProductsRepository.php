@@ -82,9 +82,13 @@ class DistributorProductsRepository extends ServiceEntityRepository
     public function findDistributorProducts($distributor_id)
     {
         $queryBuilder = $this->createQueryBuilder('d')
+            ->select('d','p')
+            ->join('d.product', 'p')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
             ->andWhere('d.distributor = :distributor_id')
             ->setParameter('distributor_id', $distributor_id)
-            ->orderBy('d.id', 'DESC')
+            ->orderBy('p.name', 'DESC')
         ;
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];

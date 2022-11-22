@@ -45,22 +45,26 @@ class ProductManufacturersRepository extends ServiceEntityRepository
         }
     }
 
-    // /**
-    //  * @return ProductManufacturers[] Returns an array of ProductManufacturers objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    /**
+    * @return ProductManufacturers[] Returns an array of ProductManufacturers objects
+    */
+    public function findByDistributorManufacturer($distributorId)
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('p.id', 'ASC')
-            ->setMaxResults(10)
+        return $this->createQueryBuilder('pm')
+            ->select('pm','p','dp','m')
+            ->join('pm.manufacturers', 'm')
+            ->join('pm.products', 'p')
+            ->join('p.distributorProducts', 'dp')
+            ->andWhere('dp.distributor = :distributorId')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->setParameter('distributorId', $distributorId)
+            ->groupBy('m.id')
+            ->orderBy('m.name', 'ASC')
             ->getQuery()
             ->getResult()
         ;
     }
-    */
 
     /*
     public function findOneBySomeField($value): ?ProductManufacturers

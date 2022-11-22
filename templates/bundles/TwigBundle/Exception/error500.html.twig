@@ -28,9 +28,9 @@
                                         <p>
                                             {% set url = '' %}
                                             {% if type == 'clinics' %}
-                                                {% set url = path('clinic_analytics') %}
+                                                {% set url = path('clinic_orders_list',{'clinic_id': app.user.clinic.id}) %}
                                             {% elseif type == 'distributors' %}
-                                                {% set url = path('distributor_order_list',{'distributor_id': id}) %}
+                                                {% set url = path('distributor_order_list',{'distributor_id': app.user.distributor.id}) %}
                                             {% elseif type == 'admin' %}
                                                 {% set url = path('products_list',{'page_id': 1}) %}
                                             {% elseif type == 'frontend' %}

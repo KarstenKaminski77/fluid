@@ -88,11 +88,6 @@ class ClinicUsers implements UserInterface, PasswordAuthenticatedUserInterface
     private $telephone;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $reviewUsername;
-
-    /**
      * @ORM\OneToMany(targetEntity=ProductReviewLikes::class, mappedBy="clinicUser")
      */
     private $productReviewLikes;
@@ -387,18 +382,6 @@ class ClinicUsers implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTelephone(string $telephone): self
     {
         $this->telephone = $telephone;
-
-        return $this;
-    }
-
-    public function getReviewUsername(): ?string
-    {
-        return $this->reviewUsername;
-    }
-
-    public function setReviewUsername(?string $reviewUsername): self
-    {
-        $this->reviewUsername = $reviewUsername;
 
         return $this;
     }

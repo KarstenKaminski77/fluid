@@ -21,6 +21,7 @@ use App\Entity\Orders;
 use App\Entity\ProductFavourites;
 use App\Entity\ProductImages;
 use App\Entity\ProductNotes;
+use App\Entity\ProductReviews;
 use App\Entity\Products;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -216,7 +217,10 @@ class ProductsController extends AbstractController
                     'clinic' => $user->getClinic()->getId()
                 ]);
                 $productNotes = $this->em->getRepository(ProductNotes::class)->findNotes($product->getId(), $user->getClinic()->getId());
-                $countReviews = $product->getProductReviews()->count();
+                $countReviews = $this->em->getRepository(ProductReviews::class)->findBy([
+                    'product' => $product->getId(),
+                    'isApproved' => 1,
+                ]);
                 $countNotes = $product->getProductNotes()->count();
                 $countClinicsBought = $this->em->getRepository(OrderItems::class)->findBy([
                     'product' => $product->getId()
@@ -255,14 +259,14 @@ class ProductsController extends AbstractController
                 $reviewCount = '';
                 $noteCount = '';
 
-                if($countReviews > 0){
+                if(count($countReviews) > 0){
 
                     $reviewCount = '
                     <span 
                         class="position-absolute text-opacity-25 start-100 translate-middle badge border rounded-circle bg-primary"
                         style="z-index: 999"
                     >
-                        '. $countReviews .'
+                        '. count($countReviews) .'
                     </span>';
                 }
 
@@ -296,7 +300,7 @@ class ProductsController extends AbstractController
 
                     if($listItem != null) {
 
-                        $favouriteIcon = 'text-secondary';
+                        $favouriteIcon = 'text-danger';
                         $dataFavourite = 'true';
                         $dataDistributor = 'data-distributor-id="' . $listItem->getDistributor()->getId() . '"';
                     }
@@ -321,8 +325,21 @@ class ProductsController extends AbstractController
 
                 if($product->getDosage() != null && $product->getDosageUnit() != null)
                 {
-                    $dosage = '<p id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
+                    $dosage = '<p class="" id="dosage_'. $product->getId() .'"><b>Dosage:</b> '. $product->getDosage();
                     $dosage .= $product->getDosageUnit() .' '. $product->getForm() .' / '. $product->getActiveIngredient() .'</p>';
+                }
+
+                // Species
+                $species = '';
+
+                if($product->getProductSpecies() != null)
+                {
+                    foreach($product->getProductSpecies() as $productSpecies)
+                    {
+                        $species .= '<button class="btn bg-transparent border-xy ms-3">';
+                        $species .= '   <i class="'. $productSpecies->getSpecies()->getIcon() .' fa-fw info" style="font-size: 20px !important;"></i>';
+                        $species .= '</button>';
+                    }
                 }
 
                 $html .= '
@@ -363,9 +380,21 @@ class ProductsController extends AbstractController
                                     </div>
                                     <!-- Description -->
                                     <div class="col-12 col-sm-10 pt-3 pb-3">
-                                       <h4>'. $name .'</h4>
-                                       <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
-                                       '. $dosage .'
+                                       <div class="row">
+                                           <div class="col-12">
+                                                <h4>'. $name .'</h4>
+                                                <p><span class="pe-2">'. $manufacturer .' <span class="from_'. $product->getId() .'"></span></p>
+                                            </div>
+                                       </div>
+                                       <div class="row">
+                                           <div class="col-12 col-md-6">
+                                                '. $dosage .'
+                                            </div>
+                                            <div class="col-12 col-md-6 text-end">
+                                                '. $species .'
+                                            </div>
+                                       </div>
+                                       
                                         <!-- Product rating -->
                                         <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
                                             <i class="star star-under fa fa-star">
@@ -475,6 +504,15 @@ class ProductsController extends AbstractController
             
                                     <!-- Track -->
                                     <div class="collapse" id="track_'. $product->getId() .'">
+                                        <h5 class="pb-3 pt-3">Availability Tracker</h5>
+                                        <p>
+                                        Create custom alerts when a backordered item comes back in stock. Set a notification 
+                                        for how you would like to be notified and which suppliers you would like to track. 
+                                        Once an item comes back in stock and you are notified, the tracker will automatically 
+                                        turn off. You can also view a list of all tracked items in your shopping list. 
+                                        Note: Fluid cannot track the availability of items that are drop shipped directly 
+                                        from the vendor.
+                                        </p>
                                     </div>
             
                                     <!-- Notes -->
@@ -673,57 +711,9 @@ class ProductsController extends AbstractController
                                         </div>
                                         <div class="row mb-3">
                                             <div class="col-12">
-                                                <label>Title</label>
-                                                <input name="review_title" id="review_title" type="text" class="form-control">
-                                            </div>
-                                            <div class="hidden_msg" id="error_review_title">
-                                                Required Field
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <div class="col-12">
                                                 <label>Review</label>
                                                 <textarea rows="4" name="review" id="review" class="form-control"></textarea>
                                                 <div class="hidden_msg" id="error_review">
-                                                    Required Field
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-12 col-sm-6">
-                                                <label>
-                                                    Username
-                                                </label>
-                                                <input 
-                                                    type="text" 
-                                                    name="review_username" 
-                                                    id="review_username" 
-                                                    class="form-control"
-                                                    value="'. $this->getUser()->getReviewUserName() .'"
-                                                >
-                                                <div class="hidden_msg" id="error_review_username">
-                                                    Required Field
-                                                </div>
-                                            </div>
-                                            <div class="col-12 col-sm-6">
-                                                <label>
-                                                    Position
-                                                </label>
-                                                <select name="position" id="review_position" class="form-control">
-                                                    <option value=""></option>
-                                                    <option value="Technician">Technician</option>
-                                                    <option value="Credentialed Technician">Credentialed Technician</option>
-                                                    <option value="Veterinary Assistant">Veterinary Assistant</option>
-                                                    <option value="Doctor">Doctor</option>
-                                                    <option value="Doctor, Owner">Doctor, Owner</option>
-                                                    <option value="Doctor, Diplomate">Doctor, Diplomate</option>
-                                                    <option value="Doctor, Diplomate, Owner">Doctor, Diplomate, Owner</option>
-                                                    <option value="Non-DVM Owner">Non-DVM Owner</option>
-                                                    <option value="Inventory Manager">Inventory Manager</option>
-                                                    <option value="Hospital Manager">Hospital Manager</option>
-                                                    <option value="Office Staff">Office Staff</option>
-                                                </select>
-                                                <div class="hidden_msg" id="error_review_position">
                                                     Required Field
                                                 </div>
                                             </div>
@@ -1845,7 +1835,7 @@ class ProductsController extends AbstractController
                         class="ms-1"
                         for="dist_'. $value .'"
                     >
-                        ('. $distributorProductCount[$value] .') '. $key .'
+                        ('. $distributorProductCount[$value] .') '. $this->encryptor->decrypt($key) .'
                     </label>
                 </li>';
             }
@@ -1955,7 +1945,7 @@ class ProductsController extends AbstractController
                         class="ms-1"
                         for="man_'. $value .'"
                     >
-                        ('. $productManufacturerCount[$value] .') '. $key .'
+                        ('. $productManufacturerCount[$value] .') '. $this->encryptor->decrypt($key) .'
                     </label>
                 </li>';
             }

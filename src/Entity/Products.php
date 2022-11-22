@@ -25,13 +25,10 @@ class Products
     private $id;
 
     /**
-     * Relation with category entity
-     * @var blogCategory
-     *
      * @ORM\ManyToMany(targetEntity="App\Entity\Species", inversedBy="product", cascade={"remove"})
      * @ORM\JoinTable(name="products_species")
      */
-    protected $productsSpecies;
+    protected $productsSpecie;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Manufacturers", inversedBy="product", cascade={"remove"})
@@ -165,6 +162,11 @@ class Products
     private $productManufacturers;
 
     /**
+     * @ORM\ManyToMany(targetEntity=ProductsSpecies::class, mappedBy="products")
+     */
+    protected $productsSpecies;
+
+    /**
      * @ORM\OneToMany(targetEntity=ProductImages::class, mappedBy="product")
      */
     private $productImages;
@@ -218,6 +220,11 @@ class Products
      * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $dosageUnit;
+
+    /**
+     * @ORM\Column(type="json", nullable=true)
+     */
+    private $manufacturerIds = [];
 
     public function __construct()
     {
@@ -923,6 +930,18 @@ class Products
     public function setDosageUnit(?string $dosageUnit): self
     {
         $this->dosageUnit = $dosageUnit;
+
+        return $this;
+    }
+
+    public function getManufacturerIds(): ?array
+    {
+        return $this->manufacturerIds;
+    }
+
+    public function setManufacturerIds(?array $manufacturerIds): self
+    {
+        $this->manufacturerIds = $manufacturerIds;
 
         return $this;
     }

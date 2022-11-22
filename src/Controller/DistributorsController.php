@@ -16,7 +16,9 @@ use App\Entity\DistributorUsers;
 use App\Entity\Notifications;
 use App\Entity\OrderItems;
 use App\Entity\Orders;
+use App\Entity\ProductManufacturers;
 use App\Entity\Products;
+use App\Entity\ProductsSpecies;
 use App\Entity\RefreshTokens;
 use App\Entity\RestrictedDomains;
 use App\Entity\Tracking;
@@ -85,6 +87,7 @@ class DistributorsController extends AbstractController
         $email = $request->request->get('email');
         $domainName = explode('@', $email);
         $response['response'] = true;
+        $firstName = '';
         $restrictedDomains = $this->em->getRepository(RestrictedDomains::class)->arrayFindAll();
 
         foreach($restrictedDomains as $restrictedDomain)
@@ -121,6 +124,26 @@ class DistributorsController extends AbstractController
         $clinicUsers = $this->em->getRepository(ClinicUsers::class)->findOneBy([
             'hashedEmail' => md5($email),
         ]);
+
+        if($clinicDomain != null)
+        {
+            $user = $this->em->getRepository(ClinicUsers::class)->findOneBy([
+                'clinic' => $clinicDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        if($distributorDomain != null)
+        {
+            $user = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+                'distributor' => $distributorDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        $response['firstName'] = $firstName;
 
         if($distributor != null || $distributorUsers != null || $clinic != null || $clinicUsers != null || $clinicDomain != null || $distributorDomain != null)
         {
@@ -294,9 +317,11 @@ class DistributorsController extends AbstractController
         $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy(['isDistributor' => 1]);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
         $usersPagination = $this->getPagination(1, $userResults, $distributorId);
-        $distributorProductsRepo = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($distributorId);
+        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,0,0);
         $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
         $distributorProductsPagination = $this->getPagination(1, $distributorProducts, $distributorId);
+        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
+        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
         $form = $this->createRegisterForm();
         $inventoryForm = $this->createDistributorInventoryForm();
         $addressForm = $this->createDistributorAddressesForm();
@@ -345,6 +370,8 @@ class DistributorsController extends AbstractController
             'tracking' => $traking,
             'distributorProducts' => $distributorProducts,
             'distributorProductsPagination' => $distributorProductsPagination,
+            'manufacturers' => $manufacturers,
+            'species' => $species,
         ]);
     }
 
