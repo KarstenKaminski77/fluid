@@ -601,12 +601,12 @@
                         }
 
                         if(class_name == 'view-list' || list_id > 0 || is_list_uri != null) {
-                            alert(list_keyword);
+
                             if(list_keyword == '' || list_keyword == 'undefined'){
 
                                 list_keyword = $.session.get('search_key');
                             }
-                            alert(list_keyword);
+                            
                             getListBackButton(list_keyword, list_id);
                             window.history.pushState(null, "Fluid", '/clinics/inventory/list/' + list_id);
 
