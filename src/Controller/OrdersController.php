@@ -3366,7 +3366,7 @@ class OrdersController extends AbstractController
             $orderItem->getDistributor()->getId()
         );
 
-        $order->setSubTotal($sumTotal[0]['totals'] ?? 0);
+        $order->setSubTotal($sumTotal[0]['totals'] ?? 0.00);
         $order->setTotal($sumTotal[0]['totals'] + $order->getDeliveryFee() + $order->getTax());
 
         $this->em->persist($order);

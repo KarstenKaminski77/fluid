@@ -57,19 +57,27 @@ class ListsRepository extends ServiceEntityRepository
             ->andWhere('p.isActive = 1')
             ->andWhere('p.isPublished = 1')
             ->andWhere('l.clinic = :clinicId')
-            ->setParameter('clinicId', $clinicId);
+            ->setParameter('clinicId', $clinicId)
+            ->orderBy('l.isProtected', 'DESC')
+            ->addOrderBy('l.name', 'ASC');
 
         return $queryBuilder->getQuery()->getResult();
     }
 
-    public function getLastList($clinic_id): object
+    public function findClinicProducts($clinicId, $listId)
     {
         $queryBuilder = $this->createQueryBuilder('l')
-            ->select('l')
-            ->andWhere('l.clinic = :clinic_id')
-            ->setParameter('clinic_id', $clinic_id)
-            ->orderBy('l.id', 'DESC')
-            ->setMaxResults(1);
+            ->select('l','li', 'p')
+            ->join('l.listItems', 'li')
+            ->join('li.product', 'p')
+            ->andWhere('l.clinic = :clinicId')
+            ->setParameter('clinicId', $clinicId)
+            ->andWhere('l.id = :listId')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->setParameter('listId', $listId)
+            ->orderBy('l.id', 'DESC');
+
         return $queryBuilder->getQuery()->getResult();
     }
 }

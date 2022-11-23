@@ -75,7 +75,7 @@
                                 "html": response.html,
                                 "pageTitle": 'Fluid'
                             }, "", '{{ app.request.baseUrl }}/clinics/inventory');
-                            $.session.set('search_key', keyword);
+                            //$.session.set('search_key', keyword);
 
                             $(response.productIds).each(function (index, value) {
 
@@ -442,7 +442,7 @@
             $(document).on('click','.view-list',function (e){
 
                 e.preventDefault();
-
+                $.session.set('listSearchKey', $('#search_field').val());
                 $('#search_field').val('');
             });
 
@@ -601,7 +601,12 @@
                         }
 
                         if(class_name == 'view-list' || list_id > 0 || is_list_uri != null) {
+                            alert(list_keyword);
+                            if(list_keyword == '' || list_keyword == 'undefined'){
 
+                                list_keyword = $.session.get('search_key');
+                            }
+                            alert(list_keyword);
                             getListBackButton(list_keyword, list_id);
                             window.history.pushState(null, "Fluid", '/clinics/inventory/list/' + list_id);
 
@@ -616,7 +621,12 @@
                         }
 
                         isLoading(false);
-                        $.session.set('search_key', keyword);
+
+                        if(keyword != '' || keyword != 'undefined'){
+
+                            $.session.set('search_key', keyword);
+                        }
+
 
                         let popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
                         let popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
@@ -1773,11 +1783,11 @@
                         permissions: '{{ permissions|json_encode }}'
                     },
                     dataType: 'json',
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
-                        }
-                    },
+                    {#complete: function(e, xhr, settings){#}
+                    {#    if(e.status === 500){#}
+                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                    {#    }#}
+                    {#},#}
                     success: function (response) {
 
                         $('#basket_container').empty().append(response);
@@ -1984,9 +1994,12 @@
             });
             $(document).on('change', '.order-qty-delivered', function (){
 
+                let uri = window.location.pathname;
+                let pieces = uri.split("/");
+
                 let item_id = $(this).data('qty-delivered-id');
-                let order_id = '{{ app.request.get('order_id') }}'
-                let distributor_id = '{{ app.request.get('distributor_id') }}'
+                let order_id = pieces[3]
+                let distributor_id = pieces[4]
                 let qty = $(this).val();
 
                 if(qty == '' || qty == 'undefined'){

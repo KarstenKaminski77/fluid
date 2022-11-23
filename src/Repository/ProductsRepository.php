@@ -41,6 +41,30 @@ class ProductsRepository extends ServiceEntityRepository
     /**
      * @return Products[] Returns an array of Products objects
      */
+    public function findBySearchAvailable($keyword)
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p','dp','d','c','pm','pi')
+            ->join('p.distributorProducts', 'dp')
+            ->join('dp.distributor', 'd')
+            ->join('p.productsSpecies', 'ps')
+            ->leftJoin('p.category', 'c')
+            ->leftJoin('p.productManufacturers', 'pm')
+            ->leftJoin('p.productFavourites', 'pf')
+            ->leftJoin('p.productImages', 'pi')
+            ->andWhere("MATCH_AGAINST(p.name,p.activeIngredient,p.description,p.slug) AGAINST(:search_term boolean) > 0")
+            ->setParameter('search_term', '*'.$keyword.'*')
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->andWhere("dp.itemId != ''")
+            ->getQuery()
+            ->getResult();
+            ;
+    }
+
+    /**
+     * @return Products[] Returns an array of Products objects
+     */
     public function findBySearchAdmin($keyword)
     {
         $queryBuilder = $this->createQueryBuilder('p')
