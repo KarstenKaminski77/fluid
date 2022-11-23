@@ -8,6 +8,7 @@ use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
 use App\Entity\Products;
 use Doctrine\ORM\EntityManagerInterface;
+use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,9 +19,11 @@ use Symfony\Component\Routing\Annotation\Route;
 class AvailabilityTrackerController extends AbstractController
 {
     private $em;
+    private $encryptor;
 
-    public function __construct(EntityManagerInterface $em) {
+    public function __construct(EntityManagerInterface $em, Encryptor $encryptor) {
         $this->em = $em;
+        $this->encryptor = $encryptor;
     }
 
     #[Route('/clinics/get-availability-tracker', name: 'get_availability_tracker')]
@@ -108,7 +111,7 @@ class AvailabilityTrackerController extends AbstractController
                             autocomplete="off"
                         >
                         <label class="btn btn-sm btn-outline-primary w-100 text-truncate" for="method_'. $i .'">
-                            '. $notification .'
+                            '. $this->encryptor->decrypt($notification) .'
                         </label>
                     </div>';
 
@@ -151,7 +154,7 @@ class AvailabilityTrackerController extends AbstractController
                 <div class="col-2">
                     <input type="checkbox" class="btn-check" name="distributor[]" value="'. $product->getDistributor()->getId() .'" id="btn_distributor_'. $i .'" autocomplete="off">
                     <label class="btn btn-sm btn-outline-primary w-100 text-truncate" for="btn_distributor_'. $i .'">
-                        '. $product->getDistributor()->getDistributorName() .'
+                        '. $this->encryptor->decrypt($product->getDistributor()->getDistributorName()) .'
                     </label>
                 </div>';
 
