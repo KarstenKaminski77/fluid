@@ -995,7 +995,7 @@ a.page-link {
 }
 
 .page-container {
-    min-height: calc(100vh - 146px);
+    min-height: calc(100vh - 140px);
 }
 
 .icon-unchecked {
