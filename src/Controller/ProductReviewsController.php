@@ -381,20 +381,41 @@ class ProductReviewsController extends AbstractController
                                 data-review-id="' . $review->getId() . '"
                             >
                                 <i class="fa-solid fa-thumbs-up review-icon me-2 ' . $likeIcon . '"></i> ' . count($likeCount) . '
-                            </button>
-                            <button 
-                                class="btn btn-sm btn-white btn-comment me-3" 
-                                data-review-id="' . $review->getId() . '"
-                                id="btn_comment_' . $review->getId() . '"
-                            >
-                                <i 
-                                    class="fa-solid fa-comment review-icon me-2 list-icon-unchecked"
-                                     id="comment_icon_' . $review->getId() . '"
-                                ></i> 
-                                <span class="list-icon-unchecked" id="comment_span_' . $review->getId() . '">
-                                    <span class="d-none d-sm-inline">View Comments </span>' . $commentCount . '
-                                </span>
-                            </button>
+                            </button>';
+
+                            if (count($productReviewComments) > 0) {
+
+                                $displayComment = false;
+
+                                foreach($productReviewComments as $comment)
+                                {
+                                    if($comment->getIsApproved() == 1)
+                                    {
+                                        $displayComment = true;
+                                        break;
+                                    }
+                                }
+
+                                if($displayComment) {
+
+                                    $response .= '
+                                    <button 
+                                        class="btn btn-sm btn-white btn-comment me-3" 
+                                        data-review-id="' . $review->getId() . '"
+                                        id="btn_comment_' . $review->getId() . '"
+                                    >
+                                        <i 
+                                            class="fa-solid fa-comment review-icon me-2 list-icon-unchecked"
+                                             id="comment_icon_' . $review->getId() . '"
+                                        ></i> 
+                                        <span class="list-icon-unchecked" id="comment_span_' . $review->getId() . '">
+                                            <span class="d-none d-sm-inline">View Comments </span>' . $commentCount . '
+                                        </span>
+                                    </button>';
+                                }
+                            }
+
+                            $response .= '
                             <button 
                                 class="btn btn-sm btn-white btn-leave-comment me-3" 
                                 data-review-id="' . $review->getId() . '"
@@ -419,28 +440,32 @@ class ProductReviewsController extends AbstractController
                                 <div class="row">
                                     <div class="col-12" id="review_comments_' . $review->getId() . '">';
 
+                                    // Comments
                                     if (count($productReviewComments) > 0) {
 
                                         foreach ($productReviewComments as $comment) {
 
-                                            $firstName = $this->encryptor->decrypt($comment->getClinicUser()->getFirstName());
-                                            $lastName = $this->encryptor->decrypt($comment->getClinicUser()->getLastName());
-                                            $position = $this->encryptor->decrypt($comment->getClinic()->getClinicUsers()[0]->getPosition());
+                                            if ($comment->getIsApproved() == 1) {
 
-                                            $response .= '
-                                                            <div class="row mt-4">
-                                                                <div class="col-12">
-                                                                    <b>' . $firstName . ' ' . $lastName . '</b> 
-                                                                    ' . $position . ' ' . $comment->getCreated()->format('dS M Y H:i') . '
-                                                                </div>
-                                                                <div class="col-12">
-                                                                    ' . $comment->getComment() . '
-                                                                </div>
-                                                            </div>';
+                                                $firstName = $this->encryptor->decrypt($comment->getClinicUser()->getFirstName());
+                                                $lastName = $this->encryptor->decrypt($comment->getClinicUser()->getLastName());
+                                                $position = $this->encryptor->decrypt($comment->getClinic()->getClinicUsers()[0]->getPosition());
+
+                                                $response .= '
+                                                <div class="row mt-4">
+                                                    <div class="col-12">
+                                                        <b>' . $firstName . ' ' . $lastName . '</b> 
+                                                        ' . $position . ' ' . $comment->getCreated()->format('dS M Y H:i') . '
+                                                    </div>
+                                                    <div class="col-12">
+                                                        ' . $comment->getComment() . '
+                                                    </div>
+                                                </div>';
+                                            }
                                         }
                                     }
 
-                    $response .= '
+                                    $response .= '
                                     </div>
                                 </div>
                             </div>
@@ -587,9 +612,34 @@ class ProductReviewsController extends AbstractController
             $reviewComment->setClinic($this->getUser()->getClinic());
             $reviewComment->setReview($review);
             $reviewComment->setComment($data->get('comment'));
+            $reviewComment->setIsApproved(0);
 
             $this->em->persist($reviewComment);
             $this->em->flush();
+
+            // Approval Email
+            $url = $this->getParameter('app.base_url') .'/admin/comment/'. $reviewComment->getId();
+            $body = '
+            <table style="border-collapse: collapse; padding: 10px; font-family: Arial; font-size: 14px; width: 700px;">
+                <tr>
+                    <td colspan="2">
+                        <p>Please <a href="'. $url .'">click here</a> to approve or reject the comment.</p>
+                    </td>
+                </tr>
+            </table>
+            <br>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html'  => $body,
+            ]);
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($this->getParameter('app.email_from'))
+                ->subject('Fluid - New Comment')
+                ->html($html->getContent());
+
+            $this->mailer->send($email);
         }
 
         $reviewComments = $this->em->getRepository(ProductReviewComments::class)->findBy([

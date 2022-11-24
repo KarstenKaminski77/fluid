@@ -9,11 +9,11 @@
 {% block content %}
     <div class="row border-bottom admin-header" style="left: 16.8%">
         <div class="col-12 col-sm-3 text-truncate mt-1 pt-3 pb-3 ps-4">
-            <h4 class="text-truncate m-0">Product Reviews</h4>
+            <h4 class="text-truncate m-0">Product Comments</h4>
         </div>
         <div class="col-12 col-sm-9 text-truncate mt-1 pt-3 pb-3 px-4">
             <div class="input-group">
-                <select name="review-status" id="review_status" class="form-control review-status">
+                <select name="comment-status" id="comment_status" class="form-control comment-status">
                     <option value="">Select a Status</option>
                     <option value="0">Awaiting Approval</option>
                     <option value="1">Approved</option>
@@ -27,7 +27,7 @@
             <div class="col-1 fw-bold ps-4 text-truncate">
                 #ID
             </div>
-            <div class="col-4 fw-bold text-truncate">
+            <div class="col-5 fw-bold text-truncate">
                 Product
             </div>
             <div class="col-2 fw-bold text-truncate">
@@ -36,51 +36,51 @@
             <div class="col-2 fw-bold text-truncate">
                 Modified
             </div>
-            <div class="col-2 fw-bold text-truncate">
+            <div class="col-1 fw-bold text-truncate">
                 Created
             </div>
             <div class="col-1 fw-bold text-truncate">
             </div>
         </div>
-        <div class="row" id="reviews">
-        {% if reviews|length > 0 %}
-            {% for review in reviews %}
+        <div class="row" id="comments">
+        {% if comments|length > 0 %}
+            {% for comment in comments %}
             <div class="col-12">
-                <div class="row py-3 border-bottom-dashed" id="row_{{ review.id }}">
+                <div class="row py-3 border-bottom-dashed" id="row_{{ comment.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
                 <div class="col-8 col-md-1 ps-4 text-truncate">
-                    #{{ review.id }}
+                    #{{ comment.id }}
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Product
                 </div>
-                <div class="col-8 col-md-4 text-truncate">
-                    {{ review.product.name }}
+                <div class="col-8 col-md-5 text-truncate">
+                    {{ comment.review.product.name }}
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Reviewed By
                 </div>
                 <div class="col-8 col-md-2 text-truncate">
-                    {{ nzo_decrypt(review.clinicUser.firstName) ~' '~ nzo_decrypt(review.clinicUser.lastName) }}
+                    {{ nzo_decrypt(comment.clinicUser.firstName) ~' '~ nzo_decrypt(comment.clinicUser.lastName) }}
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Modified
                 </div>
                 <div class="col-8 col-md-2 text-truncate">
-                    {{ review.modified|date('Y-m-d H:i:s') }}
+                    {{ comment.modified|date('Y-m-d H:i:s') }}
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Created
                 </div>
-                <div class="col-8 col-md-2 text-truncate">
-                    {{ review.created|date('Y-m-d') }}
+                <div class="col-8 col-md-1 text-truncate">
+                    {{ comment.created|date('Y-m-d') }}
                 </div>
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
-                        href="{{ path('reviews', {'reviewId':review.id} ) }}"
-                        class="float-end open-review-modal"
+                        href="{{ path('comments', {'commentId':comment.id} ) }}"
+                        class="float-end"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -117,12 +117,12 @@
 
         $(document).ready(function (){
 
-            $(document).on('change', '.review-status', function () {
+            $(document).on('change', '.comment-status', function () {
 
                 let statusId = $(this).val();
 
                 $.ajax({
-                    url: "{{ path('reviews_list', {'page_id':1}) }}",
+                    url: "{{ path('comments_list', {'page_id':1}) }}",
                     type: 'POST',
                     dataType: 'json',
                     data: {
@@ -135,7 +135,7 @@
                     },
                     success: function (response) {
 
-                        $('#reviews').empty().append(response);
+                        $('#comments').empty().append(response);
                         isLoading(false);
                     }
                 });

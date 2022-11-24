@@ -45,6 +45,15 @@ class ProductReviewCommentsRepository extends ServiceEntityRepository
         }
     }
 
+    public function adminFindByApproval($isApproved)
+    {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->andWhere('p.isApproved = :isApproved')
+            ->setParameter('isApproved', $isApproved)
+            ->orderBy('p.created', 'DESC');
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
     // /**
     //  * @return ProductReviewComments[] Returns an array of ProductReviewComments objects
     //  */

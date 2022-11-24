@@ -27,6 +27,7 @@ use App\Entity\Pages;
 use App\Entity\ProductForms;
 use App\Entity\ProductImages;
 use App\Entity\ProductManufacturers;
+use App\Entity\ProductReviewComments;
 use App\Entity\ProductReviews;
 use App\Entity\Products;
 use App\Entity\ProductsSpecies;
@@ -1242,6 +1243,25 @@ class AdminDashboardController extends AbstractController
             $review->setIsApproved($data->get('is-approved'));
 
             $this->em->persist($review);
+            $this->em->flush();
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/comment/crud', name: 'comment_crud')]
+    public function commentCrudAction(Request $request): Response
+    {
+        $data = $request->request;
+        $commentId = $data->get('comment-id') ?? 0;
+        $comment = $this->em->getRepository(ProductReviewComments::class)->find($commentId);
+        $response = [];
+
+        if(!empty($data)) {
+
+            $comment->setIsApproved($data->get('is-approved'));
+
+            $this->em->persist($comment);
             $this->em->flush();
         }
 
@@ -2930,44 +2950,117 @@ class AdminDashboardController extends AbstractController
             $firstName = $this->encryptor->decrypt($review->getClinicUser()->getFirstName());
             $lastName = $this->encryptor->decrypt($review->getClinicUser()->getLastName());
             $response .= '
-            <div class="row py-3 border-bottom-dashed" id="row_'. $review->getId() .'">
-                <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
-                    #ID
+            <div class="col-12">
+                <div class="row py-3 border-bottom-dashed" id="row_'. $review->getId() .'">
+                    <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                        #ID
+                    </div>
+                    <div class="col-8 col-md-1 ps-4 text-truncate">
+                        #'. $review->getId() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Product
+                    </div>
+                    <div class="col-8 col-md-4 text-truncate">
+                        '. $review->getProduct()->getName() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Reviewed By
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $firstName .' '. $lastName .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Modified
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $review->getModified()->format('Y-m-d vH:i:s') .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Created
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $review->getCreated()->format('Y-m-d') .'
+                    </div>
+                    <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                        <a
+                            href="'. $this->getParameter('app.base_url') . '/admin/review/'. $review->getId() .'"
+                            class="float-end open-review-modal"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="col-8 col-md-1 ps-4 text-truncate">
-                    #'. $review->getId() .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Product
-                </div>
-                <div class="col-8 col-md-4 text-truncate">
-                    '. $review->getProduct()->getName() .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Reviewed By
-                </div>
-                <div class="col-8 col-md-2 text-truncate">
-                    '. $firstName .' '. $lastName .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Modified
-                </div>
-                <div class="col-8 col-md-2 text-truncate">
-                    '. $review->getModified()->format('Y-m-d vH:i:s') .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Created
-                </div>
-                <div class="col-8 col-md-2 text-truncate">
-                    '. $review->getCreated()->format('Y-m-d') .'
-                </div>
-                <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
-                    <a
-                        href="'. $this->getParameter('app.base_url') . '/admin/review/'. $review->getId() .'"
-                        class="float-end open-review-modal"
-                    >
-                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
-                    </a>
+            </div>';
+        }
+
+        return new JsonResponse($response);
+
+    }
+
+    #[Route('/admin/comments/{page_id}', name: 'comments_list')]
+    public function CommentsList(Request $request): Response
+    {
+        $isApproved = $request->request->get('is-approved') ?? 0;
+        $comments = $this->em->getRepository(ProductReviewComments::class)->adminFindByApproval($isApproved);
+        $results = $this->page_manager->paginate($comments[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/comments/');
+        $isStatusChange = $request->request->get('is-status-change') ?? 0;
+        $response = '';
+
+        if($isStatusChange == 0)
+        {
+            return $this->render('Admin/comments_list.html.twig',[
+                'comments' => $results,
+                'pagination' => $pagination
+            ]);
+        }
+
+        foreach($results as $comment)
+        {
+            $firstName = $this->encryptor->decrypt($comment->getClinicUser()->getFirstName());
+            $lastName = $this->encryptor->decrypt($comment->getClinicUser()->getLastName());
+            $response .= '
+            <div class="col-12">
+                <div class="row py-3 border-bottom-dashed" id="row_'. $comment->getId() .'">
+                    <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                        #ID
+                    </div>
+                    <div class="col-8 col-md-1 ps-4 text-truncate">
+                        #'. $comment->getId() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Product
+                    </div>
+                    <div class="col-8 col-md-5 text-truncate">
+                        '. $comment->getReview()->getProduct()->getName() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Reviewed By
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $firstName .' '. $lastName .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Modified
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $comment->getModified()->format('Y-m-d vH:i:s') .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Created
+                    </div>
+                    <div class="col-8 col-md-1 text-truncate">
+                        '. $comment->getCreated()->format('Y-m-d') .'
+                    </div>
+                    <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                        <a
+                            href="'. $this->getParameter('app.base_url') . '/admin/comment/'. $comment->getId() .'"
+                            class="float-end open-review-modal"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                    </div>
                 </div>
             </div>';
         }
@@ -3927,6 +4020,22 @@ class AdminDashboardController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/comment/{commentId}', name: 'comments', requirements: ['commentId' => '\d+'])]
+    public function commentCrud(Request $request, $commentId = 0): Response
+    {
+        $commentId = $request->get('commentId') ?? 0;
+        $comment = $this->em->getRepository(ProductReviewComments::class)->find($commentId);
+
+        if($comment == null){
+
+            $comment = new ProductReviewComments();
+        }
+
+        return $this->render('Admin/comments.html.twig',[
+            'comment' => $comment,
+        ]);
+    }
+
     #[Route('/admin/active-ingredient/{ingredientId}', name: 'active_ingredients', requirements: ['ingredientId' => '\d+'])]
     public function activIngredientCrud(Request $request, $ingredientId = 0): Response
     {
@@ -4360,6 +4469,7 @@ class AdminDashboardController extends AbstractController
                     $tag = 'a';
                     $href = 'href="' . $this->generateUrl('products_list', ['page_id' => 1]) . '"';
                     $hrefReview = 'href="' . $this->generateUrl('reviews_list', ['page_id' => 1]) . '"';
+                    $hrefComment = 'href="' . $this->generateUrl('comments_list', ['page_id' => 1]) . '"';
                     $disabled = '';
                     $textPrimary = 'text-primary';
 
@@ -4368,6 +4478,7 @@ class AdminDashboardController extends AbstractController
                     $tag = 'span';
                     $href = '';
                     $hrefReview = '';
+                    $hrefComment = '';
                     $disabled = 'text-disabled admin-nav-disabled';
                     $textPrimary = '';
                 }
@@ -4384,41 +4495,63 @@ class AdminDashboardController extends AbstractController
                 </li>';
 
                 $response .= '
-                <li class="w-100 admin-nav ' . $disabled . '">
-                    <' . $tag . '
-                      ' . $hrefReview . '
-                       class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
+                <li class="w-100">
+                    <a
+                        href="#submenu2"
+                        data-bs-toggle="collapse"
+                        class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon my-2 text-truncate admin-nav py-2"
+                        aria-expanded="false"
                     >
-                        <i class="menu-icon fa-fw fa-regular fa-comment-question fa-fw"></i>
-                        <span class="ms-1 d-none d-sm-inline">Product Reviews</span>
-                    </' . $tag . '>
+                        <i class="fa-regular fa-cart-flatbed fa-fw"></i>
+                        <span class="ms-1 d-none d-sm-inline">Product Feedback</span>
+                    </a>
+                    <ul class="nav flex-column collapse" id="submenu2" data-bs-parent="#menu" style="">
+                        <li class="w-100 admin-nav ' . $disabled . '">
+                            <' . $tag . '
+                              ' . $hrefReview . '
+                               class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
+                            >
+                                <i class="menu-icon fa-fw fa-regular fa-comments fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">Product Reviews</span>
+                            </' . $tag . '>
+                        </li>
+                        <li class="w-100 admin-nav ' . $disabled . '">
+                            <' . $tag . '
+                              ' . $hrefComment . '
+                               class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
+                            >
+                                <i class="menu-icon fa-fw fa-regular fa-comments fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">Review Comments</span>
+                            </' . $tag . '>
+                        </li>
+                    </ul>
                 </li>';
 
-            if (in_array('ROLE_RESTRICTED_DOMAIN', $roles)) {
+                if (in_array('ROLE_RESTRICTED_DOMAIN', $roles)) {
 
-                $tag = 'a';
-                $href = 'href="' . $this->generateUrl('restricted_domains_list', ['page_id' => 1]) . '"';
-                $disabled = '';
-                $textPrimary = 'text-primary';
+                    $tag = 'a';
+                    $href = 'href="' . $this->generateUrl('restricted_domains_list', ['page_id' => 1]) . '"';
+                    $disabled = '';
+                    $textPrimary = 'text-primary';
 
-            } else {
+                } else {
 
-                $tag = 'span';
-                $href = '';
-                $disabled = 'text-disabled admin-nav-disabled';
-                $textPrimary = '';
-            }
+                    $tag = 'span';
+                    $href = '';
+                    $disabled = 'text-disabled admin-nav-disabled';
+                    $textPrimary = '';
+                }
 
-            $response .= '
-                <li class="w-100 admin-nav ' . $disabled . '">
-                    <' . $tag . '
-                      ' . $href . '
-                       class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
-                    >
-                        <i class="menu-icon fa-fw fa-regular fa-ban fa-fw"></i>
-                        <span class="ms-1 d-none d-sm-inline">Restricted Domains</span>
-                    </' . $tag . '>
-                </li>';
+                $response .= '
+                    <li class="w-100 admin-nav ' . $disabled . '">
+                        <' . $tag . '
+                          ' . $href . '
+                           class="px-0 align-middle nav-icon my-2 text-truncate ' . $textPrimary . '"
+                        >
+                            <i class="menu-icon fa-fw fa-regular fa-ban fa-fw"></i>
+                            <span class="ms-1 d-none d-sm-inline">Restricted Domains</span>
+                        </' . $tag . '>
+                    </li>';
 
                 if (in_array('ROLE_SPECIE', $roles)) {
 

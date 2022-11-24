@@ -42,15 +42,13 @@
 
         $(window).on('load', function(e){
 
-            let uri = '{{ app.request.requestUri }}';
+            let uri = window.location.pathname;
             let is_search = uri.match('/clinics/inventory');
             history.pushState(null, null, window.location.href);
             history.back();
             window.onpopstate = () => history.forward();
 
-            if(($.session.get('search_key') != '' || $.session.get('search_key') != 'udefined') && is_search != null){
-
-                //e.preventDefault();
+            if($.session.get('search_key') !== '' && $.session.get('search_key') !== 'undefined' && is_search != null){
 
                 let page_no = 1;
                 let keyword = $.session.get('search_key');
@@ -75,7 +73,8 @@
                                 "html": response.html,
                                 "pageTitle": 'Fluid'
                             }, "", '{{ app.request.baseUrl }}/clinics/inventory');
-                            //$.session.set('search_key', keyword);
+
+                            $.session.set('search_key', keyword);
 
                             $(response.productIds).each(function (index, value) {
 
@@ -110,7 +109,7 @@
 
         $(document).ready(function ()   {
 
-            let uri = '{{ app.request.requestUri }}';
+            let uri = window.location.pathname;
             let is_order_detail = uri.match('/clinics/order/[0-9]+');
             let is_basket = uri.match('/clinics/basket');
             let is_saved_baskets = uri.match('/clinics/saved/baskets');
@@ -448,8 +447,8 @@
 
             function getSearchResults(page_id, object, shipping_list = false, list_id = 0, searchArray = [], elementId = ''){
 
-                let keyword = '';
-                let list_keyword = '';
+                let keyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
+                let list_keyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
                 let keyword_field = false;
                 let page_no = page_id;
                 let class_name = '';
@@ -606,7 +605,7 @@
 
                                 list_keyword = $.session.get('search_key');
                             }
-                            
+
                             getListBackButton(list_keyword, list_id);
                             window.history.pushState(null, "Fluid", '/clinics/inventory/list/' + list_id);
 
@@ -964,11 +963,6 @@
             $(document).on('change', '.modal-basket-qty', function (){
 
                 basket_qty = $(this).val();
-            });
-            $(document).on('mouseout', '.modal-basket-qty', function (){
-
-                $(this).val(basket_qty);
-
             });
             $(document).on('click', '.remove-item', function (e){
 
@@ -2682,6 +2676,7 @@
 
                 e.preventDefault();
 
+                let uri = window.location.pathname;
                 let list_id = $(this).data("value");
                 let product_id = $(this).data("id");
                 let distributor_id = $('#list_distributor_id').val();
@@ -3721,6 +3716,10 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
+                        beforeSend: function () {
+
+                            isLoading(true);
+                        },
                         success: function (response) {
 
                             getFlash(response);
@@ -3756,6 +3755,7 @@
                                         success: function (response) {
                                             if(response != false) {
                                                 $('#reviews_'+ product_id).empty().append(response.response).show();
+                                                isLoading(false);
                                             }
                                         }
                                     });
@@ -3860,6 +3860,10 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
+                        beforeSend: function () {
+
+                            isLoading(true);
+                        } ,
                         success: function (response) {
 
                             $('#review_comments_'+ review_id).empty().append(response);
@@ -3879,6 +3883,7 @@
                                     $('#comment_'+ review_id).val('');
                                     $('#leave_comment_container_'+ review_id).slideUp(700);
                                     $('#comment_container_'+ review_id).slideDown(700);
+                                    isLoading(false);
                                 }
                             });
                         }

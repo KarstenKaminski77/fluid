@@ -47,6 +47,11 @@ class ProductReviewComments
      */
     private $created;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $isApproved;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -128,6 +133,18 @@ class ProductReviewComments
     public function setCreated(\DateTimeInterface $created): self
     {
         $this->created = $created;
+
+        return $this;
+    }
+
+    public function getIsApproved(): ?int
+    {
+        return $this->isApproved;
+    }
+
+    public function setIsApproved(int $isApproved): self
+    {
+        $this->isApproved = $isApproved;
 
         return $this;
     }
