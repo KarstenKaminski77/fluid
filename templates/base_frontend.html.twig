@@ -178,6 +178,12 @@
                             container.show(700);
                         }
                     });
+
+                    // Adjust margin for footer
+                    let footerHeight = $('footer').height();
+
+                    $('body').css({'margin-bottom':footerHeight});
+                    $('footer').css({'position'})
                 });
             </script>
         {% endblock %}
