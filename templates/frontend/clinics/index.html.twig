@@ -2384,6 +2384,23 @@
                 let distributorId = $(this).data('distributor-id');
                 let orderId = $(this).data('order-id');
 
+                sendMessage(message, distributorId, orderId);
+            });
+            $(document).on('keyup keypress', '#chat_field', function (e)
+            {
+                if (e.key === 'Enter' || e.keyCode === 13)
+                {
+                    e.preventDefault();
+                    
+                    let message = $('#chat_field').val();
+                    let distributorId = $(this).data('distributor-id');
+                    let orderId = $(this).data('order-id');
+
+                    sendMessage(message, distributorId, orderId);
+                }
+            });
+            function sendMessage(message, distributorId, orderId)
+            {
                 if(message.length > 0){
 
                     $.ajax({
@@ -2423,7 +2440,7 @@
                         }
                     });
                 }
-            });
+            }
             function getMessages(order_id, distributor_id, clinic_id){
 
                 let uri = window.location.pathname;
