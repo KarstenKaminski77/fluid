@@ -40,11 +40,14 @@
             <link rel="stylesheet" href="{{ asset('css/cookies.min.css') }}">
         {% endblock %}
     </head>
-    <body class="frontend-body-pt d-flex flex-column h-100">
-        {% block header %}{% endblock %}
-        {% block body %}{% endblock %}
-        {% block footer %}{% endblock %}
-
+    <body class="frontend-body-pt h-100">
+        <div class="page-container position-relative">
+            <div class="content-wrap">
+                {% block header %}{% endblock %}
+                {% block body %}{% endblock %}
+            </div>
+            {% block footer %}{% endblock %}
+        </div>
         {% block javascripts %}
             <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.umd.min.js"></script>
 
@@ -182,8 +185,8 @@
                     // Adjust margin for footer
                     let footerHeight = $('footer').height();
 
-                    $('body').css({'margin-bottom':footerHeight});
-                    $('footer').css({'position'})
+                    $('.content-wrap').css({'padding-bottom': footerHeight});
+                    $('footer').css({'position':'absolute','bottom':0,'width':'100%'})
                 });
             </script>
         {% endblock %}

@@ -994,6 +994,10 @@ a.page-link {
     font-size: 20px;
 }
 
+.page-container {
+    min-height: calc(100vh - 146px);
+}
+
 .icon-unchecked {
     color: #ccc;
 }
