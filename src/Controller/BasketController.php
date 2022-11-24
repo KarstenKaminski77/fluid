@@ -37,7 +37,7 @@ class BasketController extends AbstractController
     public function addToBasketAction(Request $request): Response
     {
         $distributorId = $request->get('distributor_id');
-
+        $basketId = $request->get('basket_id');
         $productId = $request->get('product_id');
         $qty = $request->get('qty');
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
@@ -47,20 +47,17 @@ class BasketController extends AbstractController
             'product' => $productId,
             'distributor' => $distributorId
         ]);
-        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
-            'clinic' => $this->getUser()->getClinic()->getId(),
-            'status' => 'active',
-            'isDefault' => 1,
-        ]);
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
         if($basket == null){
 
             $basket = new Baskets();
+
+            $basket->setName($request->get('basket_name'));
         }
 
         $basket->setClinic($clinic);
         $basket->setDistributor($distributor);
-        $basket->setName($request->get('basket_name'));
         $basket->setStatus($request->get('status'));
         $basket->setSavedBy($this->encryptor->encrypt($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName()));
 
@@ -1034,7 +1031,7 @@ class BasketController extends AbstractController
                                 }
 
                                 $response .= '
-                                <a href="#" id="return_to_search">
+                                <a href="#" id="return_to_search" data-basket-id="">
                                     <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Back To Search</span>
                                 </a>
                             </div>

@@ -535,6 +535,7 @@
                                 },
                                 success: function (response) {
 
+                                    $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
                                     $('#search_result_distributors_'+ productId).empty().append(response.html);
                                     $('.from_'+ productId).empty().append(response.from);
                                     popOver();
@@ -857,6 +858,7 @@
                         $('#back_btn').hide();
                         $('#inventory_container').hide();
                         $('#basket_container').empty().append(response).fadeIn(500);
+                        $('#return_to_search').attr('data-basket-id', $('#btn_basket').attr('data-basket-id'))
                         $("#basket_container").css({ overflow:"auto" }).addClass('col-container');
                         $('#saved_items_container').hide();
                         isLoading(false);
@@ -1424,11 +1426,13 @@
 
                 e.preventDefault();
 
-                let basket_id = $(this).attr('data-basket-id');
+                let basketId = $(this).attr('data-basket-id');
 
-                if(basket_id > 0) {
+                $('#btn_basket').attr('data-basket-id', basketId);
 
-                    getBasket(basket_id, true, '');
+                if(basketId > 0)
+                {
+                    getBasket(basketId, true, '');
                 }
             });
             $(document).on('click', '.distributor-clinic-connect', function (e) {
@@ -1472,6 +1476,7 @@
                 e.preventDefault();
 
                 $('#basket_container').empty().hide();
+                $('.basket-id').attr('data-basket-id', $('#btn_basket').attr('data-basket-id'));
                 $('#inventory_container').show();
             });
             {# End Back To Search #}

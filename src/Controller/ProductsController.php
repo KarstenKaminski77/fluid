@@ -1119,6 +1119,7 @@ class ProductsController extends AbstractController
                         <input type="hidden" name="price" value="' . number_format($unitPrice, 2) . '">
                         <input type="hidden" name="status" value="active">
                         <input type="hidden" name="basket_name" value="Fluid Commerce">
+                        <input type="hidden" name="basket_id" class="basket-id" value="0">
                         <div class="modal-body">
                             <div class="row">
                                 <div class="col-12 col-sm-5 text-center" id="basket_thumbnail text-center">
