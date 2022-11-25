@@ -148,127 +148,135 @@
                             {{ nzo_decrypt(clinic.clinicName) }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" id="account_menu" style="min-width: 250px">
-                            {% if 3 or 4 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
-                                {% set class = 'dropdown-item manage-lists' %}
-                                {% set id = 'analytics_link' %}
+                            {% if 3 in permissions and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
+                                {% set class = 'dropdown-item' %}
+                                {% set id = 'orders_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag}} class="dropdown-item orders_link" data-clinic-id="{{ clinic_id }}" id="orders_link">
+                                <{{ openingTag}} class="{{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
                                     <i class="fa-regular fa-file-invoice pe-2 fa-width"></i>
                                     Orders
-                                </{{ opening_tag }}>
+                                </{{ closingTag }}>
                             </li>
+                            {% if 4 in permissions  and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
+                                {% set class = 'dropdown-item manage-lists' %}
+                            {% else %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
+                                {% set class = 'text-disabled dropdown-item-disabled' %}
+                            {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag}} href="#" class="{{ class }}" data-keyword-string="" id="orders_link">
+                                <{{ openingTag}} href="#" class="{{ class }}" data-keyword-string="">
                                     <i class="fa-regular fa-cart-flatbed-boxes pe-2 fa-width"></i>
                                     Order Lists
-                                </{{ opening_tag }}>
+                                </{{ closingTag }}>
                             </li>
-                            {% if 7 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
+                            {% if 7 in permissions  and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
                                 {% set class = 'dropdown-item' %}
                                 {% set id = 'analytics_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-0 pb-1 pb-md-0">
-                                <{{ opening_tag}} href="#" class="dropdown-item analytics_link {{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
+                                <{{ openingTag}} href="#" class="dropdown-item analytics_link {{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
                                     <i class="fa-regular fa-chart-pie pe-2 fa-width"></i>
                                     Analytics
-                                </{{ closing_tag }}>
+                                </{{ closingTag }}>
                             </li>
 
                             {# Divider #}
                             <li class="py-0 px-3">
                                 <hr>
-                            </{{ closing_tag }}>
                             </li>
 
                             {# Company Information #}
                             {% if 10 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
                                 {% set class = 'dropdown-item' %}
                                 {% set id = 'account_settings_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
+                                <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
                                     <i class="fa-regular fa-screwdriver-wrench pe-2 fa-width"></i>
                                     Company Information
-                                </{{ closing_tag }}>
+                                </{{ closingTag }}>
                             </li>
 
                             {# Addresses #}
-                            {% if 12 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
+                            {% if 12 in permissions  and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
                                 {% set class = 'dropdown-item' %}
                                 {% set id = 'addresses_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
+                                <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
                                 <i class="fa-regular fa-address-book pe-2 fa-width"></i>
                                 Addresses
-                            </{{ closing_tag }}>
+                            </{{ closingTag }}>
                             </li>
 
                             {# Users #}
-                            {% if 6 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
+                            {% if 6 in permissions  and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
                                 {% set class = 'dropdown-item' %}
                                 {% set id = 'users_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag }} href="#" class="dropdown-item {{ class }}" id="{{ id }}">
+                                <{{ openingTag }} href="#" class="dropdown-item {{ class }}" id="{{ id }}">
                                     <i class="fa-regular fa-user-gear pe-2 fa-width"></i>
                                     Users
-                                </{{ closing_tag }}>
+                                </{{ closingTag }}>
                             </li>
 
                             {# Communication Methods #}
-                            {% if 13 in permissions %}
-                                {% set opening_tag = 'a href="#"' %}
-                                {% set closing_tag = 'a' %}
+                            {% if 13 in permissions  and clinic.isApproved == 1 %}
+                                {% set openingTag = 'a href="#"' %}
+                                {% set closingTag = 'a' %}
                                 {% set class = 'dropdown-item' %}
                                 {% set id = 'communication_methods_link' %}
                             {% else %}
-                                {% set opening_tag = 'span' %}
-                                {% set closing_tag = 'span' %}
+                                {% set openingTag = 'span' %}
+                                {% set closingTag = 'span' %}
                                 {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% set id = '' %}
                             {% endif %}
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                <{{ opening_tag }} href="#" class="{{ class }}" id="{{ id }}">
+                                <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
                                     <i class="fa-regular fa-microphone pe-2 fa-width"></i>
                                     Communication Methods
-                                </{{ closing_tag }}>
+                                </{{ closingTag }}>
                             </li>
                             <li class="pt-1 pb-1 pt-md-0 pb-md-0">
                                 <a href="{{ path('clinics_logout') }}" class="dropdown-item">

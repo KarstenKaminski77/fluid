@@ -1249,6 +1249,52 @@ class AdminDashboardController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/admin/clinics/approve', name: 'clinic_is_approved')]
+    public function isClinicApprovedAction(Request $request, MailerInterface $mailer): Response
+    {
+        $data = $request->request;
+        $clinicId = $data->get('clinic-id') ?? 0;
+        $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
+        $response = [];
+
+        if(!empty($data)) {
+
+            $clinic->setIsApproved($data->get('is-approved'));
+
+            $this->em->persist($clinic);
+            $this->em->flush();
+        }
+
+        if($data->get('is-approved'))
+        {
+            // Send Email
+            $body = '<table style="padding: 8px; border-collapse: collapse; border: none; font-family: arial">';
+            $body .= '<tr><td colspan="2">Hi ' . $this->encryptor->decrypt($clinic->getManagerFirstName()) . ',</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr><td colspan="2">Please your Fluid account has been approved.</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr>';
+            $body .= '    <td><b>URL: </b></td>';
+            $body .= '    <td><a href="https://' . $_SERVER['HTTP_HOST'] . '/clinics/login">https://' . $_SERVER['HTTP_HOST'] . '/clinics/login</a></td>';
+            $body .= '</tr>';;
+            $body .= '</table>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html' => $body,
+            ])->getContent();
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($this->encryptor->decrypt($clinic->getEmail()))
+                ->subject('Fluid Account Approval')
+                ->html($html);
+
+            $mailer->send($email);
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/admin/comment/crud', name: 'comment_crud')]
     public function commentCrudAction(Request $request): Response
     {
@@ -2852,14 +2898,105 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/clinics/{page_id}', name: 'clinics_list')]
     public function clinicsList(Request $request): Response
     {
-        $clinics = $this->em->getRepository(Clinics::class)->adminFindAll();
+        $isApproved = $request->request->get('is-approved') ?? 0;
+        $clinics = $this->em->getRepository(Clinics::class)->adminFindAll($isApproved);
         $results = $this->page_manager->paginate($clinics[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/clinics/');
+        $isStatusChange = $request->request->get('is-status-change') ?? 0;
+        $response = '';
 
-        return $this->render('Admin/clinics_list.html.twig',[
-            'clinics' => $results,
-            'pagination' => $pagination
-        ]);
+        if($isStatusChange == 0)
+        {
+            return $this->render('Admin/clinics_list.html.twig',[
+                'clinics' => $results,
+                'pagination' => $pagination
+            ]);
+        }
+
+        $i = 0;
+
+        foreach($results as $clinic)
+        {
+            $i++;
+            $status = '';
+            $border = 'border-bottom-dashed';
+
+            if($i == count($results))
+            {
+                $border = 'border-bottom';
+            }
+
+            if($clinic->getIsApproved() == 0)
+            {
+                $status = 'Awaiting Approval';
+            }
+            elseif($clinic->getIsApproved() == 1)
+            {
+                $status = 'Approved';
+            }
+            elseif($clinic->getIsApproved() == 2)
+            {
+                $status = 'Declined';
+            }
+
+            $response .= '
+            <div class="col-12">
+                <div class="row py-3 '. $border .'" id="row_'. $clinic->getId() .'">
+                    <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                        #ID
+                    </div>
+                    <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #'. $clinic->getId() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate"> 
+                        Clinic Name
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($clinic->getClinicName()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Email
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($clinic->getEmail()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Telephone
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($clinic->getTelephone()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Status
+                    </div>
+                    <div class="col-8 col-md-1 text-truncate">
+                        '. $status .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Modified
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $clinic->getModified()->format('Y-m-d H:i:s') .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Created
+                    </div>
+                    <div class="col-8 col-md-1 text-truncate">
+                        '. $clinic->getCreated()->format('Y-m-d') .'
+                    </div>
+                    <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
+                        <a
+                            href="'. $this->generateUrl('clinics', ['clinic_id' => $clinic->getId()]) .'"
+                            class="float-end open-user-modal"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>';
+        }
+
+        return new JsonResponse($response);
     }
 
     #[Route('/admin/distributors/{page_id}', name: 'distributors_list')]

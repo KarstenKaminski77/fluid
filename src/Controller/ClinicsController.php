@@ -38,11 +38,13 @@ class ClinicsController extends AbstractController
     private $em;
     private $plainPassword;
     private $encryptor;
+    private $mailer;
 
-    public function __construct(EntityManagerInterface $em, Encryptor $encryptor) {
+    public function __construct(EntityManagerInterface $em, Encryptor $encryptor, MailerInterface $mailer) {
 
         $this->em = $em;
         $this->encryptor = $encryptor;
+        $this->mailer = $mailer;
     }
 
     #[Route('/clinics/register', name: 'clinic_reg')]
@@ -115,6 +117,7 @@ class ClinicsController extends AbstractController
                 $clinics->setIntlCode($this->encryptor->encrypt($data->get('clinic-intl-code')));
                 $clinics->setIsoCode($this->encryptor->encrypt($data->get('clinic-iso-code')));
                 $clinics->setCountry($country);
+                $clinics->setIsApproved(0);
 
                 $this->em->persist($clinics);
                 $this->em->flush();
@@ -339,27 +342,78 @@ class ClinicsController extends AbstractController
     public function clinicsUpdateCompanyInformationAction(Request $request): Response
     {
         $data = $request->request->get('clinic_form');
-        $username = $this->get('security.token_storage')->getToken()->getUser()->getClinic()->getEmail();
-        $clinics = $this->em->getRepository(Clinics::class)->findOneBy(['email' => $username]);
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $clinics = $this->em->getRepository(Clinics::class)->find($clinicId);
+        $isApproved = (bool) $clinics->getIsApproved() ?? false;
+        $tradeLicense = $_FILES['clinic_form']['name']['trade-license-file'];
+        $tradeLicenseNo = $data['trade-license-no'];
+        $tradeLicenseExpDate = $data['trade-license-exp-date'];
 
-        if($clinics != null) {
+        // Account approval required if reg docs change
+        if(
+            !empty($tradeLicense) || $tradeLicenseNo != $clinics->getTradeLicenseNo() ||
+            $tradeLicenseExpDate != $clinics->getTradeLicenseExpDate()->format('Y-m-d')
+        )
+        {
+            $clinics->setIsApproved(0);
+            $isApproved = false;
+        }
 
+        if($clinics != null)
+        {
             $domainName = explode('@', $data['email']);
 
-            $clinics->setClinicName($this->encryptor->encrypt($data['clinicName']));
+            $clinics->setClinicName($this->encryptor->encrypt($data['clinic-name']));
             $clinics->setEmail($this->encryptor->encrypt($data['email']));
             $clinics->setDomainName(md5($domainName[1]));
             $clinics->setTelephone($this->encryptor->encrypt($data['telephone']));
-            $clinics->setIsoCode($this->encryptor->encrypt($data['iso_code']));
-            $clinics->setIntlCode($this->encryptor->encrypt($data['intl_code']));
+            $clinics->setIsoCode($this->encryptor->encrypt($data['iso-code']));
+            $clinics->setIntlCode($this->encryptor->encrypt($data['intl-code']));
+            $clinics->setManagerFirstName($this->encryptor->encrypt($data['manager-first-name']));
+            $clinics->setManagerLastName($this->encryptor->encrypt($data['manager-last-name']));
+            $clinics->setManagerIdNo($this->encryptor->encrypt($data['manager-id-no']));
+            $clinics->setManagerIdExpDate(new \DateTime($data['manager-id-exp-date']));
+            $clinics->setTradeLicenseNo($this->encryptor->encrypt($data['trade-license-no']));
+            $clinics->setTradeLicenseExpDate(new \DateTime($data['trade-license-exp-date']));
+
+            if(!empty($_FILES['clinic_form']['name']['trade-license-file']))
+            {
+                $extension = pathinfo($_FILES['clinic_form']['name']['trade-license-file'], PATHINFO_EXTENSION);
+                $file = $clinics->getId() . '-' . uniqid() . '.' . $extension;
+                $targetFile = __DIR__ . '/../../public/documents/' . $file;
+
+                if (move_uploaded_file($_FILES['clinic_form']['tmp_name']['trade-license-file'], $targetFile)) {
+
+                    $clinics->setTradeLicense($file);
+                }
+            }
 
             $this->em->persist($clinics);
             $this->em->flush();
 
+            // Send Approval Email
+            if(!$isApproved)
+            {
+                $orderUrl = $this->getParameter('app.base_url') . '/admin/clinic/'. $clinics->getId();
+                $html = '<p>Please <a href="'. $orderUrl .'">click here</a> the clinics details.</p><br>';
+
+                $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                    'html'  => $html,
+                ]);
+
+                $email = (new Email())
+                    ->from($this->getParameter('app.email_from'))
+                    ->addTo($this->getParameter('app.email_from'))
+                    ->subject('Fluid - Account Approval Request')
+                    ->html($html->getContent());
+
+                $this->mailer->send($email);
+            }
+
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Company details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
         }
 
@@ -396,6 +450,27 @@ class ClinicsController extends AbstractController
 
         $clinic = $this->getUser()->getClinic();
 
+        // Ensure trade license is uploaded
+        $tradeLicenseAsterisc = '';
+
+        if($clinic->getTradeLicense() == null)
+        {
+            $tradeLicenseAsterisc = ' <span class="text-danger">*</span>';
+        }
+
+        $managerIdExpDate = '';
+        $tradingLicenseExpDate = '';
+
+        if($clinic->getManagerIdExpDate() != null)
+        {
+            $managerIdExpDate = $clinic->getManagerIdExpDate()->format('Y-m-d');
+        }
+
+        if($clinic->getTradeLicenseExpDate() != null)
+        {
+            $tradingLicenseExpDate = $clinic->getTradeLicenseExpDate()->format('Y-m-d');
+        }
+
         $response = '
         <div class="row position-relative" id="account_settings">
             <div class="col-12 text-center pt-3 pb-3" id="order_header">
@@ -412,14 +487,14 @@ class ClinicsController extends AbstractController
                     <!-- Clinic name -->
                     <div class="col-12 col-sm-12 pt-3 pt-sm-0">
                         <label>
-                            Clinic Name
+                            Business Name <span class="text-danger">*</span>
                         </label>
                         <input 
                             type="text" 
-                            name="clinic_form[clinicName]" 
+                            name="clinic_form[clinic-name]" 
                             id="clinic_name" 
                             class="form-control" 
-                            placeholder="Clinic Name*"
+                            placeholder="Business Name"
                             value="'. $this->encryptor->decrypt($clinic->getClinicName()) .'"
                         >
                         <div class="hidden_msg" id="error_first_name">
@@ -433,14 +508,14 @@ class ClinicsController extends AbstractController
                     <!-- Email -->
                     <div class="col-12 col-sm-6 pt-3 pt-sm-0">
                         <label>
-                            Clinic Email Address
+                            Business Email Address <span class="text-danger">*</span>
                         </label>
                         <input 
                             type="text" 
                             name="clinic_form[email]" 
                             id="clinic_email" 
                             class="form-control" 
-                            placeholder="Clinic Email*"
+                            placeholder="Business Email Address"
                             value="'. $this->encryptor->decrypt($clinic->getEmail()) .'"
                         >
                         <div class="hidden_msg" id="error_clinic_email">
@@ -450,10 +525,10 @@ class ClinicsController extends AbstractController
         
                     <!-- Telephone -->
                     <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>Enter Your Telephone*</label>
+                        <label>Business Telephone  <span class="text-danger">*</span></label>
                         <input 
                             type="hidden"
-                            name="isocode" 
+                            name="iso-code" 
                             id="isocode" 
                             value="'. $this->encryptor->decrypt($clinic->getIsoCode()) .'"
                         >
@@ -473,6 +548,142 @@ class ClinicsController extends AbstractController
                             value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
                         >
                         <div class="hidden_msg" id="error_telephone">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Manager Name -->
+                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+        
+                    <!-- First Name -->
+                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                        <label>
+                            Managers First Name <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="clinic_form[manager-first-name]" 
+                            id="manager_first_name" 
+                            class="form-control" 
+                            placeholder="Managers First Name"
+                            value="'. $this->encryptor->decrypt($clinic->getManagerFirstName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_manager_first_name">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- Last Name -->
+                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                        <label>
+                            Managers Last Name <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="clinic_form[manager-last-name]" 
+                            id="manager_last_name" 
+                            class="form-control" 
+                            placeholder="Managers Last Name"
+                            value="'. $this->encryptor->decrypt($clinic->getManagerLastName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_manager_last_name">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Manager ID -->
+                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+        
+                    <!-- ID No -->
+                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                        <label>
+                            Managers Emirates ID No. <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="clinic_form[manager-id-no]" 
+                            id="manager_id_no" 
+                            class="form-control" 
+                            placeholder="Managers Emirates ID Number"
+                            value="'. $this->encryptor->decrypt($clinic->getManagerIdNo()) .'"
+                        >
+                        <div class="hidden_msg" id="error_manager_id_no">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- ID Expiry Date -->
+                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                        <label>
+                            Managers ID Exp. Date <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="date" 
+                            name="clinic_form[manager-id-exp-date]" 
+                            id="manager_id_exp_date" 
+                            class="form-control" 
+                            placeholder="Managers ID Expiry Date"
+                            value="'. $managerIdExpDate .'"
+                        >
+                        <div class="hidden_msg" id="error_manager_id_exp_date">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Trading License -->
+                <div class="row pt-0 pt-sm-3 border-left border-right bg-light pb-0 pb-sm-5">
+        
+                    <!-- Upload License -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>
+                            Trade License '. $tradeLicenseAsterisc .'
+                        </label>
+                        <input 
+                            type="file" 
+                            name="clinic_form[trade-license-file]" 
+                            id="trade_license_file" 
+                            class="form-control"
+                        >
+                        <div class="hidden_msg" id="error_trade_license_file">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- License No -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>
+                            Trade License No. <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="clinic_form[trade-license-no]" 
+                            id="trade_license_no" 
+                            class="form-control" 
+                            placeholder="Trade License Number"
+                            value="'. $this->encryptor->decrypt($clinic->getTradeLicenseNo()) .'"
+                        >
+                        <div class="hidden_msg" id="error_trade_license_no">
+                            Required Field
+                        </div>
+                    </div>
+                    
+                    <!-- License Exp Date -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>
+                            Expiry Date <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="date" 
+                            name="clinic_form[trade-license-exp-date]" 
+                            id="trade_license_exp_date" 
+                            class="form-control" 
+                            placeholder="Trade License Expiry Date"
+                            value="'. $tradingLicenseExpDate .'"
+                        >
+                        <div class="hidden_msg" id="error_trade_license_exp_date">
                             Required Field
                         </div>
                     </div>

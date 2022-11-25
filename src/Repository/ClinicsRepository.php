@@ -79,10 +79,11 @@ class ClinicsRepository extends ServiceEntityRepository
         return $queryBuilder->getQuery()->getResult();
     }
 
-    public function adminFindAll()
+    public function adminFindAll($isApproved)
     {
         $queryBuilder = $this->createQueryBuilder('c')
-            ->select('c')
+            ->andWhere('c.isApproved = :isApproved')
+            ->setParameter('isApproved', $isApproved)
             ->orderBy('c.clinicName', 'ASC');
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }

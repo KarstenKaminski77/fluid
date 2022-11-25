@@ -111,6 +111,7 @@
 
             let uri = window.location.pathname;
             let is_order_detail = uri.match('/clinics/order/[0-9]+');
+            let is_order_list = uri.match('/clinics/orders/[0-9]+');
             let is_basket = uri.match('/clinics/basket');
             let is_saved_baskets = uri.match('/clinics/saved/baskets');
             let is_account_settings = uri.match('/clinics/account');
@@ -150,6 +151,12 @@
                     $("div.spanner").removeClass("show");
                     $("div.overlay").removeClass("show");
                 }
+            }
+
+            {# Redirect to company info if not approved #}
+            if(is_order_list != null)
+            {
+                window.location.href = '{{ app.request.schemeAndHttpHost }}/clinics/account';
             }
 
             {# Get correct content on refresh #}
@@ -4081,11 +4088,11 @@
 
                         isLoading(true)
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
-                        }
-                    },
+                    {#complete: function(e, xhr, settings){#}
+                    {#    if(e.status === 500){#}
+                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
+                    {#    }#}
+                    {#},#}
                     success: function (response) {
 
                         getBackButton();
@@ -4140,45 +4147,113 @@
 
                 e.preventDefault();
 
-                let is_valid = true;
-                let clinic_name = $('#clinic_name').val()
-                let clinic_email = $('#clinic_email').val();
-                let clinic_telephone = $('#clinic_telephone').val();
-                let error_clinic_name = $('#error_clinic_name');
-                let error_clinic_email = $('#error_clinic_email');
-                let error_clinic_telephone = $('#error_clinic_telephone');
+                let isValid = true;
+                let clinicName = $('#clinic_name').val()
+                let clinicEmail = $('#clinic_email').val();
+                let clinicTelephone = $('#clinic_telephone').val();
+                let managerFirstName = $('#manager_first_name').val();
+                let managerLastName = $('#manager_last_name').val();
+                let managerIdNo = $('#manager_id_no').val();
+                let managerIdExpDate = $('#manager_id_exp_date').val();
+                let tradeLicenseFile = $('#trade_license_file').val();
+                let tradeLicenseNo = $('#trade_license_no').val();
+                let tradeLicenseExpDate = $('#trade_license_exp_date').val();
+                let errorClinicName = $('#error_clinic_name');
+                let errorClinicEmail = $('#error_clinic_email');
+                let errorClinicTelephone = $('#error_clinic_telephone');
+                let errorManagerFirstName = $('#error_manager_first_name');
+                let errorManagerLastName = $('#error_manager_last_name');
+                let errorManagerIdNo = $('#error_manager_id_no');
+                let errorManagerIdExpDate = $('#error_manager_id_exp_date');
+                let errorTradeLicenseFile = $('#error_trade_license_file');
+                let errorTradeLicenseNo = $('#error_trade_license_no');
+                let errorTradeLicenseExpDate = $('#error_trade_license_exp_date');
+                let isTradeLicense = '{{ clinic.tradeLicense }}' ? '{{ clinic.tradeLicense }}' : false;
 
-                error_clinic_name.hide();
-                error_clinic_email.hide();
-                error_clinic_telephone.hide();
+                errorClinicName.hide();
+                errorClinicEmail.hide();
+                errorClinicTelephone.hide();
+                errorManagerFirstName.hide();
+                errorManagerLastName.hide();
+                errorManagerIdNo.hide();
+                errorManagerIdExpDate.hide();
+                errorTradeLicenseNo.hide();
+                errorTradeLicenseExpDate.hide();
 
-                if(clinic_name == '' || clinic_name == 'undefined'){
-
-                    error_clinic_name.show();
-                    is_valid = false;
+                if(isTradeLicense)
+                {
+                    errorTradeLicenseFile.hide();
                 }
 
-                if(clinic_email == '' || clinic_email == 'undefined'){
-
-                    error_clinic_email.show();
-                    is_valid = false;
+                if(clinicName == '' || clinicName == 'undefined')
+                {
+                    errorClinicName.show();
+                    isValid = false;
                 }
 
-                if(clinic_telephone == '' || clinic_telephone == 'undefined'){
-
-                    error_clinic_telephone.show();
-                    is_valid = false;
+                if(clinicEmail == '' || clinicEmail == 'undefined')
+                {
+                    errorClinicEmail.show();
+                    isValid = false;
                 }
 
-                if(is_valid == true){
+                if(clinicTelephone == '' || clinicTelephone == 'undefined')
+                {
+                    errorClinicTelephone.show();
+                    isValid = false;
+                }
 
+                if(managerFirstName == '' || managerFirstName == 'undefined')
+                {
+                    errorManagerFirstName.show();
+                    isValid = false;
+                }
+
+                if(managerLastName == '' || managerLastName == 'undefined')
+                {
+                    errorManagerLastName.show();
+                    isValid = false;
+                }
+
+                if(managerIdNo == '' || managerIdNo == 'undefined')
+                {
+                    errorManagerIdNo.show();
+                    isValid = false;
+                }
+
+                if(managerIdExpDate == '' || managerIdExpDate == 'undefined')
+                {
+                    errorManagerIdExpDate.show();
+                    isValid = false;
+                }
+
+                if((tradeLicenseFile == '' || tradeLicenseFile == 'undefined') && !isTradeLicense)
+                {
+                    errorTradeLicenseFile.show();
+                    isValid = false;
+                }
+
+                if(tradeLicenseNo == '' || tradeLicenseNo == 'undefined')
+                {
+                    errorTradeLicenseNo.show();
+                    isValid = false;
+                }
+
+                if(tradeLicenseExpDate == '' || tradeLicenseExpDate == 'undefined')
+                {
+                    errorTradeLicenseExpDate.show();
+                    isValid = false;
+                }
+
+                if(isValid == true)
+                {
                     let iso = iti.getSelectedCountryData().iso2;
-                    let intl_code = iti.getSelectedCountryData().dialCode
+                    let intlCode = iti.getSelectedCountryData().dialCode
 
-                    $('<input />').attr('type', 'hidden').attr('name', 'clinic_form[iso_code]')
+                    $('<input />').attr('type', 'hidden').attr('name', 'clinic_form[iso-code]')
                         .attr('value', iso).appendTo('#form_clinic_information');
-                    $('<input />').attr('type', 'hidden').attr('name', 'clinic_form[intl_code]')
-                        .attr('value', intl_code).appendTo('#form_clinic_information');
+                    $('<input />').attr('type', 'hidden').attr('name', 'clinic_form[intl-code]')
+                        .attr('value', intlCode).appendTo('#form_clinic_information');
 
                     let data = new FormData(this);
 
@@ -4192,12 +4267,12 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        beforeSend: function () {
-
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        success: function (response) {
-
+                        success: function (response)
+                        {
                             getFlash(response);
                             isLoading(false);
                         }
@@ -5650,6 +5725,7 @@
 
                 if(displayValue == 'block'){
 
+                    isLoading(true);
                     container.hide(700);
 
                 }

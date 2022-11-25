@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Clinics;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Security\AuthorizationChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -11,6 +13,13 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
+    private $em;
+
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
+
     /**
      * @Route("/distributors/login", name="distributor_login")
      */
@@ -48,16 +57,13 @@ class SecurityController extends AbstractController
      */
     public function clinicLogin(AuthenticationUtils $authenticationUtils, Request $request, AuthorizationChecker $checker): Response
     {
-        if (true === $checker->isGranted('ROLE_CLINIC')) {
+        if (true === $checker->isGranted('ROLE_CLINIC'))
+        {
+            $clinicId = $this->getUser()->getClinic()->getId();
 
-            $clinic_id = $this->getUser()->getClinic()->getId();
-
-            header('Location: '. $this->getParameter('app.base_url') . '/clinics/orders/' . $clinic_id);
-//            $this->redirectToRoute('clinic_orders_list',[
-//                'clinic_id' => $clinic_id
-//            ]);
-
-            die();
+            return $this->redirectToRoute('clinic_orders_list',[
+                'clinic_id' => $clinicId
+            ]);
         }
 
         $uri = explode('/', $request->getPathInfo());

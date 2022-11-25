@@ -159,6 +159,46 @@ class Clinics
      */
     private $domainName;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $isApproved;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $managerFirstName;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $managerLastName;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tradeLicense;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tradeLicenseNo;
+
+    /**
+     * @ORM\Column(type="date", nullable=true)
+     */
+    private $tradeLicenseExpDate;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $managerIdNo;
+
+    /**
+     * @ORM\Column(type="date", nullable=true)
+     */
+    private $managerIdExpDate;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -817,6 +857,102 @@ class Clinics
     public function setDomainName(?string $domainName): self
     {
         $this->domainName = $domainName;
+
+        return $this;
+    }
+
+    public function getIsApproved(): ?int
+    {
+        return $this->isApproved;
+    }
+
+    public function setIsApproved(?int $isApproved): self
+    {
+        $this->isApproved = $isApproved;
+
+        return $this;
+    }
+
+    public function getManagerFirstName(): ?string
+    {
+        return $this->managerFirstName;
+    }
+
+    public function setManagerFirstName(?string $managerFirstName): self
+    {
+        $this->managerFirstName = $managerFirstName;
+
+        return $this;
+    }
+
+    public function getManagerLastName(): ?string
+    {
+        return $this->managerLastName;
+    }
+
+    public function setManagerLastName(?string $managerLastName): self
+    {
+        $this->managerLastName = $managerLastName;
+
+        return $this;
+    }
+
+    public function getTradeLicense(): ?string
+    {
+        return $this->tradeLicense;
+    }
+
+    public function setTradeLicense(?string $tradeLicense): self
+    {
+        $this->tradeLicense = $tradeLicense;
+
+        return $this;
+    }
+
+    public function getTradeLicenseNo(): ?string
+    {
+        return $this->tradeLicenseNo;
+    }
+
+    public function setTradeLicenseNo(?string $tradeLicenseNo): self
+    {
+        $this->tradeLicenseNo = $tradeLicenseNo;
+
+        return $this;
+    }
+
+    public function getTradeLicenseExpDate(): ?\DateTimeInterface
+    {
+        return $this->tradeLicenseExpDate;
+    }
+
+    public function setTradeLicenseExpDate(?\DateTimeInterface $tradeLicenseExpDate): self
+    {
+        $this->tradeLicenseExpDate = $tradeLicenseExpDate;
+
+        return $this;
+    }
+
+    public function getManagerIdNo(): ?string
+    {
+        return $this->managerIdNo;
+    }
+
+    public function setManagerIdNo(?string $managerIdNo): self
+    {
+        $this->managerIdNo = $managerIdNo;
+
+        return $this;
+    }
+
+    public function getManagerIdExpDate(): ?\DateTimeInterface
+    {
+        return $this->managerIdExpDate;
+    }
+
+    public function setManagerIdExpDate(?\DateTimeInterface $managerIdExpDate): self
+    {
+        $this->managerIdExpDate = $managerIdExpDate;
 
         return $this;
     }
