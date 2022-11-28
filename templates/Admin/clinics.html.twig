@@ -190,42 +190,46 @@
             </div>
 
             {# Trade License #}
-            <div class="row mt-4">
+            {% if clinic.tradeLicense is not null %}
+                <div class="row mt-4">
 
-                {# Trade License #}
-                <div class="col-12 col-md-4">
-                    <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
-                    <div
-                        class="form-control bg-disabled"
-                        id="trade_license_file"
-                        disabled=""
-                    >
-                        {{ clinic.tradeLicense }}
+                    {# Trade License #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <a href="{{ path('clinic_download_trade_license', {'trade-license':clinic.tradeLicense }) }}">
+                        <div
+                            class="form-control bg-disabled"
+                            id="trade_license_file"
+                            disabled=""
+                        >
+                            {{ clinic.tradeLicense }}
+                        </div>
+                        </a>
+                    </div>
+
+                    {# Trade License Number #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <div
+                            class="form-control bg-disabled"
+                            id="trade_license_file"
+                        >
+                            {{ nzo_decrypt(clinic.tradeLicenseNo) }}
+                        </div>
+                    </div>
+
+                    {# Trade License Expiry Date #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <div
+                            class="form-control bg-disabled"
+                            id="trade_license_file"
+                        >
+                            {{ clinic.tradeLicenseExpDate|date('Y-m-d') }}
+                        </div>
                     </div>
                 </div>
-
-                {# Trade License Number #}
-                <div class="col-12 col-md-4">
-                    <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
-                    <div
-                        class="form-control bg-disabled"
-                        id="trade_license_file"
-                    >
-                        {{ nzo_decrypt(clinic.tradeLicenseNo) }}
-                    </div>
-                </div>
-
-                {# Trade License Expiry Date #}
-                <div class="col-12 col-md-4">
-                    <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
-                    <div
-                        class="form-control bg-disabled"
-                        id="trade_license_file"
-                    >
-                        {{ clinic.tradeLicenseExpDate|date('Y-m-d') }}
-                    </div>
-                </div>
-            </div>
+            {% endif %}
 
             {# Clinic Users #}
             <div class="row mt-4">

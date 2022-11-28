@@ -4088,11 +4088,11 @@
 
                         isLoading(true)
                     },
-                    {#complete: function(e, xhr, settings){#}
-                    {#    if(e.status === 500){#}
-                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
-                    {#    }#}
-                    {#},#}
+                    complete: function(e, xhr, settings){
+                        if(e.status === 500){
+                            window.location.href = '{{ path('clinic_error_500') }}';
+                        }
+                    },
                     success: function (response) {
 
                         getBackButton();
@@ -4275,8 +4275,39 @@
                         {
                             getFlash(response);
                             isLoading(false);
+
+                            if(tradeLicenseFile != '')
+                            {
+                                location.reload(true);
+                            }
                         }
                     });
+                }
+            });
+            $(document).on('change', '#trade_license_file', function() {
+
+                let fp = $("#trade_license_file");
+                let lg = fp[0].files.length; // get length
+                let items = fp[0].files;
+                let errorTradeLicense = $('#error_trade_license_file');
+                let fileName = '';
+                let fileSize = '';
+                let fileType = '';
+
+                errorTradeLicense.hide().append('Required Field');
+
+                if (lg > 0) {
+                    for (let i = 0; i < lg; i++) {
+                        fileName = items[i].name; // get file name
+                        fileSize = items[i].size; // get file size
+                        fileType = items[i].type; // get file type
+                    }
+                }
+
+                if(fileType != 'application/pdf')
+                {
+                    fp.val('');
+                    errorTradeLicense.empty().append('Please select a PDF document').show();
                 }
             });
             {# End Account & Settings #}

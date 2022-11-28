@@ -24,9 +24,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -382,7 +385,7 @@ class ClinicsController extends AbstractController
                 $file = $clinics->getId() . '-' . uniqid() . '.' . $extension;
                 $targetFile = __DIR__ . '/../../public/documents/' . $file;
 
-                if (move_uploaded_file($_FILES['clinic_form']['tmp_name']['trade-license-file'], $targetFile)) {
+                if(move_uploaded_file($_FILES['clinic_form']['tmp_name']['trade-license-file'], $targetFile)) {
 
                     $clinics->setTradeLicense($file);
                 }
@@ -414,7 +417,7 @@ class ClinicsController extends AbstractController
         }
         else
         {
-            $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $response = '<b><i class="fas fa-check-circle"></i> An error occurred.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
         }
 
         return new JsonResponse($response);
@@ -452,10 +455,18 @@ class ClinicsController extends AbstractController
 
         // Ensure trade license is uploaded
         $tradeLicenseAsterisc = '';
-
-        if($clinic->getTradeLicense() == null)
+        if($clinic->getTradeLicense() != null) {
+            $btnDownload = '
+            <a href="' . $this->generateUrl('clinic_download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
+                <span class="input-group-text">
+                    <i class="fa-regular fa-download"></i>
+                </span>
+            </a>';
+        }
+        else
         {
             $tradeLicenseAsterisc = ' <span class="text-danger">*</span>';
+            $btnDownload = '';
         }
 
         $managerIdExpDate = '';
@@ -641,12 +652,15 @@ class ClinicsController extends AbstractController
                         <label>
                             Trade License '. $tradeLicenseAsterisc .'
                         </label>
-                        <input 
-                            type="file" 
-                            name="clinic_form[trade-license-file]" 
-                            id="trade_license_file" 
-                            class="form-control"
-                        >
+                        <div class="input-group">
+                            <input 
+                                type="file" 
+                                name="clinic_form[trade-license-file]" 
+                                id="trade_license_file" 
+                                class="form-control"
+                            >
+                            '. $btnDownload .'
+                        </div>
                         <div class="hidden_msg" id="error_trade_license_file">
                             Required Field
                         </div>
@@ -814,6 +828,21 @@ class ClinicsController extends AbstractController
         }
 
         return new JsonResponse($html);
+    }
+
+    #[Route('/clinics/download-trade-license/{trade-license}', name: 'clinic_download_trade_license')]
+    public function clinicDownloadTradeLicenseAction(Request $request)
+    {
+        $path = __DIR__ . '/../../public/documents/';
+        $tradeLicense = $path . $request->get('trade-license');
+        $response = new BinaryFileResponse($tradeLicense);
+
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            basename($tradeLicense)
+        );
+
+        return $response;
     }
 
     #[Route('/clinics/error', name: 'clinic_error_500')]
