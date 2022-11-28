@@ -10,10 +10,19 @@
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
                         <li class="nav-item py-3 w-100">
-                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="customers_link">
+                            {% if distributor.isApproved == 1 %}
+                                {% set tag = 'a' %}
+                                {% set id = 'customers_link' %}
+                                {% set disabled = '' %}
+                            {% else %}
+                                {% set tag = 'span' %}
+                                {% set id = '' %}
+                                {% set disabled = 'text-disabled' %}
+                            {% endif %}
+                            <{{ tag }} href="#" class="align-middle px-0 text-primary nav-icon text-truncate {{ disabled }}" id="{{ id }}">
                                 <i class="fa-regular fa-users fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">Customers</span>
-                            </a>
+                            </{{ tag }}>
                         </li>
                         <li class="w-100">
                             <a
@@ -43,7 +52,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 15 in permissions %}
+                                    {% if 15 in permissions and distributor.isApproved == 1 %}
                                         <a href="#" class="align-middle text-primary nav-icon text-truncate" id="about_link">
                                             <i class="fa-regular fa-circle-question fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">About</span>
@@ -57,7 +66,7 @@
 
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 16 in permissions %}
+                                    {% if 16 in permissions and distributor.isApproved == 1 %}
                                         <a href="#" class="align-middle text-primary nav-icon text-truncate" id="operating_hours_link">
                                             <i class="fa-regular fa-clock fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Operating Hours</span>
@@ -70,7 +79,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 17 in permissions %}
+                                    {% if 17 in permissions and distributor.isApproved == 1 %}
                                         <a href="#" class="align-middle text-primary nav-icon text-truncate" id="refund_policy_link">
                                             <i class="fa-solid fa-rotate-left fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Refund Policy</span>
@@ -83,7 +92,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 18 in permissions %}
+                                    {% if 18 in permissions and distributor.isApproved == 1 %}
                                         <a href="#" class="align-middle text-primary nav-icon text-truncate" id="sales_tax_policy_link">
                                             <i class="fa-regular fa-scale-unbalanced fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Sale Tax Policy</span>
@@ -96,7 +105,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 19 in permissions %}
+                                    {% if 19 in permissions and distributor.isApproved == 1 %}
                                         <a href="#" class="align-middle text-primary nav-icon text-truncate" id="shipping_policy_link">
                                             <i class="fa-regular fa-truck-ramp-box fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Shipping Policy</span>
@@ -109,7 +118,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="w-100 mb-3">
-                                    {% if 6 in permissions %}
+                                    {% if 6 in permissions and distributor.isApproved == 1 %}
                                         <a class="align-middle text-primary nav-icon text-truncate" href="#" id="users_link">
                                             <i class="fa-regular fa-address-book fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Users</span>
@@ -124,7 +133,7 @@
                             </ul>
                         </li>
                         <li class="w-100">
-                            {% if 5 in permissions %}
+                            {% if 5 in permissions and distributor.isApproved == 1 %}
                                 <a
                                         href="#"
                                         class="px-0 align-middle text-primary nav-icon mb-3 text-truncate"
@@ -145,15 +154,24 @@
                             {% endif %}
                         </li>
                         <li class="w-100">
-                            <a
-                                href="#submenu2"
+                            {% if distributor.isApproved == 1 %}
+                                {% set tag = 'a' %}
+                                {% set href = '#submenu2' %}
+                                {% set disabled = '' %}
+                            {% else %}
+                                {% set tag = 'span' %}
+                                {% set href = '' %}
+                                {% set disabled = 'text-disabled' %}
+                            {% endif %}
+                            <{{ tag }}
+                                href="{{ href }}"
                                 data-bs-toggle="collapse"
-                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate"
+                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate {{ disabled }}"
                                 aria-expanded="false"
                             >
                                 <i class="fa-regular fa-cart-flatbed fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">Inventory</span>
-                            </a>
+                            </{{ tag }}>
                             {% if 20 in permissions %}
                                 <ul class="nav flex-column collapse" id="submenu2" data-bs-parent="#menu" style="">
                                     <li class="w-100 mb-3">
@@ -194,11 +212,13 @@
                             <label>
                                 Company Name
                             </label>
-                            {{ form_widget(form.distributorName,{id: 'distributor_name', 'attr': {
-                                'class': 'form-control',
-                                'placeholder': 'Distributor Name*',
-                                'value': nzo_decrypt(distributor.distributorName)
-                            }}) }}
+                            <input
+                                name="distributor_form[distributor-name]"
+                                id="distributor_name"
+                                class="form-control"
+                                placeholder="Distributor Name",
+                                value="{{ nzo_decrypt(distributor.distributorName) }}"
+                            />
                             <div class="hidden_msg" id="error_distributor_name">
                                 Required Field
                             </div>
@@ -211,11 +231,13 @@
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text" id="basic-addon1">https://</span>
-                                {{ form_widget(form.website,{id: 'website', 'attr': {
-                                    'class': 'form-control',
-                                    'placeholder': 'Website',
-                                    'value': nzo_decrypt(distributor.website)
-                                }}) }}
+                                <input
+                                    name="distributor_form[website]"
+                                    id="website"
+                                    class="form-control"
+                                    placeholder="Website",
+                                    value="{{ nzo_decrypt(distributor.website) }}"
+                                />
                             </div>
                         </div>
                     </div>
@@ -229,11 +251,13 @@
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text" id="basic-addon1">@</span>
-                                {{ form_widget(form.email,{id: 'email', 'attr': {
-                                    'class': 'form-control',
-                                    'placeholder': 'Email*',
-                                    'value': nzo_decrypt(distributor.email)
-                                }}) }}
+                                <input
+                                    name="distributor_form[email]"
+                                    id="email"
+                                    class="form-control"
+                                    placeholder="Business Email Address",
+                                    value="{{ nzo_decrypt(distributor.email) }}"
+                                />
                             </div>
                             <div class="hidden_msg" id="error_email">
                                 Required Field
@@ -246,18 +270,18 @@
                                 Telephone
                             </label>
                             <input
-                                    type="hidden"
-                                    name="distributor_form[telephone]"
-                                    value="{{ nzo_decrypt(distributor.telephone) }}"
-                                    id="telephone"
+                                type="hidden"
+                                name="distributor_form[telephone]"
+                                value="{{ nzo_decrypt(distributor.telephone) }}"
+                                id="telephone"
                             >
                             <input
-                                    type="text"
-                                    name="mobile"
-                                    placeholder="Telephone*"
-                                    value="{{ nzo_decrypt(distributor.telephone) }}"
-                                    id="mobile"
-                                    class="form-control"
+                                type="text"
+                                name="mobile"
+                                placeholder="Telephone*"
+                                value="{{ nzo_decrypt(distributor.telephone) }}"
+                                id="mobile"
+                                class="form-control"
                             >
                             <div class="hidden_msg" id="error_telephone">
                                 Required Field
@@ -268,23 +292,23 @@
                     <div class="row pb-3 bg-light border-left border-right">
 
                         {# Logo #}
-                        <div class="col-12 col-sm-6">
-                            <div class="row m-0">
-                                <div class="col-11 ps-0" id="logo_file">
-                                    <label>
-                                        Logo
-                                    </label>
-                                    {{ form_widget(form.logo,{id: 'logo', 'attr': {
-                                        'class': 'form-control',
-                                        'placeholder': 'Logo',
-                                        'value': distributor.logo
-                                    }}) }}
-                                </div>
-                                <div class="col-1 hidden ps-0 pe-0" id="logo_col">
+                        <div class="col-12 col-sm-6" id="logo_file">
+                            <label>
+                                Logo
+                            </label>
+                            <div class="input-group">
+                                {{ form_widget(form.logo,{id: 'logo', 'attr': {
+                                    'class': 'form-control',
+                                    'placeholder': 'Logo',
+                                    'value': distributor.logo
+                                }}) }}
+                                {% if distributor.logo is not null %}
+                                <span class="input-group-text">
                                     <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
-                                        <i class="fa-solid fa-image img-icon float-end"></i>
+                                        <i class="fa-regular fa-download"></i>
                                     </a>
-                                </div>
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -315,11 +339,13 @@
                             <label>
                                 Street Address
                             </label>
-                            {{ form_widget(form.addressStreet,{id: 'street_address', 'attr': {
-                                'class': 'form-control',
-                                'placeholder': 'Street Address',
-                                'value': nzo_decrypt(distributor.addressStreet)
-                            }}) }}
+                            <input
+                                name="distributor_form[address-street]"
+                                id="street_address"
+                                class="form-control"
+                                placeholder="Street Address",
+                                value="{{ nzo_decrypt(distributor.addressStreet) }}"
+                            />
                             <div class="hidden_msg" id="error_street_address">
                                 Required Field
                             </div>
@@ -330,29 +356,33 @@
                             <label>
                                 City
                             </label>
-                            {{ form_widget(form.addressCity,{id: 'city', 'attr': {
-                                'class': 'form-control',
-                                'placeholder': 'City',
-                                'value': nzo_decrypt(distributor.addressCity)
-                            }}) }}
+                            <input
+                                name="distributor_form[address-city]"
+                                id="city"
+                                class="form-control"
+                                placeholder="City",
+                                value="{{ nzo_decrypt(distributor.addressCity) }}"
+                            />
                             <div class="hidden_msg" id="error_city">
                                 Required Field
                             </div>
                         </div>
                     </div>
 
-                    <div class="row pb-3 pb-3 bg-light border-left border-right border-bottom">
+                    <div class="row pb-3 bg-light border-left border-right">
 
                         {# Postal Code #}
                         <div class="col-12 col-sm-6">
                             <label>
                                 Postal Code
                             </label>
-                            {{ form_widget(form.addressPostalCode,{id: 'postal_code', 'attr': {
-                                'class': 'form-control',
-                                'placeholder': 'Postal Code',
-                                'value': nzo_decrypt(distributor.addressPostalCode)
-                            }}) }}
+                            <input
+                                name="distributor_form[address-postal-code]"
+                                id="postal_code"
+                                class="form-control"
+                                placeholder="Postal Code",
+                                value="{{ nzo_decrypt(distributor.addressPostalCode) }}"
+                            />
                             <div class="hidden_msg" id="error_postal_code">
                                 Required Field
                             </div>
@@ -363,12 +393,161 @@
                             <label>
                                 State
                             </label>
-                            {{ form_widget(form.addressState,{id: 'state', 'attr': {
-                                'class': 'form-control',
-                                'placeholder': 'State',
-                                'value': nzo_decrypt(distributor.addressState)
-                            }}) }}
+                            <input
+                                name="distributor_form[address-state]"
+                                id="state"
+                                class="form-control"
+                                placeholder="State",
+                                value="{{ nzo_decrypt(distributor.addressState) }}"
+                            />
                             <div class="hidden_msg" id="error_state">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Manager Name #}
+                    <div class="row pb-3 bg-light border-left border-right">
+
+                        {# First Name #}
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers First Name <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="distributor_form[manager-first-name]"
+                                id="manager_first_name"
+                                class="form-control"
+                                placeholder="Managers First Name"
+                                value="{{ nzo_decrypt(distributor.managerFirstName) }}"
+                            >
+                            <div class="hidden_msg" id="error_manager_first_name">
+                                Required Field
+                            </div>
+                        </div>
+
+                        {# Last Name #}
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers Last Name <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="distributor_form[manager-last-name]"
+                                id="manager_last_name"
+                                class="form-control"
+                                placeholder="Managers Last Name"
+                                value="{{ nzo_decrypt(distributor.managerLastName) }}"
+                            >
+                            <div class="hidden_msg" id="error_manager_last_name">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Manager ID #}
+                    <div class="row pb-3 bg-light border-left border-right">
+
+                        {# ID No #}
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers Emirates ID No. <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="distributor_form[manager-id-no]"
+                                id="manager_id_no"
+                                class="form-control"
+                                placeholder="Managers Emirates ID Number"
+                                value="{{ nzo_decrypt(distributor.managerIdNo) }}"
+                            >
+                            <div class="hidden_msg" id="error_manager_id_no">
+                                Required Field
+                            </div>
+                        </div>
+
+                        {# ID Expiry Date #}
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers ID Exp. Date <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                name="distributor_form[manager-id-exp-date]"
+                                id="manager_id_exp_date"
+                                class="form-control"
+                                placeholder="Managers ID Expiry Date"
+                                value="{{ distributor.managerIdExpDate|date('Y-m-d') }}"
+                            >
+                            <div class="hidden_msg" id="error_manager_id_exp_date">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Trading License #}
+                    <div class="row pb-3 bg-light border-left border-right border-bottom">
+
+                        {# Upload License #}
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Trade License '. $tradeLicenseAsterisc .'
+                            </label>
+                            <div class="input-group">
+                                <input
+                                    type="file"
+                                    name="distributor_form[trade-license-file]"
+                                    id="trade_license_file"
+                                    class="form-control"
+                                >
+                                {% if distributor.tradeLicense is not null %}
+                                    <a href="{{ path('download_trade_license', {'trade-license':distributor.tradeLicense }) }}">
+                                        <span class="input-group-text">
+                                            <i class="fa-regular fa-download"></i>
+                                        </span>
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="hidden_msg" id="error_trade_license_file">
+                                Required Field
+                            </div>
+                        </div>
+
+                        {# License No #}
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Trade License No. <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="distributor_form[trade-license-no]"
+                                id="trade_license_no"
+                                class="form-control"
+                                placeholder="Trade License Number"
+                                value="{{
+                                    nzo_decrypt(distributor.tradeLicenseNo)
+                                }}"
+                            >
+                            <div class="hidden_msg" id="error_trade_license_no">
+                                Required Field
+                            </div>
+                        </div>
+
+                        {# License Exp Date #}
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Expiry Date <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                name="distributor_form[trade-license-exp-date]"
+                                id="trade_license_exp_date"
+                                class="form-control"
+                                placeholder="Trade License Expiry Date"
+                                value="{{ distributor.tradeLicenseExpDate|date('Y-m-d') }}"
+                            >
+                            <div class="hidden_msg" id="error_trade_license_exp_date">
                                 Required Field
                             </div>
                         </div>
@@ -1271,6 +1450,16 @@
     {{ parent() }}
 
     <script>
+
+        // Redirect to company info if not approved
+        let uri = window.location.pathname;
+        let isCompanyInfo = uri.match('/distributors/account');
+        let isApproved = '{{ distributor.isApproved|default(0) }}';
+
+        if(isApproved == 0 && isCompanyInfo == null)
+        {
+            window.location.href = '{{ app.request.schemeAndHttpHost }}/distributors/account';
+        }
 
         $(document).ready(function(){
 
@@ -2646,90 +2835,153 @@
 
                 e.preventDefault();
 
-                let is_valid = true;
-                let company_name = $('#distributor_name').val();
+                let isValid = true;
+                let companyName = $('#distributor_name').val();
                 let email = $('#email').val();
                 let telephone = $('#telephone').val();
                 let country = $('#country').val();
-                let street_address = $('#street_address').val();
+                let streetAddress = $('#street_address').val();
                 let city = $('#city').val();
-                let postal_code = $('#postal_code').val();
+                let postalCode = $('#postal_code').val();
                 let state = $('#state').val();
-                let error_company_name = $('#error_distributor_name');
-                let error_email = $('#error_email');
-                let error_telephone = $('#error_telephone');
-                let error_country = $('#error_country');
-                let error_street_address = $('#error_street_address');
-                let error_city = $('#error_city');
-                let error_postal_code = $('#error_postal_code');
-                let error_state = $('#error_state');
+                let managerFirstName = $('#manager_first_name').val();
+                let managerLastName = $('#manager_last_name').val();
+                let managerIdNo = $('#manager_id_no').val();
+                let managerIdExpDate = $('#manager_id_exp_date').val();
+                let tradeLicenseFile = $('#trade_license_file').val();
+                let tradeLicenseNo = $('#trade_license_no').val();
+                let tradeLicenseExpDate = $('#trade_license_exp_date').val();
+                let errorCompanyName = $('#error_distributor_name');
+                let errorEmail = $('#error_email');
+                let errorTelephone = $('#error_telephone');
+                let errorCountry = $('#error_country');
+                let errorStreetAddress = $('#error_street_address');
+                let errorCity = $('#error_city');
+                let errorPostalCode = $('#error_postal_code');
+                let errorState = $('#error_state');
+                let errorManagerFirstName = $('#error_manager_first_name');
+                let errorManagerLastName = $('#error_manager_last_name');
+                let errorManagerIdNo = $('#error_manager_id_no');
+                let errorManagerIdExpDate = $('#error_manager_id_exp_date');
+                let errorTradeLicenseFile = $('#error_trade_license_file');
+                let errorTradeLicenseNo = $('#error_trade_license_no');
+                let errorTradeLicenseExpDate = $('#error_trade_license_exp_date');
+                let isTradeLicense = '{{ distributor.tradeLicense }}' ? '{{ distributor.tradeLicense }}' : false;
 
-                error_company_name.hide();
-                error_email.hide();
-                error_telephone.hide();
-                error_country.hide();
-                error_street_address.hide();
-                error_city.hide();
-                error_postal_code.hide();
-                error_state.hide();
+                errorCompanyName.hide();
+                errorEmail.hide();
+                errorTelephone.hide();
+                errorCountry.hide();
+                errorStreetAddress.hide();
+                errorCity.hide();
+                errorPostalCode.hide();
+                errorState.hide();
+                errorManagerFirstName.hide();
+                errorManagerLastName.hide();
+                errorManagerIdNo.hide();
+                errorManagerIdExpDate.hide();
+                errorTradeLicenseNo.hide();
+                errorTradeLicenseExpDate.hide();
 
-                if(company_name == '' || company_name == 'undefined'){
+                if(companyName == '' || companyName == 'undefined'){
 
-                    error_company_name.show();
-                    is_valid = false;
+                    error_companyName.show();
+                    isValid = false;
                 }
 
                 if(email == '' || email == 'undefined'){
 
-                    error_email.show();
-                    is_valid = false;
+                    errorEmail.show();
+                    isValid = false;
                 }
 
                 if(telephone == '' || telephone == 'undefined'){
 
-                    error_telephone.show();
-                    is_valid = false;
+                    errorTelephone.show();
+                    isValid = false;
                 }
 
                 if(country == '' || country == 'undefined'){
 
-                    error_country.show();
-                    is_valid = false;
+                    errorCountry.show();
+                    isValid = false;
                 }
 
-                if(street_address == '' || street_address == 'undefined'){
+                if(streetAddress == '' || streetAddress == 'undefined'){
 
-                    error_street_address.show();
-                    is_valid = false;
+                    errorStreetAddress.show();
+                    isValid = false;
                 }
 
                 if(city == '' || city == 'undefined'){
 
                     error_city.show();
-                    is_valid = false;
+                    isValid = false;
                 }
 
-                if(postal_code == '' || postal_code == 'undefined'){
+                if(postalCode == '' || postalCode == 'undefined'){
 
-                    error_postal_code.show();
-                    is_valid = false;
+                    errorPostalCode.show();
+                    isValid = false;
                 }
 
                 if(state == '' || state == 'undefined'){
 
                     error_state.show();
-                    is_valid = false;
+                    isValid = false;
                 }
 
-                if(is_valid == true){
+                if(managerFirstName == '' || managerFirstName == 'undefined')
+                {
+                    errorManagerFirstName.show();
+                    isValid = false;
+                }
+
+                if(managerLastName == '' || managerLastName == 'undefined')
+                {
+                    errorManagerLastName.show();
+                    isValid = false;
+                }
+
+                if(managerIdNo == '' || managerIdNo == 'undefined')
+                {
+                    errorManagerIdNo.show();
+                    isValid = false;
+                }
+
+                if(managerIdExpDate == '' || managerIdExpDate == 'undefined')
+                {
+                    errorManagerIdExpDate.show();
+                    isValid = false;
+                }
+
+                if((tradeLicenseFile == '' || tradeLicenseFile == 'undefined') && !isTradeLicense)
+                {
+                    errorTradeLicenseFile.show();
+                    isValid = false;
+                }
+
+                if(tradeLicenseNo == '' || tradeLicenseNo == 'undefined')
+                {
+                    errorTradeLicenseNo.show();
+                    isValid = false;
+                }
+
+                if(tradeLicenseExpDate == '' || tradeLicenseExpDate == 'undefined')
+                {
+                    errorTradeLicenseExpDate.show();
+                    isValid = false;
+                }
+
+                if(isValid == true){
 
                     let iso = iti.getSelectedCountryData().iso2;
-                    let intl_code = iti.getSelectedCountryData().dialCode
+                    let intlCode = iti.getSelectedCountryData().dialCode
 
-                    $('<input />').attr('type', 'hidden').attr('name', 'distributor_form[iso_code]')
+                    $('<input />').attr('type', 'hidden').attr('name', 'distributor_form[iso-code]')
                         .attr('value', iso).appendTo('#form_company_information');
-                    $('<input />').attr('type', 'hidden').attr('name', 'distributor_form[intl_code]')
-                        .attr('value', intl_code).appendTo('#form_company_information');
+                    $('<input />').attr('type', 'hidden').attr('name', 'distributor_form[intl-code]')
+                        .attr('value', intlCode).appendTo('#form_company_information');
 
                     // Create an FormData object
                     let data = new FormData(this);
@@ -2756,6 +3008,11 @@
                             if(response.logo != null && response.logo != ''){
 
                                 $('#logo_img').attr('src', '/images/logos/' + response.logo);
+                            }
+
+                            if(tradeLicenseFile != '' || tradeLicenseNo != '{{ nzo_decrypt(distributor.tradeLicenseNo) }}' || tradeLicenseExpDate != '{{ distributor.tradeLicenseExpDate|date('Y-m-d') }}')
+                            {
+                                location.reload(true);
                             }
                         }
                     });

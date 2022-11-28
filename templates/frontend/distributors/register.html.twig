@@ -95,6 +95,11 @@
         </div>
     </div>
 </form>
+<div class="overlay"></div>
+<div class="spanner">
+    <div class="loader"></div>
+    <p class="text-light fw-bold" style="font-size: 36px;">Loading...</p>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -262,14 +267,32 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
+                        beforeSend: function () {
+                            isLoading(true);
+                        },
                         success: function (response) {
 
                             $('#register_form').empty();
                             $('#register_form').append(response);
+                            isLoading(false);
                         }
                     });
                 }
             });
+
+            function isLoading(status){
+
+                if(status) {
+
+                    $("div.spanner").addClass("show");
+                    $("div.overlay").addClass("show");
+
+                } else {
+
+                    $("div.spanner").removeClass("show");
+                    $("div.overlay").removeClass("show");
+                }
+            }
 
         });
 

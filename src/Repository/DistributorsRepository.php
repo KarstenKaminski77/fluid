@@ -64,10 +64,11 @@ class DistributorsRepository extends ServiceEntityRepository
             ;
     }
 
-    public function adminFindAll()
+    public function adminFindAll($isApproved)
     {
         $queryBuilder = $this->createQueryBuilder('d')
-            ->select('d')
+            ->andWhere('d.isApproved = :isApproved')
+            ->setParameter('isApproved', $isApproved)
             ->orderBy('d.distributorName', 'ASC');
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }

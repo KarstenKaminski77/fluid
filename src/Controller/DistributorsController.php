@@ -51,12 +51,14 @@ class DistributorsController extends AbstractController
     private $requestStack;
     private $plainPassword;
     private $encryptor;
+    private $mailer;
 
-    public function __construct(EntityManagerInterface $em, PaginationManager $pagination, RequestStack $requestStack, Encryptor $encryptor) {
+    public function __construct(EntityManagerInterface $em, PaginationManager $pagination, RequestStack $requestStack, Encryptor $encryptor, MailerInterface $mailer) {
         $this->em = $em;
         $this->pageManager = $pagination;
         $this->requestStack = $requestStack;
         $this->encryptor = $encryptor;
+        $this->mailer = $mailer;
     }
 
     #[Route('/distributors', name: 'distributors')]
@@ -204,6 +206,7 @@ class DistributorsController extends AbstractController
                 $distributors->setIsoCode($this->encryptor->encrypt($data->get('iso-code')));
                 $distributors->setAddressCountry($countries);
                 $distributors->setTracking($tracking);
+                $distributors->setIsApproved(0);
 
                 $this->em->persist($distributors);
                 $this->em->flush();
@@ -420,25 +423,56 @@ class DistributorsController extends AbstractController
         $distributor = $this->getUser()->getDistributor();
         $countryId = (int) $data['addressCountry'];
         $logo = '';
-
         $country = $this->em->getRepository(Countries::class)->find($countryId);
+        $isApproved = (bool) $distributor->getIsApproved() ?? false;
+        $tradeLicense = $_FILES['distributor_form']['name']['trade-license-file'];
+        $tradeLicenseNo = $data['trade-license-no'];
+        $tradeLicenseExpDate = $data['trade-license-exp-date'];
+
+        // Account approval required if reg docs change
+        if(
+            !empty($tradeLicense) || $tradeLicenseNo != $this->encryptor->decrypt($distributor->getTradeLicenseNo()) ||
+            $tradeLicenseExpDate != $distributor->getTradeLicenseExpDate()->format('Y-m-d')
+        )
+        {
+            $distributor->setIsApproved(0);
+            $isApproved = false;
+        }
 
         if($distributor != null) {
 
             $domainName = explode('@', $data['email']);
 
-            $distributor->setDistributorName($this->encryptor->encrypt($data['distributorName']));
+            $distributor->setDistributorName($this->encryptor->encrypt($data['distributor-name']));
             $distributor->setTelephone($this->encryptor->encrypt($data['telephone']));
             $distributor->setEmail($this->encryptor->encrypt($data['email']));
             $distributor->setWebsite($this->encryptor->encrypt($data['website']));
             $distributor->setDomainName(md5($domainName[1]));
             $distributor->setAddressCountry($country);
-            $distributor->setAddressStreet($this->encryptor->encrypt($data['addressStreet']));
-            $distributor->setAddressCity($this->encryptor->encrypt($data['addressCity']));
-            $distributor->setAddressPostalCode($this->encryptor->encrypt($data['addressPostalCode']));
-            $distributor->setAddressState($this->encryptor->encrypt($data['addressState']));
-            $distributor->setIsoCode($this->encryptor->encrypt($data['iso_code']));
-            $distributor->setIntlCode($this->encryptor->encrypt($data['intl_code']));
+            $distributor->setAddressStreet($this->encryptor->encrypt($data['address-street']));
+            $distributor->setAddressCity($this->encryptor->encrypt($data['address-city']));
+            $distributor->setAddressPostalCode($this->encryptor->encrypt($data['address-postal-code']));
+            $distributor->setAddressState($this->encryptor->encrypt($data['address-state']));
+            $distributor->setIsoCode($this->encryptor->encrypt($data['iso-code']));
+            $distributor->setIntlCode($this->encryptor->encrypt($data['intl-code']));
+            $distributor->setManagerFirstName($this->encryptor->encrypt($data['manager-first-name']));
+            $distributor->setManagerLastName($this->encryptor->encrypt($data['manager-last-name']));
+            $distributor->setManagerIdNo($this->encryptor->encrypt($data['manager-id-no']));
+            $distributor->setManagerIdExpDate(new \DateTime($data['manager-id-exp-date']));
+            $distributor->setTradeLicenseNo($this->encryptor->encrypt($data['trade-license-no']));
+            $distributor->setTradeLicenseExpDate(new \DateTime($data['trade-license-exp-date']));
+
+            if(!empty($_FILES['distributor_form']['name']['trade-license-file']))
+            {
+                $extension = pathinfo($_FILES['distributor_form']['name']['trade-license-file'], PATHINFO_EXTENSION);
+                $file = $distributor->getId() . '-' . uniqid() . '.' . $extension;
+                $targetFile = __DIR__ . '/../../public/documents/' . $file;
+
+                if(move_uploaded_file($_FILES['distributor_form']['tmp_name']['trade-license-file'], $targetFile)) {
+
+                    $distributor->setTradeLicense($file);
+                }
+            }
 
             if(!empty($_FILES['distributor_form']['name']['logo'])) {
 
@@ -455,6 +489,25 @@ class DistributorsController extends AbstractController
 
             $this->em->persist($distributor);
             $this->em->flush();
+
+            // Send Approval Email
+            if(!$isApproved)
+            {
+                $orderUrl = $this->getParameter('app.base_url') . '/admin/distributor/'. $distributor->getId();
+                $html = '<p>Please <a href="'. $orderUrl .'">click here</a> to view the distributors details.</p><br>';
+
+                $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                    'html'  => $html,
+                ]);
+
+                $email = (new Email())
+                    ->from($this->getParameter('app.email_from'))
+                    ->addTo($this->getParameter('app.email_from'))
+                    ->subject('Fluid - Account Approval Request')
+                    ->html($html->getContent());
+
+                $this->mailer->send($email);
+            }
 
             $message = '<b><i class="fa-solid fa-circle-check"></i></i></b> Company details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 

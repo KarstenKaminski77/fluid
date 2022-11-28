@@ -33,10 +33,32 @@
                             type="submit"
                             name="save_continue"
                     >
-                    <span class="btn-label">
-                        <i class="action-icon far fa-edit"></i>
-                        Save
-                    </span>
+                        <span class="btn-label">
+                            <i class="action-icon far fa-edit"></i>
+                            Save
+                        </span>
+                    </button>
+                    <button
+                        class="btn-approve btn btn-primary action-save w-sm-100 mb-3 mb-sm-0 me-md-3 float-end text-truncate"
+                        type="submit"
+                        name="decline-distributor"
+                        data-distributor-id="{{ distributor.id|default(0) }}"
+                        data-is-approved="2"
+                    >
+                        <i class="action-icon fa-light fa-thumbs-down"></i>
+                        <span class="btn-label">Decline</span>
+                    </button>
+                    <button
+                        class="btn-approve btn btn-secondary action-save w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="submit"
+                        name="approve-distributor"
+                        data-distributor-id="{{ distributor.id|default(0) }}"
+                        data-is-approved="1"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon fa-light fa-thumbs-up"></i>
+                            Approve
+                        </span>
                     </button>
                 </div>
             </div>
@@ -171,6 +193,120 @@
                 </div>
 
             </div>
+
+            {# Manager Name #}
+            <div class="row mt-4">
+
+                {# First Name #}
+                <div class="col-12 col-md-6">
+                    <label class="text-primary mb-2">Manager First Name <span class="text-danger">*</span> </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="manager-first-name"
+                        id="manager_first_name"
+                        value="{{ nzo_decrypt(distributor.managerFirstName) }}"
+                        placeholder="Managers First Name"
+                    >
+                    <div class="hidden_msg" id="error_manager_first_name">
+                        Required Field
+                    </div>
+                </div>
+
+                {# Last Name #}
+                <div class="col-12 col-md-6">
+                    <label class="text-primary mb-2">Manager Last Name <span class="text-danger">*</span> </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="manager-last-name"
+                        id="manager_last_name"
+                        value="{{ nzo_decrypt(distributor.managerLastName) }}"
+                        placeholder="Managers Last Name"
+                    >
+                    <div class="hidden_msg" id="error_manager_last_name">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+
+            {# Manager ID #}
+            <div class="row mt-4">
+
+                {# ID No #}
+                <div class="col-12 col-md-6">
+                    <label class="text-primary mb-2">Manager ID No. <span class="text-danger">*</span> </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="manager-id-no"
+                        id="manager_id_no"
+                        value="{{ nzo_decrypt(distributor.managerIdNo) }}"
+                        placeholder="Managers First Name"
+                    >
+                    <div class="hidden_msg" id="error_manager_id_no">
+                        Required Field
+                    </div>
+                </div>
+
+                {# ID Expiry Date #}
+                <div class="col-12 col-md-6">
+                    <label class="text-primary mb-2">Manager ID Exp Date <span class="text-danger">*</span> </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="manager-id-exp-date"
+                        id="manager_id_exp_date"
+                        value="{{ distributor.managerIdExpDate|date('Y-m-d') }}"
+                        placeholder="Managers ID Expiry Date"
+                    >
+                    <div class="hidden_msg" id="error_manager_id_exp_date">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+
+            {# Trade License #}
+            {% if distributor.tradeLicense is not null %}
+                <div class="row mt-4">
+
+                    {# Trade License #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <a href="{{ path('download_trade_license', {'trade-license':distributor.tradeLicense }) }}">
+                            <div
+                                class="form-control bg-disabled"
+                                id="trade_license_file"
+                                disabled=""
+                            >
+                                {{ distributor.tradeLicense }}
+                            </div>
+                        </a>
+                    </div>
+
+                    {# Trade License Number #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <div
+                            class="form-control bg-disabled"
+                            id="trade_license_file"
+                        >
+                            {{ nzo_decrypt(distributor.tradeLicenseNo) }}
+                        </div>
+                    </div>
+
+                    {# Trade License Expiry Date #}
+                    <div class="col-12 col-md-4">
+                        <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
+                        <div
+                            class="form-control bg-disabled"
+                            id="trade_license_file"
+                        >
+                            {{ distributor.tradeLicenseExpDate|date('Y-m-d') }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
 
             {# Clinic Users #}
             <div class="row mt-4">
@@ -442,6 +578,32 @@
                         }
                     });
                 }
+            });
+            $(document).on('click', '.btn-approve', function (e){
+
+                e.preventDefault();
+
+                let distributorId = $(this).attr('data-distributor-id');
+                let isApproved = $(this).attr('data-is-approved')
+
+                $.ajax({
+                    url: "{{ path('distributor_is_approved') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'distributor-id': distributorId,
+                        'is-approved': isApproved,
+                    },
+                    beforeSend: function () {
+
+                        isLoading(true)
+                    },
+                    success: function (response) {
+
+                        getFlash(response.flash);
+                        window.location.assign('{{ path('distributors_list',{ 'page_id':1 }) }}');
+                    }
+                });
             });
             {# End Save Products #}
 

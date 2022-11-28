@@ -11,7 +11,17 @@
         <div class="col-12 col-sm-3 text-truncate mt-1 pt-3 pb-3 ps-4">
             <h4 class="text-truncate m-0">Distributors</h4>
         </div>
-        <div class="col-12 col-sm-9 mt-1 pt-3 pb-3">
+        <div class="col-12 col-sm-3 text-truncate mt-1 pt-3 pb-3 ps-4">
+            <div class="input-group">
+                <select name="distributor-status" id="distributor_status" class="form-control form-control-sm distributor-status">
+                    <option value="">Select a Status</option>
+                    <option value="0">Awaiting Approval</option>
+                    <option value="1">Approved</option>
+                    <option value="2">Declined</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 mt-1 pt-3 pb-3">
             <div class="input-group">
                 <input
                         name="search-string"
@@ -186,6 +196,29 @@
                 });
             }
         });
+        $(document).on('change', '.distributor-status', function () {
+
+            let statusId = $(this).val();
+
+            $.ajax({
+                url: "{{ path('distributors_list', {'page_id':1}) }}",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'is-status-change': 1,
+                    'is-approved': statusId,
+                },
+                beforeSend: function () {
+
+                    isLoading(true)
+                },
+                success: function (response) {
+
+                    $('#distributors').empty().append(response);
+                    isLoading(false);
+                }
+            });
+        })
     });
 </script>
 {% endblock %}

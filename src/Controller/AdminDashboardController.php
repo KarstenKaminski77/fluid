@@ -1295,6 +1295,52 @@ class AdminDashboardController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/admin/distributors/approve', name: 'distributor_is_approved')]
+    public function isDistributorApprovedAction(Request $request, MailerInterface $mailer): Response
+    {
+        $data = $request->request;
+        $distributorId = $data->get('distributor-id') ?? 0;
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $response = [];
+
+        if(!empty($data)) {
+
+            $distributor->setIsApproved($data->get('is-approved'));
+
+            $this->em->persist($distributor);
+            $this->em->flush();
+        }
+
+        if($data->get('is-approved'))
+        {
+            // Send Email
+            $body = '<table style="padding: 8px; border-collapse: collapse; border: none; font-family: arial">';
+            $body .= '<tr><td colspan="2">Hi ' . $this->encryptor->decrypt($distributor->getManagerFirstName()) . ',</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr><td colspan="2">Please your Fluid account has been approved.</td></tr>';
+            $body .= '<tr><td colspan="2">&nbsp;</td></tr>';
+            $body .= '<tr>';
+            $body .= '    <td><b>URL: </b></td>';
+            $body .= '    <td><a href="https://' . $_SERVER['HTTP_HOST'] . '/distributors/login">https://' . $_SERVER['HTTP_HOST'] . '/distributors/login</a></td>';
+            $body .= '</tr>';;
+            $body .= '</table>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html' => $body,
+            ])->getContent();
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($this->encryptor->decrypt($distributor->getEmail()))
+                ->subject('Fluid Account Approval')
+                ->html($html);
+
+            $mailer->send($email);
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/admin/comment/crud', name: 'comment_crud')]
     public function commentCrudAction(Request $request): Response
     {
@@ -3002,14 +3048,105 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/distributors/{page_id}', name: 'distributors_list')]
     public function ditributorsList(Request $request): Response
     {
-        $distributors = $this->em->getRepository(Distributors::class)->adminFindAll();
+        $isApproved = $request->request->get('is-approved') ?? 0;
+        $distributors = $this->em->getRepository(Distributors::class)->adminFindAll($isApproved);
         $results = $this->page_manager->paginate($distributors[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/distributors/');
+        $isStatusChange = $request->request->get('is-status-change') ?? 0;
+        $response = '';
 
-        return $this->render('Admin/distributors_list.html.twig',[
-            'distributors' => $results,
-            'pagination' => $pagination
-        ]);
+        if($isStatusChange == 0)
+        {
+            return $this->render('Admin/distributors_list.html.twig',[
+                'distributors' => $results,
+                'pagination' => $pagination
+            ]);
+        }
+
+        $i = 0;
+
+        foreach($results as $distributor)
+        {
+            $i++;
+            $status = '';
+            $border = 'border-bottom-dashed';
+
+            if($i == count($results))
+            {
+                $border = 'border-bottom';
+            }
+
+            if($distributor->getIsApproved() == 0)
+            {
+                $status = 'Awaiting Approval';
+            }
+            elseif($distributor->getIsApproved() == 1)
+            {
+                $status = 'Approved';
+            }
+            elseif($distributor->getIsApproved() == 2)
+            {
+                $status = 'Declined';
+            }
+
+            $response .= '
+            <div class="col-12">
+                <div class="row py-3 '. $border .'" id="row_'. $distributor->getId() .'">
+                    <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                        #ID
+                    </div>
+                    <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #'. $distributor->getId() .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate"> 
+                        Clinic Name
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($distributor->getDistributorName()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Email
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($distributor->getEmail()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Telephone
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $this->encryptor->decrypt($distributor->getTelephone()) .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Status
+                    </div>
+                    <div class="col-8 col-md-1 text-truncate">
+                        '. $status .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Modified
+                    </div>
+                    <div class="col-8 col-md-2 text-truncate">
+                        '. $distributor->getModified()->format('Y-m-d H:i:s') .'
+                    </div>
+                    <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                        Created
+                    </div>
+                    <div class="col-8 col-md-1 text-truncate">
+                        '. $distributor->getCreated()->format('Y-m-d') .'
+                    </div>
+                    <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
+                        <a
+                            href="'. $this->generateUrl('distributor_admin', ['distributorId' => $distributor->getId()]) .'"
+                            class="float-end open-user-modal"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>';
+        }
+
+        return new JsonResponse($response);
     }
 
     #[Route('/admin/communication-methods/{page_id}', name: 'communication_methods_list')]

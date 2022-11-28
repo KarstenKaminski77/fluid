@@ -196,7 +196,7 @@
                     {# Trade License #}
                     <div class="col-12 col-md-4">
                         <label class="text-primary mb-2">Trade License <span class="text-danger">*</span> </label>
-                        <a href="{{ path('clinic_download_trade_license', {'trade-license':clinic.tradeLicense }) }}">
+                        <a href="{{ path('download_trade_license', {'trade-license':clinic.tradeLicense }) }}">
                         <div
                             class="form-control bg-disabled"
                             id="trade_license_file"
@@ -466,26 +466,6 @@
                     });
                 }
             });
-            {# End Save Clinic #}
-
-            {# User Accounts #}
-            $(document).on('click', '.user-edit-icon', function (e){
-
-                e.preventDefault();
-
-                let user_id = $(this).data('user-id');
-
-                $('#user_row_'+ user_id).toggle(700);
-
-                $('.clinic-users').each(function (){
-
-                    if($(this).data('user-id') != user_id){
-
-                        $(this).hide(700);
-                    }
-                });
-
-            });
             $(document).on('click', '.btn-approve', function (e){
 
                 e.preventDefault();
@@ -511,6 +491,26 @@
                         window.location.assign('{{ path('clinics_list',{ 'page_id':1 }) }}');
                     }
                 });
+            });
+            {# End Save Clinic #}
+
+            {# User Accounts #}
+            $(document).on('click', '.user-edit-icon', function (e){
+
+                e.preventDefault();
+
+                let user_id = $(this).data('user-id');
+
+                $('#user_row_'+ user_id).toggle(700);
+
+                $('.clinic-users').each(function (){
+
+                    if($(this).data('user-id') != user_id){
+
+                        $(this).hide(700);
+                    }
+                });
+
             });
             {# End User Accounts #}
         });

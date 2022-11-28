@@ -457,7 +457,7 @@ class ClinicsController extends AbstractController
         $tradeLicenseAsterisc = '';
         if($clinic->getTradeLicense() != null) {
             $btnDownload = '
-            <a href="' . $this->generateUrl('clinic_download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
+            <a href="' . $this->generateUrl('download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
                 <span class="input-group-text">
                     <i class="fa-regular fa-download"></i>
                 </span>
@@ -830,8 +830,8 @@ class ClinicsController extends AbstractController
         return new JsonResponse($html);
     }
 
-    #[Route('/clinics/download-trade-license/{trade-license}', name: 'clinic_download_trade_license')]
-    public function clinicDownloadTradeLicenseAction(Request $request)
+    #[Route('/download-trade-license/{trade-license}', name: 'download_trade_license')]
+    public function downloadTradeLicenseAction(Request $request)
     {
         $path = __DIR__ . '/../../public/documents/';
         $tradeLicense = $path . $request->get('trade-license');
