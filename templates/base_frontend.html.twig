@@ -132,7 +132,6 @@
 
                         }
                     });
-
                     $(document).on('click', '.signup-toggle', function(e) {
 
                         let container = $('#signup_toggle');
@@ -164,7 +163,6 @@
 
                         }
                     });
-
                     $(document).on('click', '.account-dropdown-toggle', function(e) {
 
                         let container = $('#account_menu');
@@ -184,6 +182,12 @@
 
                     // Adjust margin for footer
                     let footerHeight = $('footer').height();
+
+                    // Toggle Navbar
+                    $(document).on('click', '#btn_navbar_toggle', function () {
+
+                        $('#main_nav').toggle(700);
+                    });
 
                     $('.content-wrap').css({'padding-bottom': footerHeight + 25});
                     $('footer').css({'position':'absolute','bottom':0,'width':'100%'})

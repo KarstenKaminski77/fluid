@@ -48,6 +48,18 @@
             <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
             <script src="{{ asset('js/jquery.session.min.js') }}"></script>
             <script src="{{ asset('js/intlTelInput.min.js') }}"></script>
+
+            <script>
+
+                $(document).ready(function () {
+
+                    // Toggle Navbar
+                    $(document).on('click', '#btn_navbar_toggle', function () {
+
+                        $('#main_nav').toggle(700);
+                    });
+                });
+            </script>
         {% endblock %}
     </body>
 </html>

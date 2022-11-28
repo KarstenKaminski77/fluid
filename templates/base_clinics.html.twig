@@ -90,6 +90,12 @@
                             bottom: 0
                         }
                     );
+
+                    // Toggle Navbar
+                    $(document).on('click', '#btn_navbar_toggle', function () {
+
+                        $('#main_nav').toggle(700);
+                    });
                 });
 
                 function initialize() {
