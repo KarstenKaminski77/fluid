@@ -226,6 +226,11 @@ class Products
      */
     private $manufacturerIds = [];
 
+    /**
+     * @ORM\OneToMany(targetEntity=ClinicDistributorClinics::class, mappedBy="product")
+     */
+    private $clinicDistributorClinics;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -247,6 +252,7 @@ class Products
         $this->productManufacturers = new ArrayCollection();
         $this->productImages = new ArrayCollection();
         $this->productSpecies = new ArrayCollection();
+        $this->clinicDistributorClinics = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -942,6 +948,36 @@ class Products
     public function setManufacturerIds(?array $manufacturerIds): self
     {
         $this->manufacturerIds = $manufacturerIds;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ClinicDistributorClinics>
+     */
+    public function getClinicDistributorClinics(): Collection
+    {
+        return $this->clinicDistributorClinics;
+    }
+
+    public function addClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    {
+        if (!$this->clinicDistributorClinics->contains($clinicDistributorClinic)) {
+            $this->clinicDistributorClinics[] = $clinicDistributorClinic;
+            $clinicDistributorClinic->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    {
+        if ($this->clinicDistributorClinics->removeElement($clinicDistributorClinic)) {
+            // set the owning side to null (unless already changed)
+            if ($clinicDistributorClinic->getProduct() === $this) {
+                $clinicDistributorClinic->setProduct(null);
+            }
+        }
 
         return $this;
     }

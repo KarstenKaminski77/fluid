@@ -199,6 +199,16 @@ class Clinics
      */
     private $managerIdExpDate;
 
+    /**
+     * @ORM\OneToMany(targetEntity=RetailUsers::class, mappedBy="clinic")
+     */
+    private $retailUsers;
+
+    /**
+     * @ORM\OneToMany(targetEntity=ClinicDistributorClinics::class, mappedBy="clinic")
+     */
+    private $clinicDistributorClinics;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -224,6 +234,8 @@ class Clinics
         $this->chatParticipants = new ArrayCollection();
         $this->clinicUserPermissions = new ArrayCollection();
         $this->distributorClinics = new ArrayCollection();
+        $this->retailUsers = new ArrayCollection();
+        $this->clinicDistributorClinics = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -953,6 +965,66 @@ class Clinics
     public function setManagerIdExpDate(?\DateTimeInterface $managerIdExpDate): self
     {
         $this->managerIdExpDate = $managerIdExpDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, RetailUsers>
+     */
+    public function getRetailUsers(): Collection
+    {
+        return $this->retailUsers;
+    }
+
+    public function addRetailUser(RetailUsers $retailUser): self
+    {
+        if (!$this->retailUsers->contains($retailUser)) {
+            $this->retailUsers[] = $retailUser;
+            $retailUser->setClinic($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRetailUser(RetailUsers $retailUser): self
+    {
+        if ($this->retailUsers->removeElement($retailUser)) {
+            // set the owning side to null (unless already changed)
+            if ($retailUser->getClinic() === $this) {
+                $retailUser->setClinic(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ClinicDistributorClinics>
+     */
+    public function getClinicDistributorClinics(): Collection
+    {
+        return $this->clinicDistributorClinics;
+    }
+
+    public function addClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    {
+        if (!$this->clinicDistributorClinics->contains($clinicDistributorClinic)) {
+            $this->clinicDistributorClinics[] = $clinicDistributorClinic;
+            $clinicDistributorClinic->setClinic($this);
+        }
+
+        return $this;
+    }
+
+    public function removeClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    {
+        if ($this->clinicDistributorClinics->removeElement($clinicDistributorClinic)) {
+            // set the owning side to null (unless already changed)
+            if ($clinicDistributorClinic->getClinic() === $this) {
+                $clinicDistributorClinic->setClinic(null);
+            }
+        }
 
         return $this;
     }
