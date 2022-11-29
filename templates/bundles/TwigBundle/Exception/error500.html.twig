@@ -35,6 +35,8 @@
                                                 {% set url = path('products_list',{'page_id': 1}) %}
                                             {% elseif type == 'frontend' %}
                                                 {% set url = path('home_page') %}
+                                            {% elseif type == 'retail' %}
+                                                {% set url = path('home_page') %}
                                             {% endif %}
                                             There was an loading the requested page. <a href="{{ url }}">Return to the homepage</a>.
                                         </p>

@@ -91,6 +91,9 @@
             {% elseif user_type == 'manufacturers' %}
                 {% set url = 'manufacturers_forgot_password_request' %}
                 {% set url_register = 'distributor_reg' %}
+            {% elseif user_type == 'retail' %}
+                {% set url = 'retail_forgot_password_request' %}
+                {% set url_register = 'retail_reg' %}
             {% endif %}
 
             <div class="col-12 col-md-10 offset-xs-0 offset-md-1 mt-3 mt-md-5">

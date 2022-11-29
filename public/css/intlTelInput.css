@@ -51,7 +51,9 @@
     white-space: nowrap;
     max-height: 200px;
     overflow-y: scroll;
-    -webkit-overflow-scrolling: touch; }
+    -webkit-overflow-scrolling: touch;
+    z-index: 9999;
+  }
     .iti__country-list--dropup {
       bottom: 100%;
       margin-bottom: -1px; }

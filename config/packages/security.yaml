@@ -21,6 +21,10 @@ security:
             entity:
                 class: App\Entity\ManufacturerUsers
                 property: email
+        app_retail_provider:
+            entity:
+                class: App\Entity\RetailUsers
+                property: email
         app_admin_provider:
             entity:
                 class: App\Entity\User
@@ -69,6 +73,20 @@ security:
             entry_point: App\Security\ManufacturersAuthenticator
             logout:
                 path: manufacturers_logout
+                # where to redirect after logout
+                target: home_page
+        Retail:
+            pattern: ^/retail
+            form_login:
+                login_path: retail_login
+                check_path: retail_login
+            access_denied_url: /retail/login
+            lazy: true
+            provider: app_retail_provider
+            custom_authenticator: App\Security\RetailAuthenticator
+            entry_point: App\Security\RetailAuthenticator
+            logout:
+                path: retail_logout
                 # where to redirect after logout
                 target: home_page
         admin:
