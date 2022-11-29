@@ -227,9 +227,9 @@ class Products
     private $manufacturerIds = [];
 
     /**
-     * @ORM\OneToMany(targetEntity=ClinicDistributorClinics::class, mappedBy="product")
+     * @ORM\OneToMany(targetEntity=ClinicDistributorProducts::class, mappedBy="product")
      */
-    private $clinicDistributorClinics;
+    private $clinicDistributorProducts;
 
     public function __construct()
     {
@@ -252,7 +252,7 @@ class Products
         $this->productManufacturers = new ArrayCollection();
         $this->productImages = new ArrayCollection();
         $this->productSpecies = new ArrayCollection();
-        $this->clinicDistributorClinics = new ArrayCollection();
+        $this->clinicDistributorProducts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -953,29 +953,29 @@ class Products
     }
 
     /**
-     * @return Collection<int, ClinicDistributorClinics>
+     * @return Collection<int, ClinicDistributorProducts>
      */
-    public function getClinicDistributorClinics(): Collection
+    public function getClinicDistributorProducts(): Collection
     {
-        return $this->clinicDistributorClinics;
+        return $this->clinicDistributorProducts;
     }
 
-    public function addClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    public function addClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
     {
-        if (!$this->clinicDistributorClinics->contains($clinicDistributorClinic)) {
-            $this->clinicDistributorClinics[] = $clinicDistributorClinic;
-            $clinicDistributorClinic->setProduct($this);
+        if (!$this->clinicDistributorProducts->contains($clinicDistributorProduct)) {
+            $this->clinicDistributorProducts[] = $clinicDistributorProduct;
+            $clinicDistributorProduct->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeClinicDistributorClinic(ClinicDistributorClinics $clinicDistributorClinic): self
+    public function removeClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
     {
-        if ($this->clinicDistributorClinics->removeElement($clinicDistributorClinic)) {
+        if ($this->clinicDistributorProducts->removeElement($clinicDistributorProduct)) {
             // set the owning side to null (unless already changed)
-            if ($clinicDistributorClinic->getProduct() === $this) {
-                $clinicDistributorClinic->setProduct(null);
+            if ($clinicDistributorProduct->getProduct() === $this) {
+                $clinicDistributorProduct->setProduct(null);
             }
         }
 

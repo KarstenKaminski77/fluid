@@ -18,16 +18,6 @@ class ClinicDistributorProducts
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Clinics::class, inversedBy="clinicDistributorClinics")
-     */
-    private $clinic;
-
-    /**
-     * @ORM\ManyToOne(targetEntity=Products::class, inversedBy="clinicDistributorClinics")
-     */
-    private $product;
-
-    /**
      * @ORM\Column(type="integer")
      */
     private $itemId;
@@ -57,6 +47,26 @@ class ClinicDistributorProducts
      */
     private $isActive;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=Clinics::class, inversedBy="clinicDistributorProducts")
+     */
+    private $clinic;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=Products::class, inversedBy="clinicDistributorProducts")
+     */
+    private $product;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $modified;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $created;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -68,30 +78,6 @@ class ClinicDistributorProducts
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getClinic(): ?Clinics
-    {
-        return $this->clinic;
-    }
-
-    public function setClinic(?Clinics $clinic): self
-    {
-        $this->clinic = $clinic;
-
-        return $this;
-    }
-
-    public function getProduct(): ?Products
-    {
-        return $this->product;
-    }
-
-    public function setProduct(?Products $product): self
-    {
-        $this->product = $product;
-
-        return $this;
     }
 
     public function getItemId(): ?int
@@ -162,6 +148,54 @@ class ClinicDistributorProducts
     public function setIsActive(int $isActive): self
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function getClinic(): ?Clinics
+    {
+        return $this->clinic;
+    }
+
+    public function setClinic(?Clinics $clinic): self
+    {
+        $this->clinic = $clinic;
+
+        return $this;
+    }
+
+    public function getProduct(): ?Products
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?Products $product): self
+    {
+        $this->product = $product;
+
+        return $this;
+    }
+
+    public function getModified(): ?\DateTimeInterface
+    {
+        return $this->modified;
+    }
+
+    public function setModified(\DateTimeInterface $modified): self
+    {
+        $this->modified = $modified;
+
+        return $this;
+    }
+
+    public function getCreated(): ?\DateTimeInterface
+    {
+        return $this->created;
+    }
+
+    public function setCreated(\DateTimeInterface $created): self
+    {
+        $this->created = $created;
 
         return $this;
     }

@@ -19,6 +19,7 @@ class RetailUsers
 
     /**
      * @ORM\ManyToOne(targetEntity=Clinics::class, inversedBy="retailUsers")
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $clinic;
 
