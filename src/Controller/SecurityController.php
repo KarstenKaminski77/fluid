@@ -117,7 +117,7 @@ class SecurityController extends AbstractController
     {
         if (true === $checker->isGranted('ROLE_RETAIL')) {
 
-            header('Location: '. $this->getParameter('app.base_url') . '/retail/account');
+            header('Location: '. $this->getParameter('app.base_url') . '/retail/search');
 
             die();
         }

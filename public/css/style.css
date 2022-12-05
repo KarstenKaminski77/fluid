@@ -1694,6 +1694,14 @@ a.distributor-logo-container {
     padding-right: 0 !important;
 }
 
+.retail-right-col{
+    position: relative;
+}
+
+.fa-caret-right{
+    width: 10px;
+}
+
 /* width */
 ::-webkit-scrollbar {
     width: 5px;

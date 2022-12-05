@@ -4553,11 +4553,11 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        {#complete: function(e, xhr, settings){#}
-                        {#    if(e.status === 500){#}
-                        {#        window.location.href = '{{ path('clinic_error_500') }}';#}
-                        {#    }#}
-                        {#},#}
+                        complete: function(e, xhr, settings){
+                            if(e.status === 500){
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
                         success: function (response) {
 
                             if (response.response) {
@@ -4725,7 +4725,7 @@
 
                 $.ajax({
                     async: "true",
-                    url: "{{ path('clinic_get_address') }}",
+                    url: "{{ path('get_address') }}",
                     type: 'POST',
                     data: {
                         id: address_id
@@ -5077,7 +5077,7 @@
 
                     $.ajax({
                         async: "true",
-                        url: "{{ path('clinic_get_address') }}",
+                        url: "{{ path('get_address') }}",
                         type: 'POST',
                         dataType: 'json',
                         data: {
@@ -5178,7 +5178,7 @@
 
                     $.ajax({
                         async: "true",
-                        url: "{{ path('clinic_get_address') }}",
+                        url: "{{ path('get_address') }}",
                         type: 'POST',
                         dataType: 'json',
                         data: {

@@ -4,46 +4,82 @@
 
 {% block body %}
     <div class="hidden users-flash mb-0" id="flash"></div>
-    <div class="container-fluid pe-4">
-        <div class="row flex-nowrap">
-            <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 bg-light border-right distributor-left-col">
-                <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100 text-truncate overflow-hidden">
+
+    <main class="flex-shrink-0">
+        <div class="container-fluid pe-4">
+        <div class="row flex-nowrap h-100">
+            <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 bg-light border-right left-col">
+                <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
                         <li class="nav-item py-3 w-100">
-                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="company_information_link">
-                                <i class="fa-regular fa-screwdriver-wrench fa-fw"></i>
-                                <span class="ms-1 d-none d-sm-inline">Personal Information</span>
+                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="personal_information_link">
+                                <i class="fa-regular fa-house fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">Home</span>
                             </a>
                         </li>
                         <li class="w-100">
                             <a
                                 href="#submenu1"
                                 data-bs-toggle="collapse"
-                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate"
+                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate dropdown-link"
                                 aria-expanded="false"
                             >
-                                <i class="fa-regular fa-chart-mixed fa-fw"></i>
-                                <span class="ms-1 d-none d-sm-inline">Reports</span>
+                                <i class="fa-regular fa-user fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">My Account</span>
+                                <span class="float-end">
+                                    <i class="fa-solid fa-caret-right"></i>
+                                </span>
                             </a>
                             <ul class="nav flex-column collapse" id="submenu1" data-bs-parent="#menu" style="">
                                 <li class="w-100 mb-3">
-                                    <a href="#" class="align-middle text-primary nav-icon text-truncate" id="account_settings_link">
-                                        <i class="fa-regular fa-chart-pie fa-fw"></i>
-                                        <span class="ms-1 d-none d-sm-inline">Analytics</span>
+                                    <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="personal_information_link">
+                                        <i class="fa-regular fa-circle-info fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Personal Information</span>
                                     </a>
+                                </li>
+                                {# Addresses #}
+                                <li class="w-100">
+                                    <a
+                                        href="#submenu2"
+                                        data-bs-toggle="collapse"
+                                        class="px-0 align-middle
+                                        text-primary text-center dropdown-link
+                                        text-sm-start nav-icon mb-3 text-truncate"
+                                        aria-expanded="true"
+                                    >
+                                        <i class="fa-regular fa-address-book fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Addresses</span>
+                                        <span class="float-end">
+                                            <i class="fa-solid fa-caret-right"></i>
+                                        </span>
+                                    </a>
+                                    <ul class="nav flex-column collapse" id="submenu2" style="">
+                                        <li class="w-100 mb-3">
+                                            <a href="#" class="align-middle text-primary nav-icon text-truncate" id="address_new">
+                                                <i class="fa-regular fa-square-plus fa-fw"></i>
+                                                <span class="ms-1 d-none d-sm-inline">Create New</span>
+                                            </a>
+                                        </li>
+                                        <li class="w-100 mb-3">
+                                            <a href="#" class="align-middle text-primary nav-icon text-truncate"  id="addresses_link">
+                                                <i class="fa-light fa-list-dropdown fa-fw"></i>
+                                                <span class="ms-1 d-none d-sm-inline">List</span>
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </li>
                             </ul>
                         </li>
                         <li class="nav-item w-100">
                             <a class="align-middle text-primary nav-icon text-truncate" href="#" id="users_link">
-                                <i class="fa-regular fa-address-book fa-fw"></i>
-                                <span class="ms-1 d-none d-sm-inline">Users</span>
+                                <i class="fa-regular fa-boxes-stacked fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline">Orders</span>
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="col-10 col-sm-10 pb-3 distributor-right-col">
+            <div class="col-10 col-sm-10 pb-3 retail-right-col">
 
                 {# Main Container #}
                 <div class="row">
@@ -54,11 +90,13 @@
             </div>
         </div>
     </div>
+    </main>
     <div class="overlay"></div>
     <div class="spanner">
         <div class="loader"></div>
         <p>Loading...</p>
     </div>
+    <div class="hidden users-flash m-0 save-all-items" id="flash"></div>
 {% endblock %}
 
 {% block footer %}
@@ -70,325 +108,65 @@
 
     <script>
 
-        $(document).ready(function(){
-
+        $(document).ready(function()
+        {
             $('body').addClass('d-flex flex-column h-100');
 
             {# Get correct content on refresh #}
             let uri = window.location.pathname;
-            let isAnalytics = uri.match('/manufacturers/analytics');
             let isUsers = uri.match('/manufacturers/users/[0-9]+');
-            let isCompanyInformation = uri.match('/manufacturers/company-information');
+            let isPersonalInformation = uri.match('/retail/personal-information');
+            let isAddresses = uri.match('/retail/addresses/[0-9]+');
 
             {# Handle Page Rload #}
-            if(isAnalytics != null)
-            {
-                getAnalytics();
-            }
-
-            if(isUsers != null)
-            {
-                getUsers();
-            }
-
-            if(isCompanyInformation != null)
+            if(isPersonalInformation != null)
             {
                 getCompanyInformation();
             }
-
-            {# Analyics #}
-            function getAnalytics()
+            if(isAddresses != null)
             {
-                $('#analytics').show();
+                getAddresses(1);
             }
-            {# End Analyics #}
 
-            {# Users #}
-            function getUsers()
-            {
-                $.ajax({
-                    url: "{{ path('manufacturer_get_users') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    beforeSend: function (){
-
-                        isLoading(true);
-                    },
-                    success: function (response) {
-
-                        isLoading(false);
-                        $('#manufacturer_container').empty().append(response);
-                        window.history.pushState(null, "Fluid", '/manufacturers/users/1');
-                    }
-                });
-            }
-            $(document).on('click', '#users_link', function (e) {
+            {# Dropdown Menu Carat #}
+            $(document).on('click', '.dropdown-link', function (e) {
 
                 e.preventDefault();
-
-                $.ajax({
-                    url: "{{ path('manufacturer_get_users') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    beforeSend: function (){
-
-                        isLoading(true);
-                    },
-                    success: function (response) {
-
-                        isLoading(false);
-                        $('#manufacturer_container').empty().append(response);
-                        window.history.pushState(null, "Fluid", '/manufacturers/users/1');
-                    }
-                });
-            });
-            $(document).on('click', '.update-user', function (e) {
-
-                e.preventDefault();
-
-                let userId = $(this).attr('data-user-id');
-
-                if(userId > 0 && userId != 'undefined')
+                //alert($(this).attr('aria-expanded'));
+                if($(this).attr('aria-expanded') == 'true')
                 {
-                    $.ajax({
-                        url: "{{ path('manufacturer_get_user_data') }}",
-                        type: 'POST',
-                        dataType: 'json',
-                        data:{
-                            id: userId
-                        },
-                        beforeSend: function (){
-
-                            isLoading(true);
-                        },
-                        success: function (response) {
-
-                            $('#user_id').val(userId);
-                            $('#user_first_name').val(response.firstName);
-                            $('#user_last_name').val(response.lastName);
-                            $('#user_email').val(response.email);
-                            $('#user_mobile').val(response.mobile);
-                            $('#user_telephone').val(response.telephone);
-                            $('#user_iso_code').val(response.isoCode);
-                            $('#user_intl_code').val(response.intlCode);
-
-                            // International Numbers
-                            let input = document.querySelector('#user_mobile');
-                            let iso_code = $('#user_iso_code').val();
-
-                            let iti = window.intlTelInput(input, {
-                                initialCountry: iso_code,
-                                preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
-                                autoPlaceholder: "polite",
-                                nationalMode: true,
-                                utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
-                                separateDialCode: true,
-                                utilsScript: "/js/utils.js",
-                            });
-
-                            let handleChange = function() {
-                                let mobile = $('#user_telephone');
-                                let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
-                                let textNode = document.createTextNode(mobile_number);
-
-                                if(mobile_number != false){
-
-                                    let isoCode = iti.getSelectedCountryData().iso2;
-                                    let intlCode = iti.getSelectedCountryData().dialCode;
-
-                                    mobile.val(mobile_number.substring(1));
-                                    $('#user_iso_code').val(isoCode);
-                                    $('#user_intl_code').val(intlCode);
-                                }
-                            };
-
-                            // listen to "keyup", but also "change" to update when the user selects a country
-                            input.addEventListener('change', handleChange);
-                            input.addEventListener('keyup', handleChange);
-
-                            isLoading(false);
-                        }
-                    });
+                    $(this).find('.fa-caret-right').css({'rotate':'90deg'});
                 }
-            });
-            $(document).on('submit', '#form_users', function (e) {
-
-                e.preventDefault();
-
-                let isValid = true;
-                let firstName = $('#user_first_name').val();
-                let lastName = $('#user_last_name').val();
-                let telephone = $('#user_telephone').val();
-                let email = $('#user_email').val();
-                let errorFirstName = $('#error_user_first_name');
-                let errorLastName = $('#error_user_last_name');
-                let errorTelephone = $('#error_user_telephone');
-                let errorEmail = $('#error_user_email');
-
-                errorFirstName.hide();
-                errorLastName.hide();
-                errorTelephone.hide();
-                errorEmail.hide();
-
-                if(firstName == '' || firstName == 'undefined'){
-
-                    errorFirstName.show();
-                    isValid = false;
-                }
-
-                if(lastName == '' || lastName == 'undefined'){
-
-                    errorLastName.show();
-                    isValid = false;
-                }
-
-                if(telephone == '' || telephone == 'undefined'){
-
-                    errorTelephone.show();
-                    isValid = false;
-                }
-
-                if(email == '' || email == 'undefined'){
-
-                    errorEmail.show();
-                    isValid = false;
-                }
-
-                if(isValid == true)
+                else
                 {
-                    let data = new FormData(this);
-
-                    $.ajax({
-                        url: "{{ path('manufacturer_manage_user') }}",
-                        type: 'POST',
-                        contentType: false,
-                        processData: false,
-                        cache: false,
-                        timeout: 600000,
-                        dataType: 'json',
-                        data: data,
-                        beforeSend: function () {
-
-                            isLoading(true);
-                        },
-                        success: function (response) {
-
-                            let colour = 'success';
-
-                            if(response.response)
-                            {
-                                $('#manufacturer_container').empty().append(response.usersList);
-                            }
-
-                            getFlash(response.message);
-                            $('#modal_user').modal('hide');
-                            $('.modal-backdrop').remove();
-                            isLoading(false);
-                        }
-                    });
+                    $(this).find('.fa-caret-right').css({'rotate':'0deg'});
                 }
             });
-            $(document).on('click', '#user_new', function () {
 
-                $('#user_id').val(0);
-                $('#user_first_name').val('');
-                $('#user_last_name').val('');
-                $('#user_telephone').val('');
-                $('#user_mobile').val('');
-                $('#user_iso_code').val('');
-                $('#user_intl_code').val('');
-                $('#user_email').val('');
-
-                // International Numbers
-                let input = document.querySelector('#user_mobile');
-                let iso_code = $('#user_iso_code').val();
-
-                let iti = window.intlTelInput(input, {
-                    initialCountry: iso_code,
-                    preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
-                    autoPlaceholder: "polite",
-                    nationalMode: true,
-                    utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
-                    separateDialCode: true,
-                    utilsScript: "/js/utils.js",
-                });
-
-                let handleChange = function() {
-                    let mobile = $('#user_telephone');
-                    let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
-                    let textNode = document.createTextNode(mobile_number);
-
-                    if(mobile_number != false){
-
-                        let isoCode = iti.getSelectedCountryData().iso2;
-                        let intlCode = iti.getSelectedCountryData().dialCode;
-
-                        mobile.val(mobile_number.substring(1));
-                        $('#user_iso_code').val(isoCode);
-                        $('#user_intl_code').val(intlCode);
-                    }
-                };
-
-                // listen to "keyup", but also "change" to update when the user selects a country
-                input.addEventListener('change', handleChange);
-                input.addEventListener('keyup', handleChange);
-            });
-            $(document).on('click', '.delete-user', function () {
-
-                $('#delete_user').attr('data-user-id', $(this).attr('data-user-id'));
-            });
-            $(document).on('click', '#delete_user', function () {
-
-                let user_id = $(this).attr('data-user-id');
-
-                $.ajax({
-                    url: "{{ path('manufacturer_user_delete') }}",
-                    type: 'POST',
-                    data: {
-                        id: user_id
-                    },
-                    beforeSend: function(){
-                        isLoading(true);
-                    },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('distributor_error_500') }}';
-                        }
-                    },
-                    success: function (response) {
-
-                        getFlash(response.flash);
-                        $('#modal_user_delete').modal('hide');
-                        $('#manufacturer_container').empty().append(response.html);
-                        isLoading(false);
-                    }
-                });
-            });
-            {# End Users #}
-
+            adjustSideNavHeight();
             {# Company Information #}
-            function getCompanyInformation() {
-
+            function getCompanyInformation()
+            {
                 $.ajax({
-                    url: "{{ path('manufacturer_get_company_information') }}",
+                    url: "{{ path('retail_get_personal_information') }}",
                     type: 'POST',
                     dataType: 'json',
-                    beforeSend: function (){
-
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         isLoading(false);
-                        $('#manufacturer_container').empty().append(response);
-                        window.history.pushState(null, "Fluid", '/manufacturers/company-information');
+                        $('#retail_container').empty().append(response);
+                        window.history.pushState(null, "Fluid", '/retail/personal-information');
 
                         // International Numbers
                         let input = document.querySelector('#telephone');
-                        let iso_code = $('#manufacturer_iso_code').val();
+                        let isoCode = $('#iso_code').val();
 
                         let iti = window.intlTelInput(input, {
-                            initialCountry: iso_code,
+                            initialCountry: isoCode,
                             preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
                             autoPlaceholder: "polite",
                             nationalMode: true,
@@ -397,19 +175,20 @@
                             utilsScript: "/js/utils.js",
                         });
 
-                        let handleChange = function() {
-                            let mobile = $('#mobile_no');
+                        let handleChange = function()
+                        {
+                            let mobile = $('#mobile');
                             let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
                             let textNode = document.createTextNode(mobile_number);
 
-                            if(mobile_number != false){
-
+                            if(mobile_number != false)
+                            {
                                 let isoCode = iti.getSelectedCountryData().iso2;
                                 let intlCode = iti.getSelectedCountryData().dialCode;
 
                                 mobile.val(mobile_number.substring(1));
-                                $('#manufacturer_iso_code').val(isoCode);
-                                $('#manufacturer_intl_code').val(intlCode);
+                                $('#iso_code').val(isoCode);
+                                $('#intl_code').val(intlCode);
                             }
                         };
 
@@ -419,54 +198,228 @@
                     }
                 });
             }
-            $(document).on('click', '#company_information_link', function (e) {
-
+            $(document).on('click', '#personal_information_link', function (e)
+            {
                 getCompanyInformation();
             });
-            $(document).on('submit','#manufacturers_form', function (e){
-
+            $(document).on('submit','#retail_form', function (e)
+            {
                 e.preventDefault();
 
                 let isValid = true;
-                let manufacturerName = $('#manufacturer_name').val();
                 let firstName = $('#first_name').val();
                 let lastName = $('#last_name').val();
                 let email = $('#email').val();
                 let telephone = $('#mobile_no').val();
-                let errorManufacturerName = $('#error_manufacturer_name');
                 let errorFirstName = $('#error_first_name');
                 let errorLastName = $('#error_last_name');
                 let errorEmail = $('#error_email');
                 let errorTelephone = $('#error_telephone');
-                let btn = document.activeElement.getAttribute('name');
 
-                errorManufacturerName.hide();
                 errorFirstName.hide();
                 errorLastName.hide();
                 errorEmail.hide();
                 errorTelephone.hide();
 
-                if(manufacturerName == '' || manufacturerName == 'undefined'){
-
-                    errorManufacturerName.show();
-                    isValid = false;
-                }
-
-                if(firstName == '' || firstName == 'undefined'){
-
+                if(firstName == '' || firstName == 'undefined')
+                {
                     errorFirstName.show();
                     isValid = false;
                 }
 
-                if(lastName == '' || lastName == 'undefined'){
-
+                if(lastName == '' || lastName == 'undefined')
+                {
                     errorLastName.show();
                     isValid = false;
                 }
 
-                if(email == '' || email == 'undefined'){
-
+                if(email == '' || email == 'undefined')
+                {
                     errorEmail.empty().append('Required Field').show();
+                    isValid = false;
+                }
+
+                if(telephone == '' || telephone == 'undefined')
+                {
+                    errorTelephone.show();
+                    isValid = false;
+                }
+
+                if(isValid == true)
+                {
+                    let data = new FormData(this);
+
+                    $.ajax({
+                        url: "{{ path('update_retail_user') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function (e)
+                        {
+                            if (e.status === 500) {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            getFlash(response.flash, response.type);
+                            isLoading(false);
+                        }
+                    });
+                }
+            });
+            {# End Company Information #}
+
+            {# Addresses #}
+            function getAddresses(pageId, isNew = false)
+            {
+                $.ajax({
+                    async: "true",
+                    url: '{{ path('get_retail_addresses') }}',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'page-id': pageId,
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true)
+                    },
+                    complete: function(e)
+                    {
+                        if(e.status === 500){
+                            window.location.href = '{{ path('retail_error_500') }}';
+                        }
+                    },
+                    success: function (response)
+                    {
+                        $('#retail_container').empty().append(response.html).show();
+                        isLoading(false);
+                        window.history.pushState(null, "Fluid", '/retail/addresses/1');
+
+                        if(isNew)
+                        {
+                            $('#modal_address').modal('toggle');
+                        }
+                    }
+                });
+            }
+            $(document).on('click', '#addresses_link', function (e)
+            {
+                e.preventDefault();
+
+                getAddresses(1);
+            });
+            $(document).on('click', '#address_new', function ()
+            {
+                getAddresses(1, true);
+                $('#address_id').val(0);
+                $('#address_clinic_name').val('');
+                $('#address_mobile').val('');
+                $('#address_line_1').val('');
+                $('#address_modal_label').empty().append('Create An Address');
+
+                let input = document.querySelector("#address_mobile");
+
+                let iti = window.intlTelInput(input, {
+                    initialCountry: "auto",
+                    geoIpLookup: function(success, failure) {
+                        $.get("https://ipinfo.io", function() {}, "jsonp").always(function(resp) {
+                            var countryCode = (resp && resp.country) ? resp.country : "ae";
+                            success(countryCode);
+                        });
+                    },
+                    preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
+                    autoPlaceholder: "polite",
+                    nationalMode: true,
+                    utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
+                    separateDialCode: true,
+                    utilsScript: "/js/utils.js",
+                });
+
+                let handleChange = function() {
+                    let mobile = $('#address_telephone');
+                    let mobileNumber = (iti.isValidNumber()) ? iti.getNumber() : false;
+                    let textNode = document.createTextNode(mobileNumber);
+
+                    if(mobileNumber != false){
+
+                        let isoCode = iti.getSelectedCountryData().iso2;
+                        let intlCode = iti.getSelectedCountryData().dialCode;
+
+                        mobile.val(mobileNumber.substring(1));
+                        $('#address_iso_code').val(isoCode);
+                        $('#address_intl_code').val(intlCode);
+
+                    }
+                };
+
+                // listen to "keyup", but also "change" to update when the user selects a country
+                input.addEventListener('change', handleChange);
+                input.addEventListener('keyup', handleChange);
+            });
+            $(document).on('click', '#btn_map', function ()
+            {
+                let gmapController = (function () {
+                    return initialize();
+                })();
+            });
+            $(document).on('click', '#btn_map', function ()
+            {
+                let visible = $('#address_map').is(":visible");
+                let width = $(window).width();
+                let modal_height = $('#modal_address .modal-body').height();
+                $('#address_map').toggle(700);
+
+                if(visible == false){
+
+                    let height = $('#modal_address .modal-body').height();
+                    $.session.set('modal_height', height);
+
+                    if(width < 579) {
+
+                        $('#modal_address .modal-body').css('height', (modal_height + 370));
+
+                    } else {
+
+                        $('#modal_address .modal-body').css('height', (modal_height + 370));
+                    }
+
+                } else {
+
+                    $('#modal_address .modal-body').css('height', $.session.get('modal_height'));
+                }
+            });
+            $(document).on('submit', '#form_addresses', function(e)
+            {
+                e.preventDefault();
+
+                let isValid = true;
+                let clinicName = $('#address_retail_name').val()
+                let telephone = $('#address_telephone').val();
+                let addressLine1 = $('#address_line_1').val();
+                let type = $('#address_type').val();
+                let errorClinicName = $('#error_address_retail_name');
+                let errorTelephone = $('#error_address_telephone');
+                let error_AddressLine1 = $('#error_address_line_1');
+                let errorType = $('#error_address_type');
+
+                errorClinicName.hide();
+                errorTelephone.hide();
+                error_AddressLine1.hide();
+                errorType.hide();
+
+                if(clinicName == '' || clinicName == 'undefined'){
+
+                    errorClinicName.show();
                     isValid = false;
                 }
 
@@ -476,12 +429,27 @@
                     isValid = false;
                 }
 
+                if(addressLine1 == '' || addressLine1 == 'undefined'){
+
+                    error_AddressLine1.show();
+                    isValid = false;
+                }
+
+                if(type == '' || type == 'undefined'){
+
+                    error_type.show();
+                    isValid = false;
+                }
+
                 if(isValid == true){
+
+                    $("<input />").attr("type", "hidden").attr("name", "page_id").attr("value", $('#page_no').val()).appendTo("#form_addresses");
 
                     let data = new FormData(this);
 
                     $.ajax({
-                        url: "{{ path('update_manufacturer') }}",
+                        async: "true",
+                        url: "{{ path('update_retail_address') }}",
                         type: 'POST',
                         contentType: false,
                         processData: false,
@@ -489,28 +457,112 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
+                        beforeSend: function (){
+                            isLoading(true);
+                        },
                         success: function (response) {
-
                             getFlash(response.flash);
-                            $('.content-header-title').empty().append('<h4 class="text-truncate">Editing '+ response.manufacturer +'</h4>');
 
-                            if(response.manufacturerLogo != '')
-                            {
-                                $('#logo_img').attr('src', response.manufacturerLogo);
-                            }
-
-                            if(btn == 'save_return')
-                            {
-                                window.location.assign('{{ path('manufacturers_list',{ 'page_id':1 }) }}');
-                            }
+                            $('#modal_address').modal('toggle');
+                            $('#retail_container').empty().append(response.addresses);
+                            $('#paginator').empty().append(response.pagination).show();
+                            isLoading(false);
+                            $('#address_retail_name').val('');
+                            $('#address_telephone').val('');
+                            $('#address_line_1').val('');
+                            $('#address_suite').val('');
+                            $('#address_postal_code').val('');
+                            $('#address_city').val('');
+                            $('#address_state').val('');
                         }
                     });
                 }
             });
-            {# End Company Information #}
+            $(document).on('click', '.address_update', function ()
+            {
+                let address_id = $(this).data('address-id');
+
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('get_address') }}",
+                    type: 'POST',
+                    data: {
+                        id: address_id
+                    },
+                    success: function (response) {
+                        $('#address_retail_name').val(response.clinic_name);
+                        $('#address_telephone').val(response.telephone);
+                        $('#address_mobile').val(response.telephone);
+                        $('#address_iso_code').val(response.iso_code);
+                        $('#address_intl_code').val(response.intl_code);
+                        $('#address_line_1').val(response.address);
+                        $('option').attr('selected', false);
+
+                        if(response.type == 1){
+
+                            $('#option_billing').attr('selected', true);
+                        }
+
+                        if(response.type == 2){
+
+                            $('#option_shipping').attr('selected', true);
+                        }
+
+                        let input = document.querySelector("#address_mobile");
+
+                        iti = window.intlTelInput(input, {
+                            preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
+                            initialCountry: response.iso_code,
+                            autoPlaceholder: "polite",
+                            nationalMode: true,
+                            utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
+                            separateDialCode: true,
+                            utilsScript: "/js/utils.js",
+                        });
+                    }
+                });
+
+                $('#address_id').val(address_id);
+                $('#address_modal_label').empty().append('Update An Address');
+            });
+            $(document).on('click', '#delete_address', function ()
+            {
+                let addressId = $(this).data('address-id');
+
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('address_delete') }}",
+                    type: 'POST',
+                    data: {
+                        id: addressId,
+                        page_id: 1
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true);
+                    },
+                    success: function (response)
+                    {
+                        getFlash(response.flash);
+                        $('#modal_address_delete').modal('toggle');
+                        $('#basket_container').empty().append(response.addresses);
+                        $('#paginator').empty().append(response.pagination).show();
+
+                        isLoading(false);
+                    }
+                });
+            });
+            $(document).on('click', '.open-delete-address-modal', function (e)
+            {
+                e.preventDefault();
+
+                $('#delete_address').attr('data-address-id', $(this).data('address-id'));
+            });
+            {# End Addresses #}
 
             {# Popovers #}
-            function popOver() {
+            function popOver()
+            {
                 var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
                 var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                     return new bootstrap.Popover(popoverTriggerEl)
@@ -518,7 +570,8 @@
             }
 
             {# Flash Message #}
-            function getFlash(flash, type = 'success'){
+            function getFlash(flash, type = 'success')
+            {
                 $('#flash').addClass('alert-'+ type).addClass('alert').addClass('text-center');
                 $('#flash').removeClass('users-flash').addClass('users-flash').empty().append(flash).removeClass('hidden');
 
@@ -527,13 +580,15 @@
                     $('#flash').removeClass('users-flash').empty().addClass('hidden');
                 }, 5000);
             }
-            $('#flash').click(function (){
+
+            $('#flash').click(function ()
+            {
                 $('#flash').addClass('hidden');
             });
 
             {# Loading Overlay #}
-            function isLoading(status){
-
+            function isLoading(status)
+            {
                 if(status) {
 
                     $("div.spanner").addClass("show");
@@ -545,12 +600,35 @@
                     $("div.overlay").removeClass("show");
                 }
             }
+
+            {# Adjust SideNav Height #}
+            function adjustSideNavHeight()
+            {
+                let topNavHeight = $('nav').outerHeight();
+                let footerHeight = $('footer').outerHeight();
+                let windowHeight = document.documentElement.scrollHeight;
+                let leftColHeight = windowHeight - (topNavHeight + footerHeight) + 16;
+
+                $('.left-col').css(
+                {
+                    'top':topNavHeight,
+                    'height': leftColHeight,
+                    'position':'relative',
+                    'overflow': 'scroll'
+                });
+
+                $('.retail-right-col').css(
+                {
+                    'top': topNavHeight
+                });
+            }
         });
 
         var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl)
+        {
             return new bootstrap.Popover(popoverTriggerEl)
-        })
+        });
     </script>
 {% endblock %}
 

@@ -34,6 +34,21 @@ class AddressesRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
+    /**
+     * @return Addresses[] Returns an array of Addresses objects
+     */
+    public function getRetailAddresses($retailUserId)
+    {
+        $queryBuilder = $this->createQueryBuilder('a')
+            ->andWhere('a.retail = :retailUserId')
+            ->setParameter('retailUserId', $retailUserId)
+            ->andWhere('a.isActive = 1')
+            ->orderBy('a.id', 'ASC')
+        ;
+
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
     /*
     public function findOneBySomeField($value): ?Addresses
     {

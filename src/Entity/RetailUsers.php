@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\RetailUsersRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -84,12 +86,18 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $created;
 
+    /**
+     * @ORM\OneToMany(targetEntity=Addresses::class, mappedBy="retail")
+     */
+    private $addresses;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
         if ($this->getCreated() == null) {
             $this->setCreated(new \DateTime());
         }
+        $this->addresses = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -299,5 +307,35 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you inventory any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    /**
+     * @return Collection<int, Addresses>
+     */
+    public function getAddresses(): Collection
+    {
+        return $this->addresses;
+    }
+
+    public function addAddress(Addresses $address): self
+    {
+        if (!$this->addresses->contains($address)) {
+            $this->addresses[] = $address;
+            $address->setRetail($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAddress(Addresses $address): self
+    {
+        if ($this->addresses->removeElement($address)) {
+            // set the owning side to null (unless already changed)
+            if ($address->getRetail() === $this) {
+                $address->setRetail(null);
+            }
+        }
+
+        return $this;
     }
 }

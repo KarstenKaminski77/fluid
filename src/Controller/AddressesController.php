@@ -6,6 +6,7 @@ use App\Entity\Addresses;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\Orders;
+use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -30,23 +31,11 @@ class AddressesController extends AbstractController
         $this->encryptor = $encryptor;
     }
 
-    private function getAddresses($addresses)
+    private function getAddresses($addresses, $module)
     {
         $response = '
-        <!-- Addresses -->
-        <div class="row">
-            <!-- Create New -->
-            <div class="col-12 col-md-12 mt-0 ps-0 pe-0">
-                <button 
-                    type="button" class="btn btn-primary float-end w-sm-100 text-truncate" data-bs-toggle="modal" 
-                    data-bs-target="#modal_address" id="address_new"
-                >
-                    <i class="fa-solid fa-circle-plus"></i> CREATE NEW ADDRESS
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 mt-3 mt-sm-4 mt-md-0 pt-md-0" id="order_header">
+        <div class="row pt-3">
+            <div class="col-12 text-center mt-1 pt-3 pb-3">
                 <h4 class="text-primary text-truncate">Manage Shipping Addresses</h4>
                 <span class="d-none d-sm-inline mb-5 mt-2 text-center text-primary text-sm-start">
                     Add or remove shipping addresses from the list below.
@@ -136,24 +125,24 @@ class AddressesController extends AbstractController
                                     <i class="fa-solid fa-trash-can"></i>
                                 </a>';
 
-                                if($type == 'Billing') {
+                    if($type == 'Billing') {
 
-                                    $response .= '
-                                    <a href="#" class="address_default_billing float-start float-sm-none" data-billing-address-id="' . $address->getId() . '">
-                                        <i class="fa-solid fa-star float-end ' . $classBilling . '"></i>
-                                    </a>';
+                        $response .= '
+                        <a href="#" class="address_default_billing float-start float-sm-none" data-billing-address-id="' . $address->getId() . '">
+                            <i class="fa-solid fa-star float-end ' . $classBilling . '"></i>
+                        </a>';
 
-                                }
+                    }
 
-                                if($type == 'Shipping') {
+                    if($type == 'Shipping') {
 
-                                    $response .= '
-                                    <a href="#" class="address_default float-start float-sm-none" data-address-id="' . $address->getId() . '">
-                                        <i class="fa-solid fa-star float-end ' . $class . '"></i>
-                                    </a>';
-                                }
+                        $response .= '
+                        <a href="#" class="address_default float-start float-sm-none" data-address-id="' . $address->getId() . '">
+                            <i class="fa-solid fa-star float-end ' . $class . '"></i>
+                        </a>';
+                    }
 
-                            $response .= '
+                    $response .= '
                             </div>
                         </div>
                     </div>
@@ -168,7 +157,7 @@ class AddressesController extends AbstractController
                     <div class="modal-dialog modal-dialog-centered modal-xl">
                         <div class="modal-content">
                             <form name="form_addresses" id="form_addresses" method="post">
-                                ' . $this->getAddressModal()->getContent() . '
+                                ' . $this->getAddressModal($module)->getContent() . '
                             </form>
                         </div>
                     </div>
@@ -213,7 +202,7 @@ class AddressesController extends AbstractController
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
                         <form name="form_addresses" id="form_addresses" method="post">
-                            ' . $this->getAddressModal()->getContent() . '
+                            ' . $this->getAddressModal($module)->getContent() . '
                         </form>
                     </div>
                 </div>
@@ -381,11 +370,11 @@ class AddressesController extends AbstractController
         return new JsonResponse($response);
     }
 
-    public function getAddressModal(): Response
+    public function getAddressModal($module): Response
     {
 
         $response = '
-        <input type="hidden" value="" name="addresses_form[address_id]" id="address_id">
+        <input type="hidden" value="" name="addresses-form[address-id]" id="address_id">
         <div class="modal-header" id="modal_header_address">
             <h5 class="modal-title" id="address_modal_label">Create an Address</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -397,7 +386,7 @@ class AddressesController extends AbstractController
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="info">Address Type</label>
                     <select
-                        name="addresses_form[type]"
+                        name="addresses-form[type]"
                         id="address_type"
                         class="form-control"
                     >
@@ -410,17 +399,17 @@ class AddressesController extends AbstractController
                     </div>
                 </div>
 
-                <!-- Clinic Name -->
+                <!-- '. $module .' Name -->
                 <div class="col-12 col-sm-4 mb-3">
                     <label class="info">Clinic Name</label>
                     <input
                         type="text"
-                        name="addresses_form[clinicName]"
-                        id="address_clinic_name"
+                        name="addresses-form['. $module .'-name]"
+                        id="address_'. $module .'_name"
                         class="form-control"
                         value=""
                     >
-                    <div class="hidden_msg" id="error_address_clinic_name">
+                    <div class="hidden_msg" id="error_address_'. $module .'_name">
                         Required Field
                     </div>
                 </div>
@@ -430,26 +419,26 @@ class AddressesController extends AbstractController
                     <label class="info">Telephone</label>
                     <input 
                         type="text" 
-                        name="addresses_mobile" 
+                        name="addresses-mobile" 
                         id="address_mobile" 
                         class="form-control" 
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[telephone]"
+                        name="addresses-form[telephone]"
                         id="address_telephone"
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[iso_code]"
+                        name="addresses-form[iso-code]"
                         id="address_iso_code"
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[intl_code]"
+                        name="addresses-form[intl-code]"
                         id="address_intl_code"
                         value=""
                     >
@@ -468,7 +457,7 @@ class AddressesController extends AbstractController
                         Find on Map
                     </span>
                     <textarea
-                        name="addresses_form[address]"
+                        name="addresses-form[address]"
                         id="address_line_1"
                         class="form-control"
                         rows="5"
@@ -527,7 +516,7 @@ class AddressesController extends AbstractController
         $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinic->getId());
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->request->get('page_id'), $results);
-        $html = $this->getAddresses($results);
+        $html = $this->getAddresses($results, 'clinic');
 
         $response = [
             'html' => $html,
@@ -537,8 +526,8 @@ class AddressesController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/get-address', name: 'clinic_get_address')]
-    public function clinicsGetAddressAction(Request $request): Response
+    #[Route('/get-address', name: 'get_address')]
+    public function getAddressAction(Request $request): Response
     {
         $response = '';
 
@@ -567,7 +556,7 @@ class AddressesController extends AbstractController
         // Billing Address = 1
         // Shipping Address = 2
 
-        $data = $request->request->get('addresses_form');
+        $data = $request->request->get('addresses-form');
         $clinicId = $this->getUser()->getClinic()->getId();
         $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
 
@@ -585,9 +574,9 @@ class AddressesController extends AbstractController
             'clinic' => $clinicId,
         ]);
 
-        $addressId = $data['address_id'];
+        $addressId = $data['address-id'];
 
-        if($data['address_id'] == 0 || empty($data['address_id'])){
+        if($data['address-id'] == 0 || empty($data['address-id'])){
 
             $clinicAddress = new Addresses();
             $flash = '<b><i class="fas fa-check-circle"></i> Address details successfully created.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -599,14 +588,15 @@ class AddressesController extends AbstractController
         }
 
         $clinicAddress->setClinic($clinic);
+        $clinicAddress->setRetail(null);
         $clinicAddress->setType($data['type']);
-        $clinicAddress->setClinicName($this->encryptor->encrypt($data['clinicName']));
+        $clinicAddress->setClinicName($this->encryptor->encrypt($data['clinic-name']));
         $clinicAddress->setTelephone($this->encryptor->encrypt($data['telephone']));
         $clinicAddress->setAddress($this->encryptor->encrypt($data['address']));
         $clinicAddress->setIsDefault(0);
         $clinicAddress->setIsActive(1);
-        $clinicAddress->setIsoCode($this->encryptor->encrypt($data['iso_code']));
-        $clinicAddress->setIntlCode($this->encryptor->encrypt($data['intl_code']));
+        $clinicAddress->setIsoCode($this->encryptor->encrypt($data['iso-code']));
+        $clinicAddress->setIntlCode($this->encryptor->encrypt($data['intl-code']));
 
         if($defaultShippingAddress == null){
 
@@ -642,13 +632,89 @@ class AddressesController extends AbstractController
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->request->get('page_id'), $results);
 
-        $addresses = $this->getAddresses($results);
+        $addresses = $this->getAddresses($results, 'clinic');
 
         $response = [
             'flash' => $flash,
             'addresses' => $addresses,
             'checkout_address' => $checkoutAddress,
             'checkout_address_id' => $checkoutAddressId,
+            'pagination' => $pagination,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/clinics/update-retail-address', name: 'update_retail_address')]
+    public function updateRetailAddressAction(Request $request): Response
+    {
+        // Billing Address = 1
+        // Shipping Address = 2
+
+        $data = $request->request->get('addresses-form');
+        $retailUserId = $this->getUser()->getId();
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+
+        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'isActive' => 1,
+            'type' => 1,
+            'isDefaultBilling' => 1,
+            'retail' => $retailUserId,
+        ]);
+
+        $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'isActive' => 1,
+            'type' => 2,
+            'isDefault' => 1,
+            'retail' => $retailUserId,
+        ]);
+
+        $addressId = $data['address-id'];
+
+        if($data['address-id'] == 0 || empty($data['address-id'])){
+
+            $retailAddress = new Addresses();
+            $flash = '<b><i class="fas fa-check-circle"></i> Address successfully created.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        } else {
+
+            $retailAddress = $this->em->getRepository(Addresses::class)->find($addressId);
+            $flash = '<b><i class="fas fa-check-circle"></i> Address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        }
+
+        $retailAddress->setClinic(null);
+        $retailAddress->setRetail($retailUser);
+        $retailAddress->setType($data['type']);
+        $retailAddress->setClinicName($this->encryptor->encrypt($data['retail-name']));
+        $retailAddress->setTelephone($this->encryptor->encrypt($data['telephone']));
+        $retailAddress->setAddress($this->encryptor->encrypt($data['address']));
+        $retailAddress->setIsDefault(0);
+        $retailAddress->setIsActive(1);
+        $retailAddress->setIsoCode($this->encryptor->encrypt($data['iso-code']));
+        $retailAddress->setIntlCode($this->encryptor->encrypt($data['intl-code']));
+
+        if($defaultShippingAddress == null){
+
+            $retailAddress->setIsDefault(1);
+        }
+
+        if($defaultBillingAddress == null){
+
+            $retailAddress->setIsDefaultBilling(1);
+        }
+
+        $this->em->persist($retailAddress);
+        $this->em->flush();
+
+        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
+        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+
+        $addresses = $this->getAddresses($results, 'retail');
+
+        $response = [
+            'flash' => $flash,
+            'addresses' => $addresses,
             'pagination' => $pagination,
         ];
 
@@ -734,7 +800,7 @@ class AddressesController extends AbstractController
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->request->get('page_id'), $results);
 
-        $html = $this->getAddresses($results);
+        $html = $this->getAddresses($results, 'retail');
 
         $flash = '<b><i class="fas fa-check-circle"></i> Address successfully deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
@@ -751,6 +817,24 @@ class AddressesController extends AbstractController
     public function clinicFindAddress(Request $request): Response
     {
         return $this->render('frontend/clinics/map.html.twig');
+    }
+
+    #[Route('/retail/get-retail-addresses', name: 'get_retail_addresses')]
+    public function getRetailAddressesAction(Request $request): Response
+    {
+        $retailUserId = $this->getUser()->getId();
+        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
+        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+
+        $html = $this->getAddresses($results, 'retail');
+
+        $response = [
+            'html' => $html,
+            'pagination' => $pagination
+        ];
+
+        return new JsonResponse($response);
     }
 
     public function getPagination($pageId, $results)

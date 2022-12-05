@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Addresses;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\Distributors;
@@ -27,12 +28,16 @@ class RetailUsersController extends AbstractController
     private $em;
     private $mailer;
     private $encryptor;
+    private $passwordHasher;
 
-    public function __construct(EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor)
+    const ITEMS_PER_PAGE = 10;
+
+    public function __construct(EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor, UserPasswordHasherInterface $passwordHasher)
     {
         $this->em = $em;
         $this->mailer = $mailer;
         $this->encryptor = $encryptor;
+        $this->passwordHasher = $passwordHasher;
     }
     
     #[Route('/retail/register', name: 'retail_reg')]
@@ -44,7 +49,7 @@ class RetailUsersController extends AbstractController
     }
 
     #[Route('/retail/register/create', name: 'retail_create')]
-    public function retailCreateAction(Request $request, UserPasswordHasherInterface $passwordHasher): Response
+    public function retailCreateAction(Request $request): Response
     {
         $data = $request->request;
         $hashedEmail = md5($data->get('email'));
@@ -61,7 +66,7 @@ class RetailUsersController extends AbstractController
             // Create user
             if (!empty($plainTextPwd))
             {
-                $hashedPwd = $passwordHasher->hashPassword($retailUser, $plainTextPwd);
+                $hashedPwd = $this->passwordHasher->hashPassword($retailUser, $plainTextPwd);
 
                 $retailUser->setFirstName($this->encryptor->encrypt($data->get('first-name')));
                 $retailUser->setLastName($this->encryptor->encrypt($data->get('last-name')));
@@ -121,6 +126,8 @@ class RetailUsersController extends AbstractController
     }
 
     #[Route('/retail/search', name: 'retail_search')]
+    #[Route('/retail/personal-information', name: 'retail_personal_information')]
+    #[Route('/retail/addresses/{pageId}', name: 'retail_addresses')]
     public function retailSearchAction(Request $request): Response
     {
         $retailUserId = $this->getUser()->getId();
@@ -351,6 +358,156 @@ class RetailUsersController extends AbstractController
         return $this->render('reset_password/retail_password_reset.html.twig');
     }
 
+    #[Route('/retail/get-personal-information', name: 'retail_get_personal_information')]
+    public function getRetailInformationAction(Request $request): Response
+    {
+        $retailUserId = $this->getUser()->getId();
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $response = '<h4 class="w-100 text-center mt-5 pt-5"><i class="fa-light fa-face-frown me-3"></i>Something went wrong...</h4>';
+
+        if($retailUser != null)
+        {
+            $response = '
+            <form name="retail_form" id="retail_form" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="retail-user-id" id="retail_user_id" value="'. $retailUserId .'">
+                <div class="row pt-3">
+                    <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
+                        <h4 class="text-primary">Personal Information</h4>
+                    </div>
+                </div>
+        
+                <div class="row pb-3 bg-light border-left border-right">
+                
+                    <!-- First Name -->
+                    <div class="col-12 col-sm-6">
+                        <label>First Name <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="first-name" 
+                            id="first_name" 
+                            class="form-control" 
+                            placeholder="First Name"
+                            value="'. $this->encryptor->decrypt($retailUser->getFirstName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_first_name">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- Last Name -->
+                    <div class="col-12 col-sm-6">
+                        <label>Last Name <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="last-name" 
+                            id="last_name" 
+                            class="form-control" 
+                            placeholder="Last Name"
+                            value="'. $this->encryptor->decrypt($retailUser->getLastName()) .'"
+                        >
+                        <div class="hidden_msg" id="error_last_name">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row pb-3 bg-light border-left border-right">
+                
+                    <!-- Email Address -->
+                    <div class="col-12 col-sm-6">
+                        <label>Email Address<span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="email" 
+                            id="email" 
+                            class="form-control" 
+                            placeholder="Email"
+                            value="'. $this->encryptor->decrypt($retailUser->getEmail()) .'"
+                        >
+                        <div class="hidden_msg" id="error_email">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- Telephone -->
+                    <div class="col-12 col-sm-6">
+                        <label>Business Telephone <span class="text-danger">*</span></label>
+                        <input 
+                            type="text" 
+                            name="telephone" 
+                            id="telephone" 
+                            class="form-control" 
+                            placeholder="Telephone"
+                            value="'. $this->encryptor->decrypt($retailUser->getTelephone()) .'"
+                        >
+                        <input 
+                            type="hidden" 
+                            value="'. $this->encryptor->decrypt($retailUser->getTelephone()) .'" 
+                            name="mobile" 
+                            id="mobile"
+                        >
+                        <input 
+                            type="hidden" 
+                            name="iso-code" 
+                            id="iso_code" 
+                            value="'. $this->encryptor->decrypt($retailUser->getIsoCode()) .'"
+                        >
+                        <input 
+                            type="hidden" 
+                            name="intl-code" 
+                            id="intl_code" 
+                            value="'. $this->encryptor->decrypt($retailUser->getIntlCode()) .'"
+                        >
+                        <div class="hidden_msg" id="error_telephone">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row">
+                    <div class="col-12">
+                        <button id="form_save" type="submit" class="btn btn-primary float-end w-100">SAVE</button>
+                    </div>
+                </div>
+            </form>';
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/user/update', name: 'update_retail_user')]
+    public function retailUserUpdateAction(Request $request): Response
+    {
+        $data = $request->request;
+        $retailUserId = $data->get('retail-user-id') ?? 0;
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $response = [];
+
+        if($retailUser != null)
+        {
+            $retailUser->setEmail($this->encryptor->encrypt($data->get('email')));
+            $retailUser->setHashedEmail(md5($data->get('email')));
+            $retailUser->setTelephone($this->encryptor->encrypt($data->get('telephone')));
+            $retailUser->setIntlCode($this->encryptor->encrypt($data->get('intl-code')));
+            $retailUser->setIsoCode($this->encryptor->encrypt($data->get('iso-code')));
+            $retailUser->setFirstName($this->encryptor->encrypt($data->get('first-name')));
+            $retailUser->setLastName($this->encryptor->encrypt($data->get('last-name')));
+
+            $this->em->persist($retailUser);
+            $this->em->flush();
+
+            $response['flash'] = $this->getFlash('Personal Information Successfully Saved.');
+            $response['type'] = 'success';
+        }
+        else
+        {
+            $response['flash'] = $this->getFlash('An Error Occurred!');
+            $response['type'] = 'danger';
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/retail/error', name: 'retail_error_500')]
     public function retail500ErrorAction(Request $request): Response
     {
@@ -522,5 +679,10 @@ class RetailUsersController extends AbstractController
         }
 
         return $pagination;
+    }
+
+    private function getFlash($message)
+    {
+        return '<b><i class="fas fa-check-circle"></i> '. $message .'<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
     }
 }
