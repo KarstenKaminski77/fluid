@@ -2,26 +2,26 @@
 
 namespace App\Repository;
 
-use App\Entity\ClinicDistributorProducts;
+use App\Entity\ClinicRetailUsers;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<ClinicDistributorProducts>
+ * @extends ServiceEntityRepository<ClinicRetailUsers>
  *
- * @method ClinicDistributorClinics|null find($id, $lockMode = null, $lockVersion = null)
- * @method ClinicDistributorClinics|null findOneBy(array $criteria, array $orderBy = null)
- * @method ClinicDistributorClinics[]    findAll()
- * @method ClinicDistributorClinics[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ClinicRetailUsers|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ClinicRetailUsers|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ClinicRetailUsers[]    findAll()
+ * @method ClinicRetailUsers[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ClinicDistributorProductsRepository extends ServiceEntityRepository
+class ClinicRetailUsersRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, ClinicDistributorClinics::class);
+        parent::__construct($registry, ClinicRetailUsers::class);
     }
 
-    public function add(ClinicDistributorClinics $entity, bool $flush = false): void
+    public function add(ClinicRetailUsers $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
 
@@ -30,7 +30,7 @@ class ClinicDistributorProductsRepository extends ServiceEntityRepository
         }
     }
 
-    public function remove(ClinicDistributorClinics $entity, bool $flush = false): void
+    public function remove(ClinicRetailUsers $entity, bool $flush = false): void
     {
         $this->getEntityManager()->remove($entity);
 
@@ -40,7 +40,7 @@ class ClinicDistributorProductsRepository extends ServiceEntityRepository
     }
 
 //    /**
-//     * @return ClinicDistributorClinics[] Returns an array of ClinicDistributorClinics objects
+//     * @return ClinicRetailUsers[] Returns an array of ClinicRetailUsers objects
 //     */
 //    public function findByExampleField($value): array
 //    {
@@ -54,7 +54,7 @@ class ClinicDistributorProductsRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?ClinicDistributorClinics
+//    public function findOneBySomeField($value): ?ClinicRetailUsers
 //    {
 //        return $this->createQueryBuilder('c')
 //            ->andWhere('c.exampleField = :val')

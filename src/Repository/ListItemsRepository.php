@@ -64,6 +64,20 @@ class ListItemsRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
+    public function findListItem($clinicId, $listId, $productId)
+    {
+        return $this->createQueryBuilder('li')
+            ->select('li', 'l')
+            ->join('li.list', 'l')
+            ->andWhere('li.list = :listId')
+            ->setParameter('listId', $listId)
+            ->andWhere('li.product = :productId')
+            ->setParameter('productId', $productId)
+            ->andWhere('l.clinic = :clinicId')
+            ->setParameter('clinicId', $clinicId)
+            ->getQuery()->getResult();
+    }
+
     /*
     public function findOneBySomeField($value): ?ListItems
     {

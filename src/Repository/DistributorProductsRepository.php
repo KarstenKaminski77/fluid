@@ -79,18 +79,30 @@ class DistributorProductsRepository extends ServiceEntityRepository
     /**
      * @return DistributorProducts[] Returns an array of DistributorUsers objects
      */
-    public function findDistributorProducts($distributor_id)
+    public function findDistributorProducts($keywords)
     {
-        $queryBuilder = $this->createQueryBuilder('d')
+        return $this->createQueryBuilder('d')
             ->select('d','p')
             ->join('d.product', 'p')
             ->andWhere('p.isPublished = 1')
             ->andWhere('p.isActive = 1')
-            ->andWhere('d.distributor = :distributor_id')
-            ->setParameter('distributor_id', $distributor_id)
+            ->andWhere("MATCH_AGAINST(p.name,p.activeIngredient,p.description,p.slug) AGAINST(:searchTerm boolean) > 0")
+            ->setParameter('searchTerm', '*'.$keywords.'*')
             ->orderBy('p.name', 'DESC')
-        ;
+            ->getQuery()->getResult();
+    }
 
-        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    public function findByProductDistributorId($productId, $distributorId): array
+    {
+        return $queryBuilder = $this->createQueryBuilder('d')
+            ->select('d','p')
+            ->join('d.product', 'p')
+            ->andWhere('d.product = :productId')
+            ->setParameter('productId', $productId)
+            ->andWhere('d.distributor = :distributorId')
+            ->setParameter('distributorId', $distributorId)
+            ->andWhere("p.isActive = 1")
+            ->andWhere("p.isPublished = 1")
+            ->getQuery()->getResult();
     }
 }

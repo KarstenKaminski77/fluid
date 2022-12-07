@@ -34,6 +34,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
 use Vich\UploaderBundle\Handler\DownloadHandler;
 
 class ProductsController extends AbstractController
@@ -68,6 +69,7 @@ class ProductsController extends AbstractController
     #[Route('/clinics/order/{order_id}/{distributor_id}', name: 'clinic_order_details')]
     #[Route('/clinics/orders/{clinic_id}', name: 'clinic_orders_list')]
     #[Route('/clinics/inventory/manage/list/{list_id}', name: 'clinic_edit_shopping_list')]
+    #[Route('/clinics/manage-inventory', name: 'clinics_manage_inventory')]
     public function index(Request $request): Response
     {
         $this->denyAccessUnlessGranted('ROLE_CLINIC');
@@ -377,6 +379,16 @@ class ProductsController extends AbstractController
                                             '. $dataDistributor .'
                                         >
                                             <i class="fa-solid fa-heart"></i>
+                                        </a>
+                                        <a 
+                                            href="" 
+                                            class="retail icon-unchecked"
+                                            data-product-id="'. $product->getId() .'"
+                                            data-list-id="'. $favourite->getId() .'"
+                                            data-retail="'. $dataFavourite .'"
+                                            '. $dataDistributor .'
+                                        >
+                                            <i class="fa-solid fa-circle-dollar"></i>
                                         </a>
                                     </div>
                                     <!-- Description -->
@@ -1499,6 +1511,428 @@ class ProductsController extends AbstractController
         );
 
         return $response;
+    }
+
+    #[Route('/clinics/ajax-manage-inventory', name: 'clinics_get_inventory')]
+    public function clinicGetInventoryAction(Request $request): Response
+    {
+        $clinic = $this->getUser()->getClinic();
+        $list = $this->em->getRepository(Lists::class)->findOneBy([
+            'clinic' => $clinic->getId(),
+            'listType' => 'retail',
+        ]);
+        $products = $this->em->getRepository(ListItems::class)->findByListId($list->getId());
+        $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+        $paginator = $this->forward('App\Controller\AdminDashBordController::getPagination', [
+            'pageId' => 1,
+            'results' => $results,
+            'url' => '/clinics/manage-inventory/',
+        ])->getContent();
+
+        $response = '
+        <div class="row">
+            <div class="col-12 text-center">
+                <h4 class="text-primary text-truncate">Manage Inventory</h4>
+            </div>
+        </div>
+        <div class="row " id="import_products_row">
+            <div class="col-12 w-100">
+                <a role="button" id="btn_search_inventory" class="float-end text-primary">
+                    <i class="fa-regular fa-magnifying-glass-plus me-2 mb-3"></i>
+                    Search Inventory
+                </a>
+            </div>
+        </div>
+        <div class="row hidden" id="inventory_attach_container">
+            <div class="col-12">
+                <div class="row" id="search_row">
+                    <div class="col-12 pt-2 pb-2 bg-light border-left border-right border-top" id="inventory_search_container">
+                        <div class="input-group">
+                            <input type="text" id="search_inventory_field" class="form-control" placeholder="Search Inventory" autocomplete="off" />
+                            <span class="input-group-text">
+                                <a href="/clinics/manage-inventory" class="text-primary" id="inventory_clear">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </a>
+                            </span>
+                        </div>
+                        <div id="suggestion_field"></div>
+                    </div>
+                </div>
+        
+                <form method="post" id="inventory_item" class="row bg-light border-left border-right hidden">
+                    <input type="hidden" name="product-id" id="product_id">
+                    <div class="row mb-0 mb-sm-3 pe-0">
+        
+                        <!-- Dosage -->
+                        <div class="col-12 col-sm-6 pe-0 pe-sm-2 pt-2">
+                            <label>
+                                Dosage
+                            </label>
+                            <input type="text" class="form-control" id="dosage" disabled value="">
+                        </div>
+        
+                        <!-- Size -->
+                        <div class="col-12 col-sm-6 pe-0 pt-2">
+                            <label>
+                                Size
+                            </label>
+                            <input type="text" class="form-control" id="size" disabled value="">
+                        </div>
+                    </div>
+        
+                    <div class="row mb-0 mb-sm-3 pe-0">
+        
+                        <!-- Active Ingredient -->
+                        <div class="col-12 col-sm-6 pe-0 pe-sm-2 pt-2 pt-sm-0">
+                            <label>
+                                Active Ingredient
+                            </label>
+                            <input type="text" class="form-control" id="active_ingredient" disabled value="">
+                        </div>
+        
+                        <!-- Unit -->
+                        <div class="col-12 col-sm-6 pe-0 pt-2 pt-sm-0">
+                            <label>
+                                Unit
+                            </label>
+                            <input type="text" class="form-control" id="unit" disabled value="">
+                        </div>
+                    </div>
+        
+                    <div class="row mb-0 mb-sm-3 pe-0">
+        
+                        <!-- Distributors -->
+                        <div class="col-12 col-sm-6 pe-0 pe-sm-2 pt-2 pt-sm-0">
+                            <label>
+                                Distributor
+                            </label>
+                            <select class="form-control" name="distributor-id" id="distributor_id">
+                                <option value="">Select a Distributor</option>
+                            </select>
+                            <div class="hidden_msg" id="error_distributor_id">
+                                Required Field
+                            </div>
+                        </div>
+        
+                        <!-- SKU -->
+                        <div class="col-12 col-sm-6 pe-0 pt-2 pt-sm-0">
+                            <label>
+                                #SKU
+                            </label>
+                            <input type="text" class="form-control" name="sku" id="sku" value="" disabled>
+                            <div class="hidden_msg" id="error_sku">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="row mb-0 pb-sm-3 pe-0">
+        
+                        <!-- Cost Price -->
+                        <div class="col-12 col-sm-6 pe-0 pe-sm-2 pt-2 pt-sm-0">
+                            <label>
+                                Cost Price
+                            </label>
+                            <input type="text" class="form-control" name="cost-price" id="cost_price" value="" disabled>
+                            <div class="hidden_msg" id="error_cost_price">
+                                Required Field
+                            </div>
+                        </div>
+        
+                        <!-- Your Price -->
+                        <div class="col-12 col-sm-6 pe-0 pt-2 pt-sm-0">
+                            <label>
+                                Your Price
+                            </label>
+                            <input type="text" class="form-control" name="your-price" id="your_price" value="">
+                            <div class="hidden_msg" id="error_your_price">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-0 pb-sm-3 pe-0" id="inventory_btn">
+                        <div class="col-12 pe-0 pt-2 pt-sm-0">
+                            <button 
+                                id="btn_inventory" 
+                                type="submit" 
+                                class="btn btn-primary w-100" 
+                                data-list-id="'. $list->getId() .'"
+                            >
+                                <i class="fa-light fa-floppy-disk me-2"></i>
+                                SAVE
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 bg-light border-top border-left border-right">
+                <div class="row">
+                    <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
+                        <select class="form-control" name="manufacturer-id" id="manufacturer_id">
+                            <option value="0">
+                                Select a Manufacturer
+                            </option>
+                            <option value="2">
+                                Troy
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 py-3">
+                        <select class="form-control" name="species-id" id="species_id">
+                            <option value="0">
+                                Select a Species
+                            </option>
+                            <option value="6">
+                                Canine
+                            </option>
+                            <option value="9">
+                                Cattle
+                            </option>
+                            <option value="8">
+                                Equine
+                            </option>
+                            <option value="7">
+                                Feline
+                            </option>
+                            <option value="10">
+                                Sheep
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 d-none d-xl-block">
+                <div class="row">
+                    <div class="col-md-3 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-left border-top">
+                        Name
+                    </div>
+                    <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Distributor
+                    </div>
+                    <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Active Ingredient
+                    </div>
+                    <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Dosage
+                    </div>
+                    <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Size
+                    </div>
+                    <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Unit
+                    </div>
+                    <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                        Price
+                    </div>
+                    <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-right border-top">
+
+                    </div>
+                </div>
+            </div>
+        </div>';
+
+        if(count($results) > 0)
+        {
+            foreach($results as $result)
+            {
+                $response .= '
+                <div class="row border-left border-right border-bottom bg-light" id="distributor_product_21">
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Name:
+                    </div>
+                    <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="'. $result->getProduct()->getName() .'">
+                        '. $result->getProduct()->getName() .'
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Distributor:
+                    </div>
+                    <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="'. $result->getProduct()->getName() .'">
+                        '. $this->encryptor->decrypt($result->getDistributor()->getDistributorName()) .'
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Active Ingredient:
+                    </div>
+                    <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                        '. $result->getProduct()->getActiveIngredient() .'
+                    </div>
+                    <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Dosage:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        '. $result->getProduct()->getDosage() .'
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Size:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        '. $result->getProduct()->getSize() .'
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Unit:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        '. $result->getProduct()->getUnit() .'
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Price:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        '. $result->getUnitPrice() .'
+                    </div>
+                    <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
+                        <a 
+                            href="" 
+                            onclick="selectProductListItem(\''. $result->getProduct()->getId() .'\',\''. $result->getProduct()->getName() .'\');"
+                            class="float-end edit-product" 
+                            data-product-name="'. $result->getProduct()->getName() .'" 
+                            data-product-id="'. $result->getId() .'"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                        <a href="" class="delete-icon float-end delete-distributor-product" data-bs-toggle="modal" data-distributor-product-id="'. $result->getId() .'" data-bs-target="#modal_product_delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                    </div>
+                </div>';
+            }
+        }
+        else
+        {
+            $response .= '
+            <div class="row">
+                <div class="col-12 text-center border-left border-right border-bottom bg-light p-3">
+                    You have not selected any products yet.
+                </div>
+            </div>';
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/clinics/inventory-search-list', name: 'clinic_inventory_search_list')]
+    public function clinicInventorySearchListAction(Request $request): Response
+    {
+        $keywords = $request->get('keywords');
+        $products = $this->em->getRepository(DistributorProducts::class)->findDistributorProducts($keywords);
+        $select = '';
+
+        if(is_array($products) && count($products) > 0)
+        {
+            $select .= '<ul id="product_list">';
+
+            foreach($products as $product){
+
+                $id = $product->getProduct()->getId();
+                $name = $product->getProduct()->getName();
+                $dosage = '';
+                $size = '';
+
+                if(!empty($product->getProduct()->getDosage())) {
+
+                    $unit = '';
+
+                    if(!empty($product->getProduct()->getUnit())) {
+
+                        $unit = $product->getProduct()->getUnit();
+                    }
+
+                    $dosage = ' | '. $product->getProduct()->getDosage() . $unit;
+                }
+
+                if(!empty($product->getProduct()->getSize())) {
+
+                    $size = ' | '. $product->getProduct()->getSize();
+                }
+
+                $select .= "<li onClick=\"selectProductListItem('$id', '$name');\" class='search-item'>$name$dosage$size</li>";
+            }
+
+            $select .= '</ul>';
+        }
+
+        return new Response($select);
+    }
+
+    #[Route('/clinics/inventory-get-data', name: 'clinic_inventory_get_data')]
+    public function clinicGetInventoryDataAction(Request $request,TokenStorageInterface $tokenStorage): Response
+    {
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $productId = (int) $request->request->get('product-id');
+        $distributorId = 0;
+        $unitPrice = '';
+        $list = $this->em->getRepository(Lists::class)->findOneBy([
+            'clinic' => $clinicId,
+            'listType' => 'retail',
+        ]);
+        $listItem = $this->em->getRepository(ListItems::class)->findListItem($clinicId,$list->getId(),$productId);
+
+        if(is_array($listItem) && count($listItem) > 0)
+        {
+            $distributorId = $listItem[0]->getDistributor()->getId();
+            $unitPrice = $listItem[0]->getUnitPrice();
+        }
+
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+            'distributor' => $distributorId,
+            'product' => $productId,
+        ]);
+        $product = $this->em->getRepository(Products::class)->find($productId);
+        $response = [];
+        $select = '<option value="">Select a Distributor</option>';
+
+        if($product != null)
+        {
+            if($product->getDistributorProducts()->count() > 0)
+            {
+                foreach($product->getDistributorProducts() as $distributorProduct)
+                {
+                    $select .= '
+                    <option value="'. $distributorProduct->getDistributor()->getId() .'">
+                        '. $this->encryptor->decrypt($distributorProduct->getDistributor()->getDistributorName()) .'
+                    </option>';
+                }
+            }
+
+            $response['distributors'] = $select;
+            $response['distributorId'] = $distributorId;
+            $response['sku'] = $distributorProduct->getSku() ?? '';
+            $response['unitPrice'] = $unitPrice;
+            $response['costPrice'] = $distributorProduct->getUnitPrice() ?? '';
+            $response['productId'] = $productId;
+            $response['dosage'] = $product->getDosage();
+            $response['size'] = $product->getSize();
+            $response['unit'] = $product->getUnit();
+            $response['activeIngredient'] = $product->getActiveIngredient();
+        }
+        else
+        {
+            $response['message'] = 'Inventory item not found';
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/clinics/get-distributor-product', name: 'clinic_get_distributor_product')]
+    public function clinicGetDistributorProductAction(Request $request): Response
+    {
+        $distributorId = $request->request->get('distributor-id');
+        $productId = $request->request->get('product-id');
+        $response = '';
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findByProductDistributorId($productId, $distributorId);
+
+        if(is_array($distributorProduct) && count($distributorProduct) > 0)
+        {
+            $response =  [
+                'sku' => $distributorProduct[0]->getSku(),
+                'price' => $distributorProduct[0]->getUnitPrice(),
+            ];
+        }
+
+        return new JsonResponse($response);
     }
 
     public function zohoRetrieveItem($distributorId, $itemId): Response

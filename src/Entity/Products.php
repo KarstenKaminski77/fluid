@@ -227,9 +227,9 @@ class Products
     private $manufacturerIds = [];
 
     /**
-     * @ORM\OneToMany(targetEntity=ClinicDistributorProducts::class, mappedBy="product")
+     * @ORM\OneToMany(targetEntity=ProductRetail::class, mappedBy="product")
      */
-    private $clinicDistributorProducts;
+    private $productRetails;
 
     public function __construct()
     {
@@ -252,7 +252,7 @@ class Products
         $this->productManufacturers = new ArrayCollection();
         $this->productImages = new ArrayCollection();
         $this->productSpecies = new ArrayCollection();
-        $this->clinicDistributorProducts = new ArrayCollection();
+        $this->productRetails = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -953,29 +953,29 @@ class Products
     }
 
     /**
-     * @return Collection<int, ClinicDistributorProducts>
+     * @return Collection<int, ProductRetail>
      */
-    public function getClinicDistributorProducts(): Collection
+    public function getProductRetails(): Collection
     {
-        return $this->clinicDistributorProducts;
+        return $this->productRetails;
     }
 
-    public function addClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
+    public function addProductRetail(ProductRetail $productRetail): self
     {
-        if (!$this->clinicDistributorProducts->contains($clinicDistributorProduct)) {
-            $this->clinicDistributorProducts[] = $clinicDistributorProduct;
-            $clinicDistributorProduct->setProduct($this);
+        if (!$this->productRetails->contains($productRetail)) {
+            $this->productRetails[] = $productRetail;
+            $productRetail->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
+    public function removeProductRetail(ProductRetail $productRetail): self
     {
-        if ($this->clinicDistributorProducts->removeElement($clinicDistributorProduct)) {
+        if ($this->productRetails->removeElement($productRetail)) {
             // set the owning side to null (unless already changed)
-            if ($clinicDistributorProduct->getProduct() === $this) {
-                $clinicDistributorProduct->setProduct(null);
+            if ($productRetail->getProduct() === $this) {
+                $productRetail->setProduct(null);
             }
         }
 

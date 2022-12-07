@@ -379,6 +379,7 @@ class ClinicsController extends AbstractController
             $clinics->setTradeLicenseNo($this->encryptor->encrypt($data['trade-license-no']));
             $clinics->setTradeLicenseExpDate(new \DateTime($data['trade-license-exp-date']));
 
+            // Trade License
             if(!empty($_FILES['clinic_form']['name']['trade-license-file']))
             {
                 $extension = pathinfo($_FILES['clinic_form']['name']['trade-license-file'], PATHINFO_EXTENSION);
@@ -388,6 +389,19 @@ class ClinicsController extends AbstractController
                 if(move_uploaded_file($_FILES['clinic_form']['tmp_name']['trade-license-file'], $targetFile)) {
 
                     $clinics->setTradeLicense($file);
+                }
+            }
+
+            // Logo
+            if(!empty($_FILES['clinic_form']['name']['logo']))
+            {
+                $extension = pathinfo($_FILES['clinic_form']['name']['logo'], PATHINFO_EXTENSION);
+                $file = $clinics->getId() . '-' . uniqid() . '.' . $extension;
+                $targetFile = __DIR__ . '/../../public/images/logos/' . $file;
+
+                if(move_uploaded_file($_FILES['clinic_form']['tmp_name']['logo'], $targetFile)) {
+
+                    $clinics->setLogo($file);
                 }
             }
 
@@ -457,11 +471,11 @@ class ClinicsController extends AbstractController
         $tradeLicenseAsterisc = '';
         if($clinic->getTradeLicense() != null) {
             $btnDownload = '
-            <a href="' . $this->generateUrl('download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
-                <span class="input-group-text">
+            <span class="input-group-text">
+                <a href="' . $this->generateUrl('download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
                     <i class="fa-regular fa-download"></i>
-                </span>
-            </a>';
+                </a>
+            </span>';
         }
         else
         {
@@ -496,7 +510,7 @@ class ClinicsController extends AbstractController
                 <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
         
                     <!-- Clinic name -->
-                    <div class="col-12 col-sm-12 pt-3 pt-sm-0">
+                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
                         <label>
                             Business Name <span class="text-danger">*</span>
                         </label>
@@ -510,6 +524,43 @@ class ClinicsController extends AbstractController
                         >
                         <div class="hidden_msg" id="error_first_name">
                             Required Field
+                        </div>
+                    </div>
+                    
+                    <!-- Logo -->
+                    <div class="col-sm-6 col-12" id="logo_file">
+                        <label>
+                            Logo
+                        </label>
+                        <div class="input-group">
+                            <input type="file" id="logo" name="clinic_form[logo]" class="form-control" placeholder="Logo" value="">
+                                <span class="input-group-text">
+                                <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
+                                    <i class="fa-regular fa-image"></i>
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                </div>';
+
+                $file = $clinic->getLogo() ?? 'image-not-found.jpg';
+                $logo = $this->getParameter('app.base_url') .'/images/logos/'. $file;
+
+                $response .= '
+                <!-- Modal Logo -->
+                <div class="modal fade" id="modal_logo" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header" style="border: none; padding-bottom: 0">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" style="padding: 0">
+                                <div class="row">
+                                    <div class="col-12 mb-0 text-center">
+                                        <img src="'. $logo .'" id="logo_img" class="img-fluid">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

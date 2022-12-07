@@ -9,6 +9,7 @@ use App\Entity\Distributors;
 use App\Entity\ListItems;
 use App\Entity\Lists;
 use App\Entity\ProductFavourites;
+use App\Entity\ProductRetail;
 use App\Entity\Products;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -315,22 +316,23 @@ class ListsController extends AbstractController
     public function clinicsManageListAction(Request $request): Response
     {
         $data = $request->request;
-        $clinic = $this->get('security.token_storage')->getToken()->getUser()->getClinic();
-        $products = $this->em->getRepository(Products::class)->find($data->get('product_id'));
-        $distributor = $this->em->getRepository(Distributors::class)->find($data->get('distributor_id') ?? 0);
+        $clinic = $this->getUser()->getClinic();
+        $clinicId = $clinic->getId();
+        $productId = (int) $data->get('product-id');
+        $listId = (int) $data->get('list-id');
+        $distributorId = (int) $data->get('distributor-id');
+        $listType = $data->get('list-type');
+        $listName = $data->get('list-name');
+        $products = $this->em->getRepository(Products::class)->find($productId);
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId ?? 0);
         $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
-            'distributor' => $request->request->get('distributor_id'),
-            'product' => $request->request->get('product_id')
+            'distributor' => $distributorId,
+            'product' => $productId,
         ]);
 
-        $productId = (int) $data->get('product_id');
-        $listId = (int) $data->get('list_id');
-        $listType = $data->get('list_type');
-        $listName = $data->get('list_name');
-
         // List
-        if($listId == 0){
-
+        if($listId == 0)
+        {
             $list = new Lists();
 
             $list->setItemCount(1);
@@ -341,16 +343,25 @@ class ListsController extends AbstractController
 
             $this->em->persist($list);
             $this->em->flush();
-
-        } else {
-
+        }
+        else
+        {
             $list = $this->em->getRepository(Lists::class)->find($listId);
         }
 
         // List item
-        if(!$data->get('delete') && $distributorProduct != null) {
+        if(!$data->get('delete') && $distributorProduct != null)
+        {
+            $listItem = $this->em->getRepository(ListItems::class)->findOneBy([
+                'list' => $listId,
+                'product' => $productId,
+                'distributor' => $distributorId
+            ]);
 
-            $listItem = new ListItems();
+            if($listItem == null)
+            {
+                $listItem = new ListItems();
+            }
 
             $listItem->setList($list);
             $listItem->setProduct($products);
@@ -359,16 +370,17 @@ class ListsController extends AbstractController
             $listItem->setItemId($distributorProduct->getItemId());
             $listItem->setName($products->getName());
             $listItem->setQty(1);
+            $listItem->setUnitPrice($data->get('unit-price') ?? 0.00);
 
             $this->em->persist($listItem);
             $this->em->flush();
         }
 
         // Favourites
-        if($data->get('favourite') == 'true'){
-
-            if($data->get('delete')) {
-
+        if($data->get('favourite') == 'true')
+        {
+            if($data->get('delete'))
+            {
                 $productFavourite = $this->em->getRepository(ProductFavourites::class)->findOneBy([
                     'product' => $productId,
                     'clinic' => $clinic->getId()
@@ -382,8 +394,9 @@ class ListsController extends AbstractController
                 $this->em->remove($productFavourite);
                 $this->em->remove($listItem);
 
-            } else {
-
+            }
+            else
+            {
                 $clinic = $this->getUser()->getClinic();
                 $list = $this->em->getRepository(Lists::class)->findOneBy([
                     'clinic' => $clinic,
@@ -396,7 +409,6 @@ class ListsController extends AbstractController
                 $productFavourite->setProduct($products);
 
                 $this->em->persist($productFavourite);
-
             }
 
             $this->em->flush();
@@ -404,20 +416,68 @@ class ListsController extends AbstractController
             return new JsonResponse(['is_favourite' => true]);
         }
 
+        // Retail
+        if($data->get('retail') == 'true')
+        {
+            if($data->get('delete'))
+            {
+                $productRetail = $this->em->getRepository(ProductRetail::class)->findOneBy([
+                    'product' => $productId,
+                    'clinic' => $clinic->getId()
+                ]);
+
+                $listItem = $this->em->getRepository(ListItems::class)->findOneBy([
+                    'product' => $productId,
+                    'list' => $listId
+                ]);
+
+                $this->em->remove($productRetail);
+                $this->em->remove($listItem);
+
+            }
+            else
+            {
+                $clinic = $this->getUser()->getClinic();
+                $productRetail = $this->em->getRepository(ProductRetail::class)->findOneBy([
+                    'clinic' => $clinicId,
+                    'product' => $productId,
+                ]);
+
+                if($productRetail == null)
+                {
+                    $productRetail = new ProductRetail();
+                }
+
+                $productRetail->setClinic($clinic);
+                $productRetail->setProduct($products);
+
+                $this->em->persist($productRetail);
+            }
+
+            $this->em->flush();
+
+            $flash = '<b><i class="fas fa-check-circle"></i> Saved to Retal List.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+            return new JsonResponse([
+                'isRetail' => true,
+                'flash' => $flash,
+            ]);
+        }
+
         $lists = $this->em->getRepository(Lists::class)->getClinicLists($clinic->getId());
 
         $response = '<h3 class="pb-3 pt-3">Order Lists</h3>';
 
-        for($i = 0; $i < count($lists); $i++){
-
-            if(count($lists[$i]->getListItems()) > 0) {
-
+        for($i = 0; $i < count($lists); $i++)
+        {
+            if(count($lists[$i]->getListItems()) > 0)
+            {
                 $itemCount = true;
                 $itemId = $lists[$i]->getListItems()[0]->getList()->getListItems()[0]->getId();
                 $isSelected = false;
 
-                for($c = 0; $c < count($lists[$i]->getListItems()); $c++){
-
+                for($c = 0; $c < count($lists[$i]->getListItems()); $c++)
+                {
                     if($lists[$i]->getListItems()[$c]->getProduct()->getId() == $productId){
 
                         $isSelected = true;
@@ -425,21 +485,23 @@ class ListsController extends AbstractController
                     }
                 }
 
-                if($isSelected) {
-
+                if($isSelected)
+                {
                     $icon = '<a href="" class="list_remove_item" data-id="' . $productId . '" data-value="' . $itemId . '">
                             <i class="fa-solid fa-circle-check pe-2 list-icon list-icon-checked"></i>
                         </a>';
 
-                } else {
-
+                }
+                else
+                {
                     $icon = '<a href="" class="list_add_item" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
                             <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
                         </a>';
                 }
 
-            } else {
-
+            }
+            else
+            {
                 $itemCount = false;
 
                 $icon = '<a href="" class="list_add_item" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
@@ -783,12 +845,12 @@ class ListsController extends AbstractController
             <div class="row mt-4">
                 <div class="col-12 col-sm-9">
                     <form name="form_list" id="form_list" method="post">
-                        <input type="hidden" name="product_id" value="'. $productId .'">
-                        <input type="hidden" name="list_id" value="0">
-                        <input type="hidden" name="list_type" value="custom">
+                        <input type="hidden" name="product-id" value="'. $productId .'">
+                        <input type="hidden" name="list-id" value="0">
+                        <input type="hidden" name="list-type" value="custom">
                         <div class="row">
                             <div class="col-12 col-sm-8">
-                                <input type="text" name="list_name" id="list_name" class="form-control mb-3 mb-sm-0">
+                                <input type="text" name="list-name" id="list_name" class="form-control mb-3 mb-sm-0">
                                 <div class="hidden_msg" id="error_list_name">
                                     Required Field
                                 </div>

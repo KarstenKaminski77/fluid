@@ -2,13 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\ProductFavouritesRepository;
+use App\Repository\ProductRetailRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass=ProductFavouritesRepository::class)
+ * @ORM\Entity(repositoryClass=ProductRetailRepository::class)
  */
-class ProductFavourites
+class ProductRetail
 {
     /**
      * @ORM\Id
@@ -18,12 +18,12 @@ class ProductFavourites
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Products::class, inversedBy="productFavourites")
+     * @ORM\ManyToOne(targetEntity=Products::class, inversedBy="productRetails")
      */
     private $product;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Clinics::class, inversedBy="productFavourites")
+     * @ORM\ManyToOne(targetEntity=Clinics::class, inversedBy="productRetails")
      */
     private $clinic;
 

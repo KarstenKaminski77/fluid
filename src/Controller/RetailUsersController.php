@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Addresses;
+use App\Entity\ClinicRetailUsers;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\Distributors;
@@ -11,6 +12,7 @@ use App\Entity\Manufacturers;
 use App\Entity\ManufacturerUsers;
 use App\Entity\RetailUsers;
 use App\Form\ResetPasswordRequestFormType;
+use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,15 +31,20 @@ class RetailUsersController extends AbstractController
     private $mailer;
     private $encryptor;
     private $passwordHasher;
+    private $pageManager;
 
     const ITEMS_PER_PAGE = 10;
 
-    public function __construct(EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor, UserPasswordHasherInterface $passwordHasher)
+    public function __construct(
+        EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor,
+        UserPasswordHasherInterface $passwordHasher, PaginationManager $pageManager
+    )
     {
         $this->em = $em;
         $this->mailer = $mailer;
         $this->encryptor = $encryptor;
         $this->passwordHasher = $passwordHasher;
+        $this->pageManager = $pageManager;
     }
     
     #[Route('/retail/register', name: 'retail_reg')]
@@ -132,9 +139,117 @@ class RetailUsersController extends AbstractController
     {
         $retailUserId = $this->getUser()->getId();
         $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $pageId = $request->request->get('page_id') ?? 1;
+        $isAjax = $request->request->get('is-ajax') ?? false;
+        $isConnected = false;
+
+        if($retailUser->getClinic() != null)
+        {
+            $isConnected = true;
+            $clinicId = $this->getUser()->getClinic()->getId();
+        }
+        else
+        {
+            $retailClinics = $this->em->getRepository(Clinics::class)->adminFindAll(1);
+            $results = $this->pageManager->paginate($retailClinics[0], $request, self::ITEMS_PER_PAGE);
+            $pagination = $this->getPagination($pageId, $results);
+            $html = '
+            <div class="row pt-3">
+                <div class="col-12 text-center mt-1 pt-3 pb-3">
+                    <h4 class="text-primary text-truncate">Select a Clinic</h4>
+                    <span class="d-none d-sm-inline mb-5 mt-2 text-center text-primary text-sm-start">
+                        Select a clinic in order to place orders with them online.
+                    </span>
+                </div>
+            </div>
+            <div class="row mb-3">';
+
+            foreach($results as $clinic)
+            {
+                $address = $this->em->getRepository(Addresses::class)->findOneBy([
+                    'clinic' => $clinic->getId(),
+                    'isDefaultBilling' => 1,
+                ]);
+
+                if($address == null)
+                {
+                    $address = 'No address available.';
+                }
+                else
+                {
+                    $address = $this->encryptor->decrypt($address->getAddress());
+                }
+
+                if($clinic->getLogo() != null)
+                {
+                    $logo = $this->getParameter('app.base_url') .'/images/logos/'. $clinic->getLogo();
+                }
+                else
+                {
+                    $logo = $this->getParameter('app.base_url') .'/images/logos/image-not-found.jpg';
+                }
+
+                $html .= '
+                <div class="col-12 mx-2">
+                    <div class="row">
+                        <div class="col-12 col-sm-3 bg-white border-top border-left border-right px-3 pt-3 text-center mx-auto">
+                            <img src="'. $logo .'" style="max-height: 120px">
+                            <h6 class="mt-3">'. $this->encryptor->decrypt($clinic->getClinicName()) .'</h6>
+                            <p class="m-0">'. $address .'</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-sm-3 bg-white p-3 text-center mx-auto border-bottom border-left border-right px-3 pb-3">
+                            <button
+                                class="btn btn-primary w-100 btn-retail-connect"
+                                data-clinic-id="'. $clinic->getId() .'"
+                            >
+                                CONNECT
+                            </button>
+                        </div>
+                    </div>
+                </div>';
+            }
+
+            $html .= '
+            </div>
+            <!-- Modal Connect -->
+            <div class="modal fade" id="modal_connect" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header" style="border: none; padding-bottom: 0">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" style="padding: 0">
+                            <div class="row">
+                                <div class="col-12 mb-0 text-center">
+                                    <img src="'. $logo .'" id="logo_img" class="img-fluid">
+                                    <p class="fw-bold">Request an account with '. $this->encryptor->decrypt($clinic->getClinicName()) .'?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary w-sm-100 mb-3 mb-sm-0 w-sm-100" data-bs-dismiss="modal">CANCEL</button>
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary w-sm-100 mb-sm-0 w-sm-100" 
+                                id="btn_request_connection"
+                                data-retail-user-id="'. $retailUserId .'"
+                            >CONNECT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>';
+        }
+
+        if($isAjax)
+        {
+            return new JsonResponse($html);
+        }
 
         return $this->render('frontend/retail/index.html.twig',[
             'retailUser' => $retailUser,
+            'html' => $html,
         ]);
     }
 
@@ -508,6 +623,58 @@ class RetailUsersController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/retail/request-connection', name: 'retail_request_connection')]
+    public function retailClinicRequestConnetionAction(Request $request): Response
+    {
+        $data = $request->request;
+        $retailUserId = (int) $data->get('retail-user-id') ?? 0;
+        $clinicId = (int) $data->get('clinic-id') ?? 0;
+        $clinicRetailUser = $this->em->getRepository(ClinicRetailUsers::class)->findOneBy([
+            'retailUser' => $retailUserId,
+            'clinic' => $clinicId,
+        ]);
+        $response = [];
+
+        if($retailUserId > 0 && $clinicId > 0)
+        {
+            if($clinicRetailUser == null)
+            {
+                $clinicRetailUser = new ClinicRetailUsers();
+            }
+
+            $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
+            $clinicName = $this->encryptor->decrypt($clinic->getClinicName());
+
+            if($clinicRetailUser->getIsIgnored() != 1)
+            {
+                $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+
+                $clinicRetailUser->setClinic($clinic);
+                $clinicRetailUser->setRetailUser($retailUser);
+                $clinicRetailUser->setIsApproved(0);
+                $clinicRetailUser->setIsIgnored(0);
+
+                $this->em->persist($clinicRetailUser);
+                $this->em->flush();
+
+                $response['flash'] = $this->getFlash('Your request has been sent to '. $clinicName);
+                $response['type'] = 'success';
+            }
+            else
+            {
+                $response['flash'] = $this->getFlash($clinicName .' has declined your request!');
+                $response['type'] = 'danger';
+            }
+        }
+        else
+        {
+            $response['flash'] = $this->getFlash('An Error Occurred!');
+            $response['type'] = 'danger';
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/retail/error', name: 'retail_error_500')]
     public function retail500ErrorAction(Request $request): Response
     {
@@ -589,7 +756,7 @@ class RetailUsersController extends AbstractController
     public function getPagination($pageId, $results)
     {
         $currentPage = (int) $pageId;
-        $lastPage = $this->page_manager->lastPage($results);
+        $lastPage = $this->pageManager->lastPage($results);
 
         $pagination = '
         <!-- Pagination -->

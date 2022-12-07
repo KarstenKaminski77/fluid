@@ -50,6 +50,12 @@ class ProductManufacturersRepository extends ServiceEntityRepository
     */
     public function findByDistributorManufacturer($distributorId)
     {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));";
+        $stmt = $conn->prepare($sql);
+        $stmt->executeStatement();
+
         return $this->createQueryBuilder('pm')
             ->select('pm','p','dp','m')
             ->join('pm.manufacturers', 'm')

@@ -122,6 +122,7 @@
             let is_edit_list = uri.match('/clinics/inventory/manage/list/[0-9]+');
             let is_analytics = uri.match('/clinics/analytics');
             let is_manage_lists = uri.match('/clinics/inventory/lists');
+            let isManageInventory = uri.match('/clinics/manage-inventory');
             let orderid = '{{app.request.get('order_id')}}';
             let distributorid = '{{app.request.get('distributor_id')}}';
             let iti = '';
@@ -152,6 +153,13 @@
                     $("div.overlay").removeClass("show");
                 }
             }
+
+            {# Prevent loading overlay on multiple clicks #}
+            $(document).on('click','.account-dropdown-toggle', function (e) {
+
+                e.preventDefault();
+                isLoading(false);
+            });
 
             {# Redirect to company info if not approved #}
             if(is_order_list != null)
@@ -235,6 +243,12 @@
                 let keyword = '';
 
                 getShoppingLists(keyword);
+            }
+
+            {# Manage Inventory #}
+            if(isManageInventory != null)
+            {
+                getManageInventory();
             }
 
             {# Inventory Search #}
@@ -697,10 +711,10 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: {
-                            product_id: product_id,
-                            list_id: list_id,
-                            distributor_id: distributor_id,
-                            favourite: favourite,
+                            'product-id': product_id,
+                            'list-id': list_id,
+                            'distributor-id': distributor_id,
+                            'favourite': favourite,
                             delete: true,
                         },
                         success: function (response) {
@@ -2735,10 +2749,10 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: {
-                            product_id: product_id,
-                            list_id: list_id,
-                            distributor_id: distributor_id,
-                            favourite: favourite,
+                            'product-id': product_id,
+                            'list-id': list_id,
+                            'distributor-id': distributor_id,
+                            'favourite': favourite,
                             permissions: '{{ permissions|json_encode }}'
                         },
                         success: function (response) {
@@ -5716,20 +5730,17 @@
                 e.preventDefault();
                 $('#dd_categories').toggle(700,'linear');
             });
-
             $('#btn_filters').click(function (e){
 
                 e.preventDefault();
                 $('#dd_filters').toggle(700,'linear');
             });
-
             $('#btn_manufacturers').click(function (e){
 
                 e.preventDefault();
                 $('#dd_manufacturers_1').toggle(700,'linear');
                 $('#dd_manufacturers_2').toggle(700,'linear');
             });
-
             $('#btn_distributors').click(function (e){
 
                 e.preventDefault();
@@ -5761,7 +5772,6 @@
 
                 }
             });
-
             $(document).on('click', '.account-dropdown-toggle', function(e) {
 
                 let container = $('#account_menu');
@@ -5793,7 +5803,6 @@
 
                 }
             });
-
             $(document).on('click', '.filter-dropdown-toggle', function(e) {
 
                 let container = $('#megamenu');
@@ -5811,13 +5820,177 @@
                 }
             });
 
+            {# Inventory #}
+            function getManageInventory()
+            {
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('clinics_get_inventory') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    beforeSend: function ()
+                    {
+                        isLoading(true);
+                    },
+                    complete: function(e, xhr, settings){
+                        if(e.status === 500)
+                        {
+                           // window.location.href = '{{ path('clinic_error_500') }}';
+                        }
+                    },
+                    success: function (response)
+                    {
+                        $('#basket_container').hide();
+                        $('#inventory_container').empty().append(response).show();
+                        isLoading(false);
+                        window.history.pushState(null, "Fluid", '/clinics/manage-inventory');
+                    }
+                });
+            }
+            $(document).on('click', '#inventory_link', function (e)
+            {
+                e.preventDefault();
+                getManageInventory();
+            });
+            $(document).on('click', '#btn_search_inventory', function (e)
+            {
+                e.preventDefault();
+
+                let text = '';
+
+                if($(this).find('i').hasClass('fa-magnifying-glass-plus'))
+                {
+                    text = '<i class="fa-regular fa-magnifying-glass-minus me-2 mb-3"></i> Search Inventory';
+                }
+                else
+                if($(this).find('i').hasClass('fa-magnifying-glass-minus'))
+                {
+                    text = '<i class="fa-regular fa-magnifying-glass-plus me-2 mb-3"></i> Search Inventory';
+                }
+
+                $('#btn_search_inventory').empty().append(text);
+                $('#btn_search_inventory').empty().append(text);
+                $('#inventory_attach_container').slideToggle(700);
+            });
+            $(document).on('keyup','#search_inventory_field', function()
+            {
+                $.ajax({
+                    type: "POST",
+                    url: "{{ path('clinic_inventory_search_list') }}",
+                    data:'keywords='+$(this).val(),
+                    success: function(response)
+                    {
+                        $("#suggestion_field").show();
+                        $("#suggestion_field").html(response);
+                    }
+                });
+            });
+            $(document).on('click', '.search-item', function ()
+            {
+                $('.clear-search').removeClass('hidden');
+                $('.search-div').removeClass('col-12').addClass('col-11');
+            });
+            $(document).on('change','#distributor_id',function ()
+            {
+                let distributorId = $(this).val();
+                let productId = $('#product_id').val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ path('clinic_get_distributor_product') }}",
+                    data:{
+                        'product-id': productId,
+                        'distributor-id': distributorId,
+                    },
+                    success: function(response)
+                    {
+                        $("#sku").val(response.sku);
+                        $("#cost_price").val(response.price);
+                    }
+                });
+            });
+            $(document).on('click', '#btn_inventory', function (e)
+            {
+                e.preventDefault();
+
+                let isValid = true;
+                let productId = $('#product_id').val();
+                let listId = $('#btn_inventory').attr('data-list-id');
+                let productName = $('#search_inventory_field').val();
+                let distributorId = $('#distributor_id').val();
+                let unitPrice = $('#your_price').val();
+                let errorDistributorId = $('#error_distributor_id');
+                let errorUnitPrice = $('#error_your_price');
+                let favourite = false;
+                let retail = true;
+
+                errorDistributorId.hide();
+                errorUnitPrice.hide();
+
+                if(distributorId == '' || distributorId == 'undefined')
+                {
+                    errorDistributorId.show();
+                    isValid = false;
+                }
+
+                if(unitPrice == '' || unitPrice == 'undefined')
+                {
+                    errorUnitPrice.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        url: "{{ path('inventory_manage_list') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'product-id': productId,
+                            'list-id': listId,
+                            'distributor-id': distributorId,
+                            'favourite': favourite,
+                            'retail': retail,
+                            'unit-price': unitPrice,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                //window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            getFlash(response.flash)
+                            isLoading(false);
+                        }
+                    });
+                }
+            });
+            $(document).on('click', '#inventory_clear', function (e)
+            {
+                e.preventDefault();
+
+                $('.form-control').val('');
+                $('#product_id').val('');
+            })
+            $(document).on('click', '.edit-product', function (e)
+            {
+                e.preventDefault();
+
+                $('#inventory_attach_container').slideDown('700');
+            })
         });
 
-        function selectProduct(id, name, list_id) {
-
-            if (id > 0) {
-
-
+        function selectProduct(id, name, list_id)
+        {
+            if (id > 0)
+            {
                 $.ajax({
                     async: "true",
                     url: "{{ path('inventory_get_list_modal') }}",
@@ -5828,10 +6001,9 @@
                     data: {
                         product_id: id,
                         list_id: list_id
-
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         $('#modal_list_distributors').remove();
                         $('#basket_container').append(response);
                         $('#modal_list_distributors').modal('toggle');
@@ -5840,6 +6012,41 @@
                 });
 
                 $("#search_field").val(name);
+                $("#suggestion_field").hide();
+            }
+        }
+
+        function selectProductListItem(id, name)
+        {
+            if (id > 0) {
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ path('clinic_inventory_get_data') }}",
+                    data: {
+                        'product-id': id,
+                    },
+                    success: function (response)
+                    {
+                        $("#suggestion_field").show();
+                        $("#suggestion_field").html(response);
+                        $('#product_id').val(id);
+                        $('#distributor_id').empty().append(response.distributors);
+                        $('option[value="'+ response.distributorId +'"]').prop("selected", true);
+                        $('#unit').val(response.unit);
+                        $('#sku').val(response.sku);
+                        $('#cost_price').val(response.costPrice);
+                        $('#your_price').val(response.unitPrice);
+                        $('#dosage').val(response.dosage);
+                        $('#size').val(response.size);
+                        $('#active_ingredient').val(response.activeIngredient);
+                        $('#product_name').empty();
+                        $('#product_name').append(name + response.dosage + response.unit + response.size);
+                        $('#inventory_item').slideDown(700);
+                    }
+                });
+
+                $("#search_inventory_field").val(name);
                 $("#suggestion_field").hide();
             }
         }

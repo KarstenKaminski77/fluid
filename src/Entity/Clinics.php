@@ -205,9 +205,19 @@ class Clinics
     private $retailUsers;
 
     /**
-     * @ORM\OneToMany(targetEntity=ClinicDistributorProducts::class, mappedBy="clinic")
+     * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $clinicDistributorProducts;
+    private $logo;
+
+    /**
+     * @ORM\OneToMany(targetEntity=ClinicRetailUsers::class, mappedBy="clinic")
+     */
+    private $clinicRetailUsers;
+
+    /**
+     * @ORM\OneToMany(targetEntity=ProductRetail::class, mappedBy="clinic")
+     */
+    private $productRetails;
 
     public function __construct()
     {
@@ -235,7 +245,8 @@ class Clinics
         $this->clinicUserPermissions = new ArrayCollection();
         $this->distributorClinics = new ArrayCollection();
         $this->retailUsers = new ArrayCollection();
-        $this->clinicDistributorProducts = new ArrayCollection();
+        $this->clinicRetailUsers = new ArrayCollection();
+        $this->productRetails = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -999,30 +1010,72 @@ class Clinics
         return $this;
     }
 
-    /**
-     * @return Collection<int, ClinicDistributorProducts>
-     */
-    public function getClinicDistributorProducts(): Collection
+    public function getLogo(): ?string
     {
-        return $this->clinicDistributorProducts;
+        return $this->logo;
     }
 
-    public function addClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
+    public function setLogo(?string $logo): self
     {
-        if (!$this->clinicDistributorProducts->contains($clinicDistributorProduct)) {
-            $this->clinicDistributorProducts[] = $clinicDistributorProduct;
-            $clinicDistributorProduct->setClinic($this);
+        $this->logo = $logo;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ClinicRetailUsers>
+     */
+    public function getClinicRetailUsers(): Collection
+    {
+        return $this->clinicRetailUsers;
+    }
+
+    public function addClinicRetailUser(ClinicRetailUsers $clinicRetailUser): self
+    {
+        if (!$this->clinicRetailUsers->contains($clinicRetailUser)) {
+            $this->clinicRetailUsers[] = $clinicRetailUser;
+            $clinicRetailUser->setClinic($this);
         }
 
         return $this;
     }
 
-    public function removeClinicDistributorProduct(ClinicDistributorProducts $clinicDistributorProduct): self
+    public function removeClinicRetailUser(ClinicRetailUsers $clinicRetailUser): self
     {
-        if ($this->clinicDistributorProducts->removeElement($clinicDistributorProduct)) {
+        if ($this->clinicRetailUsers->removeElement($clinicRetailUser)) {
             // set the owning side to null (unless already changed)
-            if ($clinicDistributorProduct->getClinic() === $this) {
-                $clinicDistributorProduct->setClinic(null);
+            if ($clinicRetailUser->getClinic() === $this) {
+                $clinicRetailUser->setClinic(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductRetail>
+     */
+    public function getProductRetails(): Collection
+    {
+        return $this->productRetails;
+    }
+
+    public function addProductRetail(ProductRetail $productRetail): self
+    {
+        if (!$this->productRetails->contains($productRetail)) {
+            $this->productRetails[] = $productRetail;
+            $productRetail->setClinic($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductRetail(ProductRetail $productRetail): self
+    {
+        if ($this->productRetails->removeElement($productRetail)) {
+            // set the owning side to null (unless already changed)
+            if ($productRetail->getClinic() === $this) {
+                $productRetail->setClinic(null);
             }
         }
 

@@ -11,8 +11,15 @@
             <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 bg-light border-right left-col">
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
+
+                        {% if retailUser.clinic is null %}
+                            {% set id = 'retail_clinic_link' %}
+                        {% else %}
+                            {% set id = '' %}
+                        {% endif %}
+
                         <li class="nav-item py-3 w-100">
-                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="personal_information_link">
+                            <a href="#" class="align-middle px-0 text-primary nav-icon text-truncate" id="{{ id }}">
                                 <i class="fa-regular fa-house fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">Home</span>
                             </a>
@@ -83,7 +90,9 @@
 
                 {# Main Container #}
                 <div class="row">
-                    <div class="col-12" id="retail_container"></div>
+                    <div class="col-12" id="retail_container">
+                        {{ html|default('An error occurred...')|raw }}
+                    </div>
                 </div>
                 {# End Main Container #}
 
@@ -114,7 +123,6 @@
 
             {# Get correct content on refresh #}
             let uri = window.location.pathname;
-            let isUsers = uri.match('/manufacturers/users/[0-9]+');
             let isPersonalInformation = uri.match('/retail/personal-information');
             let isAddresses = uri.match('/retail/addresses/[0-9]+');
 
@@ -144,6 +152,7 @@
             });
 
             adjustSideNavHeight();
+
             {# Company Information #}
             function getCompanyInformation()
             {
@@ -307,6 +316,40 @@
 
                         if(isNew)
                         {
+                            let input = document.querySelector("#address_mobile");
+                            let isoCode = $('#address_iso_code').val();
+
+                            let iti = window.intlTelInput(input, {
+                                initialCountry: isoCode,
+                                preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
+                                autoPlaceholder: "polite",
+                                nationalMode: true,
+                                utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
+                                separateDialCode: true,
+                                utilsScript: "/js/utils.js",
+                            });
+
+                            let handleChange = function() {
+                                let mobile = $('#address_telephone');
+                                let mobileNumber = (iti.isValidNumber()) ? iti.getNumber() : false;
+                                let textNode = document.createTextNode(mobileNumber);
+
+                                if(mobileNumber != false){
+
+                                    let isoCode = iti.getSelectedCountryData().iso2;
+                                    let intlCode = iti.getSelectedCountryData().dialCode;
+
+                                    mobile.val(mobileNumber.substring(1));
+                                    $('#address_iso_code').val(isoCode);
+                                    $('#address_intl_code').val(intlCode);
+
+                                }
+                            };
+
+                            // listen to "keyup", but also "change" to update when the user selects a country
+                            input.addEventListener('change', handleChange);
+                            input.addEventListener('keyup', handleChange);
+
                             $('#modal_address').modal('toggle');
                         }
                     }
@@ -326,45 +369,6 @@
                 $('#address_mobile').val('');
                 $('#address_line_1').val('');
                 $('#address_modal_label').empty().append('Create An Address');
-
-                let input = document.querySelector("#address_mobile");
-
-                let iti = window.intlTelInput(input, {
-                    initialCountry: "auto",
-                    geoIpLookup: function(success, failure) {
-                        $.get("https://ipinfo.io", function() {}, "jsonp").always(function(resp) {
-                            var countryCode = (resp && resp.country) ? resp.country : "ae";
-                            success(countryCode);
-                        });
-                    },
-                    preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
-                    autoPlaceholder: "polite",
-                    nationalMode: true,
-                    utilsScript: "{{ asset('js/utils.min.js') }}", // just for formatting/placeholders etc
-                    separateDialCode: true,
-                    utilsScript: "/js/utils.js",
-                });
-
-                let handleChange = function() {
-                    let mobile = $('#address_telephone');
-                    let mobileNumber = (iti.isValidNumber()) ? iti.getNumber() : false;
-                    let textNode = document.createTextNode(mobileNumber);
-
-                    if(mobileNumber != false){
-
-                        let isoCode = iti.getSelectedCountryData().iso2;
-                        let intlCode = iti.getSelectedCountryData().dialCode;
-
-                        mobile.val(mobileNumber.substring(1));
-                        $('#address_iso_code').val(isoCode);
-                        $('#address_intl_code').val(intlCode);
-
-                    }
-                };
-
-                // listen to "keyup", but also "change" to update when the user selects a country
-                input.addEventListener('change', handleChange);
-                input.addEventListener('keyup', handleChange);
             });
             $(document).on('click', '#btn_map', function ()
             {
@@ -560,6 +564,86 @@
             });
             {# End Addresses #}
 
+            {# Select Clinic #}
+            $(document).on('click', '#retail_clinic_link', function (e)
+            {
+                e.preventDefault();
+
+                $.ajax({
+                    async: "true",
+                    url: '{{ path('retail_search') }}',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'is-ajax': true,
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true)
+                    },
+                    complete: function(e)
+                    {
+                        if(e.status === 500){
+                            window.location.href = '{{ path('retail_error_500') }}';
+                        }
+                    },
+                    success: function (response)
+                    {
+                        $('#retail_container').empty().append(response).show();
+                        isLoading(false);
+                        window.history.pushState(null, "Fluid", '/retail/search');
+                    }
+                });
+            });
+            $(document).on('click', '.btn-retail-connect', function (e)
+            {
+                e.preventDefault();
+
+                $('#btn_request_connection').attr('data-clinic-id', $(this).attr('data-clinic-id'));
+                $('#modal_connect').modal('toggle');
+            });
+            $(document).on('click', '#btn_request_connection', function ()
+            {
+                let clinicId = $(this).attr('data-clinic-id');
+                let retailUserId = $(this).attr('data-retail-user-id');
+
+                if(clinicId != '' || clinicId != 'undefined' || retailUserId != '' || retailUserId != 'undefined')
+                {
+                    $.ajax({
+                        async: "true",
+                        url: '{{ path('retail_request_connection') }}',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'clinic-id': clinicId,
+                            'retail-user-id': retailUserId,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true)
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500){
+                                //window.location.href = '{{ path('retail_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            $('#modal_connect').modal('toggle');
+                            $('.btn-retail-connect').addClass('bg-disabled').attr('disabled', true);
+                            isLoading(false);
+                            getFlash(response.flash, response.type);
+                        }
+                    });
+                }
+                else
+                {
+                    alert('An error occured');
+                }
+            });
+            {# End Select Clinic #}
+
             {# Popovers #}
             function popOver()
             {
@@ -608,18 +692,18 @@
                 let footerHeight = $('footer').outerHeight();
                 let windowHeight = document.documentElement.scrollHeight;
                 let leftColHeight = windowHeight - (topNavHeight + footerHeight) + 16;
+                let footerPosition = topNavHeight + leftColHeight;
 
                 $('.left-col').css(
                 {
                     'top':topNavHeight,
-                    'height': leftColHeight,
                     'position':'relative',
                     'overflow': 'scroll'
                 });
 
                 $('.retail-right-col').css(
                 {
-                    'top': topNavHeight
+                    'margin-top': topNavHeight
                 });
             }
         });

@@ -62,6 +62,11 @@ class ListItems
      */
     private $itemId;
 
+    /**
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $unitPrice;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -179,6 +184,18 @@ class ListItems
     public function setItemId(?string $itemId): self
     {
         $this->itemId = $itemId;
+
+        return $this;
+    }
+
+    public function getUnitPrice(): ?float
+    {
+        return $this->unitPrice;
+    }
+
+    public function setUnitPrice(?float $unitPrice): self
+    {
+        $this->unitPrice = $unitPrice;
 
         return $this;
     }
