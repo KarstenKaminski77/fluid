@@ -6001,6 +6001,7 @@
                 e.preventDefault();
 
                 $('#inventory_attach_container').slideDown('700');
+                window.scrollTo(0, 0);
             })
             $(document).on('click', '.retail', function (e)
             {
@@ -6124,11 +6125,19 @@
                         success: function (response) {
 
                             $('#inventory_list').empty().append(response);
+                            $('#filter_reset').show();
                             isLoading(false);
                             popOver();
                         }
                     });
                 }
+            });
+            $(document).on('click', '#filter_reset', function (e)
+            {
+                e.preventDefault();
+
+                getManageInventory();
+                $(this).hide();
             });
         });
 

@@ -1584,6 +1584,10 @@ class ProductsController extends AbstractController
                     <i class="fa-regular fa-magnifying-glass-plus me-2 mb-3"></i>
                     Search Inventory
                 </a>
+                <a role="button" id="filter_reset" class="float-end text-primary me-4 hidden">
+                    <i class="fa-regular fa-rotate-right me-2 mb-3"></i>
+                    Reset Filters
+                </a>
             </div>
         </div>
         <div class="row hidden" id="inventory_attach_container">
