@@ -64,6 +64,43 @@ class ListItemsRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
+    /**
+     * @return ListItems[] Returns an array of ListItems objects
+     */
+    public function findByFilter($listId, $manufacturerId, $speciesId)
+    {
+        $queryBuilder = $this->createQueryBuilder('li')
+            ->select('li', 'l', 'p','pm','ps','d', 'dp', 'a')
+            ->join('li.list', 'l')
+            ->join('li.product', 'p')
+            ->leftJoin('p.productsSpecies', 'ps')
+            ->leftJoin('p.productManufacturers', 'pm')
+            ->join('li.distributor', 'd')
+            ->join('li.distributorProduct', 'dp')
+            ->join('d.api', 'a')
+            ->andWhere('li.list = :listId')
+            ->setParameter('listId', $listId)
+            ->andWhere("li.itemId != ''");
+
+        if($manufacturerId > 0)
+        {
+            $ids = [$manufacturerId];
+            $queryBuilder
+                ->andWhere('pm.manufacturers in (:manufacturerIds)')
+                ->setParameter('manufacturerIds', $ids);
+        }
+
+        if($speciesId > 0)
+        {
+            $ids = [$speciesId];
+            $queryBuilder
+                ->andWhere('ps.species in (:speciesIds)')
+                ->setParameter('speciesIds', $ids);
+        }
+
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
     public function findListItem($clinicId, $listId, $productId)
     {
         return $this->createQueryBuilder('li')

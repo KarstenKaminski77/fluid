@@ -11,6 +11,7 @@ use App\Entity\Lists;
 use App\Entity\ProductFavourites;
 use App\Entity\ProductRetail;
 use App\Entity\Products;
+use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use phpDocumentor\Reflection\Types\This;
@@ -24,11 +25,14 @@ class ListsController extends AbstractController
 {
     private $em;
     private $encryptor;
+    private $pageManager;
+    const ITEMS_PER_PAGE = 10;
 
-    public function __construct(EntityManagerInterface $em, Encryptor $encryptor) {
+    public function __construct(EntityManagerInterface $em, Encryptor $encryptor, PaginationManager $pageManager) {
 
         $this->em = $em;
         $this->encryptor = $encryptor;
+        $this->pageManager = $pageManager;
     }
 
     #[Route('/clinics/inventory/get-lists', name: 'inventory_get_lists')]
@@ -329,6 +333,8 @@ class ListsController extends AbstractController
             'distributor' => $distributorId,
             'product' => $productId,
         ]);
+        $retailLists = '';
+        $return = $data->get('return') ?? '';
 
         // List
         if($listId == 0)
@@ -456,11 +462,100 @@ class ListsController extends AbstractController
 
             $this->em->flush();
 
+            // Get Retail List
+            if($return == 'list')
+            {
+                $products = $this->em->getRepository(ListItems::class)->findByListId($listId);
+                $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+
+                if(count($results) > 0) {
+                    foreach ($results as $result)
+                    {
+                        $retailLists .= '
+                        <div class="row border-left border-right border-bottom bg-light" id="clinic_product_' . $result->getProduct()->getId() . '">
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Name:
+                            </div>
+                            <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="' . $result->getProduct()->getName() . '">
+                                ' . $result->getProduct()->getName() . '
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Distributor:
+                            </div>
+                            <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="' . $result->getProduct()->getName() . '">
+                                ' . $this->encryptor->decrypt($result->getDistributor()->getDistributorName()) . '
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Active Ingredient:
+                            </div>
+                            <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                                ' . $result->getProduct()->getActiveIngredient() . '
+                            </div>
+                            <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Dosage:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                ' . $result->getProduct()->getDosage() . '
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Size:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                ' . $result->getProduct()->getSize() . '
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Unit:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                ' . $result->getProduct()->getUnit() . '
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Price:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                ' . $result->getUnitPrice() . '
+                            </div>
+                            <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
+                                <a 
+                                    href="" 
+                                    onclick="selectProductListItem(\'' . $result->getProduct()->getId() . '\',\'' . $result->getProduct()->getName() . '\');"
+                                    class="float-end edit-product" 
+                                    data-product-name="' . $result->getProduct()->getName() . '" 
+                                    data-product-id="' . $result->getId() . '"
+                                >
+                                    <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                                </a>
+                                <a 
+                                    href="" 
+                                    class="delete-icon float-end delete-clinic-product" 
+                                    data-bs-toggle="modal" 
+                                    data-clinic-product-id="' . $result->getProduct()->getId() . '" 
+                                    data-distributor-id="' . $result->getDistributor()->getId() . '"
+                                    data-list-id="' . $result->getList()->getId() . '"
+                                >
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>
+                            </div>
+                        </div>';
+                    }
+                }
+                else
+                {
+                    $retailLists .= '
+                    <div class="row">
+                        <div class="col-12 text-center border-left border-right border-bottom bg-light p-3">
+                            You have not selected any products yet.
+                        </div>
+                    </div>';
+                }
+            }
+
             $flash = '<b><i class="fas fa-check-circle"></i> Saved to Retal List.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
             return new JsonResponse([
                 'isRetail' => true,
                 'flash' => $flash,
+                'html' => $retailLists,
             ]);
         }
 
@@ -608,9 +703,22 @@ class ListsController extends AbstractController
     #[Route('/clinics/inventory/get-list-modal', name: 'inventory_get_list_modal')]
     public function clinicsListModalAction(Request $request): Response
     {
-        $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findWithItemId(
-            $request->request->get('product_id')
-        );
+        $retail = $request->request->get('retail') ?? false;
+        $listId = $request->request->get('list-id');
+        $productId = $request->request->get('product-id');
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $distributors = $this->em->getRepository(DistributorProducts::class)->findWithItemId($productId);
+
+        if($retail)
+        {
+            $class = 'col-12 col-sm-8';
+            $price = '<div class="col-12 col-sm-4"><input type="text" class="form-control" name="unit-price" id="unit_price" placeholder="0.00"></div>';
+        }
+        else
+        {
+            $class = 'col-12';
+            $price = '';
+        }
 
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
 
@@ -627,22 +735,26 @@ class ListsController extends AbstractController
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-12 mb-0">
+                            <div class="'. $class .' mb-0">
                                 <select class="form-control" id="list_distributor_id">
                                     <option value="">Select a distributor... </option>';
 
-                                foreach($distributorProducts as $distributorProduct){
+                                foreach($distributors as $distributor){
 
                                     $response .= '
-                                    <option value="'. $distributorProduct->getDistributor()->getId() .'">
-                                        '. $this->encryptor->decrypt($distributorProduct->getDistributor()->getDistributorName()) .' 
-                                        '. $currency .' '. number_format($distributorProduct->getUnitPrice(),2) .'
+                                    <option value="'. $distributor->getDistributor()->getId() .'">
+                                        '. $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) .' 
+                                        '. $currency .' '. number_format($distributor->getUnitPrice(),2) .'
                                     </option>';
                                 }
 
                                 $response .= '                            
                                 </select>   
-                            </div>
+                            </div>';
+
+                            $response .= $price;
+
+                        $response .= '
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -651,8 +763,8 @@ class ListsController extends AbstractController
                             type="button" 
                             class="btn btn-primary btn-sm" 
                             id="save_list_distributor"
-                            data-id="'. $request->request->get('product_id') .'"
-                            data-value="'. $request->request->get('list_id') .'"
+                            data-id="'. $request->request->get('product-id') .'"
+                            data-value="'. $request->request->get('list-id') .'"
                         >SAVE</button>
                     </div>
                 </div>
@@ -803,6 +915,106 @@ class ListsController extends AbstractController
         $this->em->flush();
 
         return new JsonResponse($basket->getId());
+    }
+
+    #[Route('/clinics/inventory/list/filter', name: 'clinic_filter_list')]
+    public function filterRetailListAction(Request $request): Response
+    {
+        $response = '';
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $manufacturerId = $request->request->get('manufacturer-id');
+        $speciesId = $request->request->get('species-id');
+        $listId = $this->em->getRepository(Lists::class)->findOneBy([
+            'listType' => 'retail',
+            'clinic' => $clinicId,
+        ]);
+
+        $products = $this->em->getRepository(ListItems::class)->findByFilter($listId, $manufacturerId, $speciesId);
+        $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+
+        if(count($results) > 0)
+        {
+            foreach ($results as $result)
+            {
+                $response .= '
+                <div class="row border-left border-right border-bottom bg-light" id="clinic_product_' . $result->getProduct()->getId() . '">
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Name:
+                    </div>
+                    <div class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="' . $result->getProduct()->getName() . '">
+                        ' . $result->getProduct()->getName() . '
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Distributor:
+                    </div>
+                    <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3" data-bs-trigger="hover" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true" data-bs-content="' . $result->getProduct()->getName() . '">
+                        ' . $this->encryptor->decrypt($result->getDistributor()->getDistributorName()) . '
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Active Ingredient:
+                    </div>
+                    <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                        ' . $result->getProduct()->getActiveIngredient() . '
+                    </div>
+                    <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Dosage:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        ' . $result->getProduct()->getDosage() . '
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Size:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        ' . $result->getProduct()->getSize() . '
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Unit:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        ' . $result->getProduct()->getUnit() . '
+                    </div>
+                    <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                        Price:
+                    </div>
+                    <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                        ' . $result->getUnitPrice() . '
+                    </div>
+                    <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
+                        <a 
+                            href="" 
+                            onclick="selectProductListItem(\'' . $result->getProduct()->getId() . '\',\'' . $result->getProduct()->getName() . '\');"
+                            class="float-end edit-product" 
+                            data-product-name="' . $result->getProduct()->getName() . '" 
+                            data-product-id="' . $result->getId() . '"
+                        >
+                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                        </a>
+                        <a 
+                            href="" 
+                            class="delete-icon float-end delete-clinic-product" 
+                            data-bs-toggle="modal" 
+                            data-clinic-product-id="' . $result->getProduct()->getId() . '" 
+                            data-distributor-id="' . $result->getDistributor()->getId() . '"
+                            data-list-id="' . $result->getList()->getId() . '"
+                        >
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                    </div>
+                </div>';
+            }
+        }
+        else
+        {
+            $response .= '
+            <div class="row">
+                <div class="col-12 text-center border-left border-right border-bottom bg-light p-3">
+                    You have not selected any products yet.
+                </div>
+            </div>';
+        }
+
+        return  new JsonResponse($response);
     }
 
     private function getListRow($icon, $listName, $listId, $itemCount, $keyword = ''){

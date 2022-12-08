@@ -60,6 +60,27 @@ class ProductsSpeciesRepository extends ServiceEntityRepository
             ;
     }
 
+    /**
+     * @return ProductsSpecies[] Returns an array of ProductsSpecies objects
+     */
+    public function findByClinic($clinicId)
+    {
+        return $this->createQueryBuilder('ps')
+            ->select('ps','p','pr','s')
+            ->join('ps.species', 's')
+            ->join('ps.products', 'p')
+            ->join('p.productRetails', 'pr')
+            ->andWhere('pr.clinic = :clinicId')
+            ->setParameter('clinicId', $clinicId)
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->groupBy('s.id')
+            ->orderBy('s.name', 'ASC')
+            ->getQuery()
+            ->getArrayResult()
+            ;
+    }
+
 //    public function findOneBySomeField($value): ?ProductsSpecies
 //    {
 //        return $this->createQueryBuilder('p')

@@ -72,6 +72,33 @@ class ProductManufacturersRepository extends ServiceEntityRepository
         ;
     }
 
+    /**
+     * @return ProductManufacturers[] Returns an array of ProductManufacturers objects
+     */
+    public function findByClinicList($clinicId)
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));";
+        $stmt = $conn->prepare($sql);
+        $stmt->executeStatement();
+
+        return $this->createQueryBuilder('pm')
+            ->select('pm','p','cp','m')
+            ->join('pm.manufacturers', 'm')
+            ->join('pm.products', 'p')
+            ->join('p.clinicProducts', 'cp')
+            ->andWhere('cp.clinic = :clinicId')
+            ->setParameter('clinicId', $clinicId)
+            ->andWhere('p.isPublished = 1')
+            ->andWhere('p.isActive = 1')
+            ->groupBy('m.id')
+            ->orderBy('m.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+            ;
+    }
+
     /*
     public function findOneBySomeField($value): ?ProductManufacturers
     {
