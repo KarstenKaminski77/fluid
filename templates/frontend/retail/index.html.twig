@@ -211,10 +211,10 @@
                         },
                         complete: function(e)
                         {
-                            {#if(e.status === 500)#}
-                            {#{#}
-                            {#    window.location.href = '{{ path('clinic_error_500') }}';#}
-                            {#}#}
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
                         },
                         success: function (response)
                         {
@@ -222,6 +222,7 @@
                             window.history.pushState(null, "Fluid", '/retail/search/'+ pageId);
                             $('#retail_container').empty().append(response.html);
                             $('#search_field').val(keywords);
+                            window.scrollTo(0, 0);
                             isLoading(false);
                         }
                     });
@@ -245,6 +246,7 @@
                 }
 
                 element.val(qty + 1);
+                $(this).closest('.col-12').next().find('.btn-basket-add').attr('data-qty', qty + 1);
             });
             $(document).on('click', '.btn-minus', function (e)
             {
@@ -260,6 +262,7 @@
                 else
                 {
                     element.val(qty - 1);
+                    $(this).closest('.col-12').next().find('.btn-basket-add').attr('data-qty', qty - 1);
                 }
             });
             $(document).on('click','.page-link',function (e)
@@ -270,6 +273,61 @@
 
                 getSearchResults(keywords, pageId);
             });
+            {# End Search Results #}
+
+            {# Basket #}
+            $(document).on('click', '.btn-basket-add', function (e)
+            {
+                e.preventDefault();
+
+                let clinicId = $(this).attr('data-clinic-id');
+                let productId = $(this).attr('data-product-id');
+                let listItemId = $(this).attr('data-list-item-id');
+                let qty = $(this).attr('data-qty');
+                let price = $(this).attr('data-price');
+                let isValid = true;
+
+                if(productId == '' || productId == 'undefined' || qty == '' || qty == 'undefined' || price == '' || price == 'undefined')
+                {
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('retail_add_to_basket') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'product-id': productId,
+                            'qty': qty,
+                            'price': price,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                //window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            getFlash(response.flash);
+                            isLoading(false);
+                        }
+                    });
+                }
+                else
+                {
+                    getFlash('An Error Occurred','danger');
+                }
+            });
+            {# End Basket #}
 
             {# Company Information #}
             function getCompanyInformation()

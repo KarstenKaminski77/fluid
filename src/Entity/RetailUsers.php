@@ -102,6 +102,11 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $country;
 
+    /**
+     * @ORM\OneToMany(targetEntity=Baskets::class, mappedBy="retailUser")
+     */
+    private $baskets;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -110,6 +115,7 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
         }
         $this->addresses = new ArrayCollection();
         $this->clinicRetailUsers = new ArrayCollection();
+        $this->baskets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -389,6 +395,36 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCountry(?Countries $country): self
     {
         $this->country = $country;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Baskets>
+     */
+    public function getBaskets(): Collection
+    {
+        return $this->baskets;
+    }
+
+    public function addBasket(Baskets $basket): self
+    {
+        if (!$this->baskets->contains($basket)) {
+            $this->baskets[] = $basket;
+            $basket->setRetailUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBasket(Baskets $basket): self
+    {
+        if ($this->baskets->removeElement($basket)) {
+            // set the owning side to null (unless already changed)
+            if ($basket->getRetailUser() === $this) {
+                $basket->setRetailUser(null);
+            }
+        }
 
         return $this;
     }

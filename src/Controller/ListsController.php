@@ -1109,8 +1109,12 @@ class ListsController extends AbstractController
                                 </div>
                                 <div class="col-12 col-sm-6 bg-white border-bottom border-right px-3 pb-3">
                                     <button
-                                        class="btn btn-primary w-100 btn-retail-connect"
-                                        data-clinic-id=""
+                                        class="btn btn-primary w-100 btn-basket-add"
+                                        data-clinic-id="'. $clinicId .'"
+                                        data-product-id="'. $product->getId() .'"
+                                        data-list-item-id="'. $result->getId() .'"
+                                        data-price="'. $result->getUnitPrice() .'"
+                                        data-qty="1"
                                     >
                                         <i class="fa-light fa-basket-shopping me-2"></i>
                                         ADD

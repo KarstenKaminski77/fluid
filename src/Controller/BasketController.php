@@ -11,6 +11,7 @@ use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
 use App\Entity\ProductImages;
 use App\Entity\Products;
+use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -1917,6 +1918,70 @@ class BasketController extends AbstractController
                 </div>
             </div>
         </div>';
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/add-to-basket', name: 'retail_add_to_basket')]
+    public function retailAddToBasketAction(Request $request): Response
+    {
+        $response = '';
+        $response = [];
+        $data = $request->request;
+        $retailUserId = $this->getUser()->getId();
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $firstName = $this->encryptor->decrypt($retailUser->getFirstName());
+        $lastName = $this->encryptor->decrypt($retailUser->getLastName());
+        $productId = $data->get('product-id');
+        $price = $data->get('price');
+        $qty = $data->get('qty');
+        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
+            'retailUser' => $retailUserId
+        ]);
+        $product = $this->em->getRepository(Products::class)->find($productId);
+
+        // Create new basket if one doesn't exist
+        if($basket == null)
+        {
+            $basket = new Baskets();
+
+            $basket->setClinic(null);
+            $basket->setDistributor(null);
+            $basket->setRetailUser($retailUser);
+            $basket->setStatus('active');
+            $basket->setName('fluid Commerce');
+            $basket->setIsDefault(1);
+        }
+
+        $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
+
+        $this->em->persist($basket);
+        $this->em->flush();
+
+        // Add item to basket
+        $basketItem = $this->em->getRepository(BasketItems::class)->findOneBy([
+            'basket' => $basket->getId(),
+            'product' => $productId,
+        ]);
+
+        if($basketItem == null)
+        {
+            $basketItem = new BasketItems();
+        }
+
+        $basketItem->setBasket($basket);
+        $basketItem->setProduct($product);
+        $basketItem->setDistributor(null);
+        $basketItem->setName($product->getName());
+        $basketItem->setQty($qty);
+        $basketItem->setUnitPrice($price);
+        $basketItem->setTotal($price * $qty);
+        $basketItem->setItemId(0);
+
+        $this->em->persist($basketItem);
+        $this->em->flush();
+
+        $response['flash'] = '<b><i class="fas fa-check-circle"></i> '. $product->getName() .' added to your basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
         return new JsonResponse($response);
     }
