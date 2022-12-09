@@ -115,6 +115,27 @@ class ListItemsRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
+    /**
+     * @return ListItems[] Returns an array of ListItems objects
+     */
+    public function findByKeyword($listId, $keywords)
+    {
+        $queryBuilder = $this->createQueryBuilder('li')
+            ->select('li', 'l', 'p', 'd', 'dp', 'a')
+            ->join('li.list', 'l')
+            ->join('li.product', 'p')
+            ->join('li.distributor', 'd')
+            ->join('li.distributorProduct', 'dp')
+            ->join('d.api', 'a')
+            ->andWhere('li.list = :listId')
+            ->setParameter('listId', $listId)
+            ->andWhere("MATCH_AGAINST(p.name,p.activeIngredient,p.description,p.slug) AGAINST(:search_term boolean) > 0")
+            ->setParameter('search_term', '*'.$keywords.'*')
+            ->andWhere("li.itemId != ''");
+
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
     /*
     public function findOneBySomeField($value): ?ListItems
     {

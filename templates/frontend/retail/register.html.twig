@@ -61,6 +61,22 @@
             </div>
         </div>
 
+        {# Country #}
+        <div class="row pb-3 bg-light border-left border-right">
+            <div class="col-12 col-sm-6">
+                <label>Located In <span class="text-danger">*</span></label>
+                <select name="country" id="country" class="form-control" style="color:#b1abb0 !important">
+                    <option value="">Country</option>
+                    {% for country in countries %}
+                        <option value="{{ country.id }}">{{ country.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="hidden_msg" id="error_country">
+                    Required Field
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12 ps-0 pe-0">
                 <button id="form_save" type="submit" class="btn btn-primary float-end w-100">CREATE ACCOUNT</button>
@@ -81,14 +97,16 @@
 
     <script>
 
-        $(document).ready(function (){
-
+        $(document).ready(function ()
+        {
             // International Numbers
             let input = document.querySelector('#telephone');
             iti = window.intlTelInput(input, {
                 initialCountry: "auto",
-                geoIpLookup: function(success, failure) {
-                    $.get("https://ipinfo.io", function() {}, "jsonp").always(function(resp) {
+                geoIpLookup: function(success, failure)
+                {
+                    $.get("https://ipinfo.io", function() {}, "jsonp").always(function(resp)
+                    {
                         var countryCode = (resp && resp.country) ? resp.country : "ae";
                         success(countryCode);
                     });
@@ -101,20 +119,20 @@
                 utilsScript: "/js/utils.js",
             });
 
-            let handleChange = function() {
+            let handleChange = function()
+            {
                 let mobile = $('#mobile');
                 let mobile_number = (iti.isValidNumber()) ? iti.getNumber() : false;
                 let textNode = document.createTextNode(mobile_number);
 
-                if(mobile_number != false){
-
+                if(mobile_number != false)
+                {
                     let isoCode = iti.getSelectedCountryData().iso2;
                     let intlCode = iti.getSelectedCountryData().dialCode;
 
                     mobile.val(mobile_number.substring(1));
                     $('#iso_code').val(isoCode);
                     $('#intl_code').val(intlCode);
-
                 }
             };
 
@@ -122,8 +140,8 @@
             input.addEventListener('change', handleChange);
             input.addEventListener('keyup', handleChange);
 
-            $(document).on('change', '#email', function (){
-
+            $(document).on('change', '#email', function ()
+            {
                 let email = $('#email').val();
                 let errorEmail = $('#error_email');
 
@@ -139,7 +157,7 @@
                     complete: function(e, xhr, settings)
                     {
                         if(e.status === 500){
-                            //window.location.href = '{{ path('retail_error_500') }}';
+                            window.location.href = '{{ path('retail_error_500') }}';
                         }
                     },
                     success: function (response)
@@ -151,8 +169,8 @@
                     }
                 });
             });
-            $(document).on('submit','#register_form', function (e){
-
+            $(document).on('submit','#register_form', function (e)
+            {
                 e.preventDefault();
 
                 let isValid = true;
@@ -160,43 +178,52 @@
                 let lastName = $('#last_name').val();
                 let email = $('#email').val();
                 let telephone = $('#mobile').val();
+                let country = $('#country').val();
                 let errorFirstName = $('#error_first_name');
                 let errorLastName = $('#error_last_name');
                 let errorEmail = $('#error_email');
                 let errorTelephone = $('#error_telephone');
+                let errorCountry = $('#error_country');
 
                 errorFirstName.hide();
                 errorLastName.hide();
                 errorEmail.hide();
                 errorTelephone.hide();
+                errorCountry.hide();
 
-                if(firstName == '' || firstName == 'undefined'){
-
+                if(firstName == '' || firstName == 'undefined')
+                {
                     errorFirstName.show();
                     isValid = false;
                 }
 
-                if(lastName == '' || lastName == 'undefined'){
-
+                if(lastName == '' || lastName == 'undefined')
+                {
                     errorLastName.show();
                     isValid = false;
                 }
 
-                if(email == '' || email == 'undefined'){
-
+                if(email == '' || email == 'undefined')
+                {
                     errorEmail.empty().append('Required Field').show();
                     isValid = false;
                 }
 
-                if(telephone == '' || telephone == 'undefined'){
-
+                if(telephone == '' || telephone == 'undefined')
+                {
                     $('#telephone').val('');
                     errorTelephone.show();
                     isValid = false;
                 }
 
-                if(isValid == true){
+                if(country == '' || country == 'undefined')
+                {
+                    errorCountry.show();
+                    isValid = false;
+                }
 
+                if(isValid == true)
+                {
                     let data = new FormData(this);
 
                     $.ajax({
@@ -208,12 +235,12 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        beforeSend: function () {
-
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        success: function (response) {
-
+                        success: function (response)
+                        {
                             $('#register_form').empty();
                             $('#register_form').addClass('text-center mt-5 mb-2').append(response);
                             isLoading(false);
@@ -222,15 +249,15 @@
                 }
             });
 
-            function isLoading(status){
-
-                if(status) {
-
+            function isLoading(status)
+            {
+                if(status)
+                {
                     $("div.spanner").addClass("show");
                     $("div.overlay").addClass("show");
-
-                } else {
-
+                }
+                else
+                {
                     $("div.spanner").removeClass("show");
                     $("div.overlay").removeClass("show");
                 }

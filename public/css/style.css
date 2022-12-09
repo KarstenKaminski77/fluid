@@ -1452,6 +1452,10 @@ a.user-pagination {
     box-shadow: none !important;
 }
 
+.btn-outline-secondary {
+    border: 1px solid #ced4da !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .address-pagination {
         transition: none;

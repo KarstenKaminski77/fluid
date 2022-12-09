@@ -6,6 +6,7 @@ use App\Entity\Addresses;
 use App\Entity\ClinicRetailUsers;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
+use App\Entity\Countries;
 use App\Entity\Distributors;
 use App\Entity\DistributorUsers;
 use App\Entity\Manufacturers;
@@ -50,8 +51,14 @@ class RetailUsersController extends AbstractController
     #[Route('/retail/register', name: 'retail_reg')]
     public function retailRegister(): Response
     {
+        $countries = $this->em->getRepository(Countries::class)->findBy([
+            'isActive' => 1
+        ],[
+            'name' => 'ASC'
+        ]);
         return $this->render('frontend/retail/register.html.twig', [
             'controller_name' => 'RetailUsersController',
+            'countries' => $countries,
         ]);
     }
 
@@ -74,6 +81,7 @@ class RetailUsersController extends AbstractController
             if (!empty($plainTextPwd))
             {
                 $hashedPwd = $this->passwordHasher->hashPassword($retailUser, $plainTextPwd);
+                $country = $this->em->getRepository(Countries::class)->find($data->get('country'));
 
                 $retailUser->setFirstName($this->encryptor->encrypt($data->get('first-name')));
                 $retailUser->setLastName($this->encryptor->encrypt($data->get('last-name')));
@@ -84,6 +92,7 @@ class RetailUsersController extends AbstractController
                 $retailUser->setTelephone($this->encryptor->encrypt($data->get('telephone')));
                 $retailUser->setIntlCode($this->encryptor->encrypt($data->get('intl-code')));
                 $retailUser->setIsoCode($this->encryptor->encrypt($data->get('iso-code')));
+                $retailUser->setCountry($country);
 
                 $this->em->persist($retailUser);
                 $this->em->flush();
@@ -132,16 +141,22 @@ class RetailUsersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/retail/search', name: 'retail_search')]
+    #[Route('/retail/search/{pageNo}', name: 'retail_search')]
     #[Route('/retail/personal-information', name: 'retail_personal_information')]
     #[Route('/retail/addresses/{pageId}', name: 'retail_addresses')]
-    public function retailSearchAction(Request $request): Response
+    public function retailBaseAction(Request $request): Response
     {
+        if($this->getUser() == null)
+        {
+            return $this->redirectToRoute('retail_login');
+        }
+
         $retailUserId = $this->getUser()->getId();
         $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
         $pageId = $request->request->get('page_id') ?? 1;
         $isAjax = $request->request->get('is-ajax') ?? false;
         $isConnected = false;
+        $html = '';
 
         if($retailUser->getClinic() != null)
         {
@@ -651,13 +666,16 @@ class RetailUsersController extends AbstractController
 
                 $clinicRetailUser->setClinic($clinic);
                 $clinicRetailUser->setRetailUser($retailUser);
-                $clinicRetailUser->setIsApproved(0);
+                $clinicRetailUser->setIsApproved(1);
                 $clinicRetailUser->setIsIgnored(0);
 
                 $this->em->persist($clinicRetailUser);
+
+                $retailUser->setClinic($clinic);
+
                 $this->em->flush();
 
-                $response['flash'] = $this->getFlash('Your request has been sent to '. $clinicName);
+                $response['flash'] = $this->getFlash('You have connected to '. $clinicName);
                 $response['type'] = 'success';
             }
             else

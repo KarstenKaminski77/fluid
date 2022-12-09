@@ -124,7 +124,9 @@
             {# Get correct content on refresh #}
             let uri = window.location.pathname;
             let isPersonalInformation = uri.match('/retail/personal-information');
+            let isSearch = uri.match('/retail/search/[0-9]+');
             let isAddresses = uri.match('/retail/addresses/[0-9]+');
+            let keywords = $.session.get('keywords');
 
             {# Handle Page Rload #}
             if(isPersonalInformation != null)
@@ -134,6 +136,13 @@
             if(isAddresses != null)
             {
                 getAddresses(1);
+            }
+            if(isSearch != null)
+            {
+                if(keywords != 'undefined' || keywords != '')
+                {
+                    getSearchResults(keywords,1);
+                }
             }
 
             {# Dropdown Menu Carat #}
@@ -151,7 +160,116 @@
                 }
             });
 
+            {# Notications #}
+            $('#notifications_panel').hide();
+
+            $(document).on('click', 'a', function ()
+            {
+                let name = $(this).attr('name');
+
+                if(name != 'notifications')
+                {
+                    $('#notifications_panel').hide();
+                }
+            });
+
             adjustSideNavHeight();
+
+            {# Search Results #}
+            $(document).on('click', '#search_btn', function (e)
+            {
+                e.preventDefault();
+
+                let keywords = $('#search_field').val();
+
+                getSearchResults(keywords, 1);
+            });
+
+            function getSearchResults(keywords, pageId)
+            {
+                let isValid = true;
+
+                if(keywords == '' || keywords == 'undefined')
+                {
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('retail_get_search') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'keywords': keywords,
+                            'page-id': pageId,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            {#if(e.status === 500)#}
+                            {#{#}
+                            {#    window.location.href = '{{ path('clinic_error_500') }}';#}
+                            {#}#}
+                        },
+                        success: function (response)
+                        {
+                            $.session.set('keywords',keywords);
+                            window.history.pushState(null, "Fluid", '/retail/search/'+ pageId);
+                            $('#retail_container').empty().append(response.html);
+                            $('#search_field').val(keywords);
+                            isLoading(false);
+                        }
+                    });
+                }
+            }
+            $(document).on('click', '.btn-plus', function (e)
+            {
+                e.preventDefault();
+
+                let element = $(this).prev('.prd-qty');
+                let qty = parseInt(element.val());
+
+                if(isNaN(qty))
+                {
+                    qty = 1;
+                }
+
+                if(qty >= 1)
+                {
+                    $(this).prevAll('.btn-minus').first().prop('disabled', false);
+                }
+
+                element.val(qty + 1);
+            });
+            $(document).on('click', '.btn-minus', function (e)
+            {
+                e.preventDefault();
+
+                let element = $(this).next('.prd-qty');
+                let qty = parseInt(element.val()) ? parseInt(element.val()) : 1;
+
+                if(qty == 1)
+                {
+                    $(this).prop('disabled', true);
+                }
+                else
+                {
+                    element.val(qty - 1);
+                }
+            });
+            $(document).on('click','.page-link',function (e)
+            {
+                e.preventDefault();
+
+                let pageId = $(this).data('page-id');
+
+                getSearchResults(keywords, pageId);
+            });
 
             {# Company Information #}
             function getCompanyInformation()
@@ -571,7 +689,7 @@
 
                 $.ajax({
                     async: "true",
-                    url: '{{ path('retail_search') }}',
+                    url: '/retail/search/1',
                     type: 'POST',
                     dataType: 'json',
                     data: {

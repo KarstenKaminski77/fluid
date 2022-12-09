@@ -24,6 +24,11 @@ class PaginationManager
             $currentPage = (int) $request->request->get('page_id');
         }
 
+        if($request->request->get('page-id') != null) {
+
+            $currentPage = (int) $request->request->get('page-id');
+        }
+
         if($request->get('page_id') != null) {
 
             $currentPage = (int) $request->get('page_id');

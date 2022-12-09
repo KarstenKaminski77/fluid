@@ -64,10 +64,16 @@ class Countries
      */
     private $currency;
 
+    /**
+     * @ORM\OneToMany(targetEntity=RetailUsers::class, mappedBy="country", orphanRemoval=true)
+     */
+    private $retailUsers;
+
     public function __construct()
     {
         $this->distributors = new ArrayCollection();
         $this->clinics = new ArrayCollection();
+        $this->retailUsers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -215,6 +221,36 @@ class Countries
     public function setCurrency(?string $currency): self
     {
         $this->currency = $currency;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, RetailUsers>
+     */
+    public function getRetailUsers(): Collection
+    {
+        return $this->retailUsers;
+    }
+
+    public function addRetailUser(RetailUsers $retailUser): self
+    {
+        if (!$this->retailUsers->contains($retailUser)) {
+            $this->retailUsers[] = $retailUser;
+            $retailUser->setCountry($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRetailUser(RetailUsers $retailUser): self
+    {
+        if ($this->retailUsers->removeElement($retailUser)) {
+            // set the owning side to null (unless already changed)
+            if ($retailUser->getCountry() === $this) {
+                $retailUser->setCountry(null);
+            }
+        }
 
         return $this;
     }

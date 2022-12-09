@@ -4,13 +4,16 @@ namespace App\Controller;
 
 use App\Entity\BasketItems;
 use App\Entity\Baskets;
+use App\Entity\Countries;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
 use App\Entity\ListItems;
 use App\Entity\Lists;
 use App\Entity\ProductFavourites;
+use App\Entity\ProductImages;
 use App\Entity\ProductRetail;
 use App\Entity\Products;
+use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -26,7 +29,7 @@ class ListsController extends AbstractController
     private $em;
     private $encryptor;
     private $pageManager;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 4;
 
     public function __construct(EntityManagerInterface $em, Encryptor $encryptor, PaginationManager $pageManager) {
 
@@ -1015,6 +1018,202 @@ class ListsController extends AbstractController
         }
 
         return  new JsonResponse($response);
+    }
+
+    #[Route('/retail/get/search', name: 'retail_get_search')]
+    public function retailSearchAction(Request $request): Response
+    {
+        if($this->getUser() == null)
+        {
+            return new JsonResponse([
+                'authenticated' => false,
+            ]);
+        }
+
+        $response['html'] = '';
+        $pageId = $request->request->get('page-id') ?? 1;
+        $keywords = $request->request->get('keywords');
+        $retailUserId = $this->getUser()->getId();
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $list = $this->em->getRepository(Lists::class)->findOneBy([
+            'clinic' => $clinicId,
+            'listType' => 'retail',
+        ]);
+        $products = $this->em->getRepository(ListItems::class)->findByKeyword($list->getId(), $keywords);
+        $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+        $country = $this->em->getRepository(Countries::class)->find($retailUser->getCountry()->getId());
+
+        if(count($results) > 0)
+        {
+            $response['html'] .= '<div class="row">';
+            $i = 0;
+
+            foreach($results as $result)
+            {
+                $i++;
+                $product = $result->getProduct();
+                $from = '&nbsp;';
+                $dosage = '&nbsp;';
+                $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
+                    'product' => $product->getId(),
+                    'isDefault' => 1
+                ]);
+
+                if($firstImage == null){
+
+                    $firstImage = 'image-not-found.jpg';
+
+                } else {
+
+                    $firstImage = $firstImage->getImage();
+                }
+
+                // Proce From
+                if($product->getSize() != null && $product->getUnit())
+                {
+                    $price = $result->getUnitPrice() / $product->getSize();
+                    $price = number_format($price, 2);
+                    $from = 'From <b>'. $country->getCurrency() .' '. $price .' </b>/ '. $product->getUnit();
+                }
+
+                // Dosage
+                if($product->getDosage() != null && $product->getDosageUnit() != null)
+                {
+                    $dosage = '<b>Dosage:</b> '. $product->getDosage();
+                    $dosage .= $product->getDosageUnit() .' '. $product->getForm() .' / '. $product->getActiveIngredient();
+                }
+
+                $response['html'] .= '
+                <div class="col-12 col-sm-3 px-4 pt-3 text-center mx-auto">
+                    <div class="row">
+                        <span class="half-border">
+                            <div class="row">
+                                <div class=" col-12 bg-white border-top border-left border-right px-4 pb-3">
+                                    <img src="/images/products/'. $firstImage .'" style="max-height: 120px">
+                                    <h6 class="mt-3">'. $product->getName() .'</h6>
+                                    <p class="m-0 pb-3"><h5>'. $country->getCurrency() .' '. number_format($result->getUnitPrice(),2) .'</h5></p>
+                                        <p>'. $from .'</p>
+                                        <p>'. $dosage .'</p>
+                                </div>
+                                <div class="col-12 col-sm-6 bg-white border-left px-3 pb-3">
+                                    <div class="input-group  ">
+                                        <button style="min-width: 2.5rem" class="btn btn-decrement btn-outline-secondary btn-minus" type="button" disabled>
+                                            <strong>−</strong>
+                                        </button>
+                                        <input type="text" inputmode="decimal" style="text-align: center" class="form-control prd-qty px-0" value="1">
+                                        <button style="min-width: 2.5rem" class="btn btn-increment btn-outline-secondary btn-plus" type="button">
+                                            <strong>+</strong>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6 bg-white border-bottom border-right px-3 pb-3">
+                                    <button
+                                        class="btn btn-primary w-100 btn-retail-connect"
+                                        data-clinic-id=""
+                                    >
+                                        <i class="fa-light fa-basket-shopping me-2"></i>
+                                        ADD
+                                    </button>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+                </div>';
+            }
+
+            $response['html'] .= '</div>';
+            $response['html'] .= $this->getPagination($pageId, $results);
+        }
+        else
+        {
+            $response .= '
+            <div class="row">
+                <div class="col-12 text-center border-left border-right border-bottom bg-light p-3">
+                    You have not selected any products yet.
+                </div>
+            </div>';
+        }
+
+        return  new JsonResponse($response);
+    }
+
+    public function getPagination($pageId, $results): string
+    {
+        $currentPage = $pageId;
+        $lastPage = $this->pageManager->lastPage($results);
+
+        $html = '
+        <!-- Pagination -->
+        <div class="row">
+            <div class="col-12 mt-3">';
+
+        if($lastPage > 1) {
+
+            $previousPageNo = $currentPage - 1;
+            $url = '/retail/search/';
+            $previousPage = $url . $previousPageNo;
+
+            $html .= '
+            <nav class="custom-pagination">
+                <ul class="pagination justify-content-center">
+            ';
+
+            $disabled = 'disabled';
+            $dataDisabled = 'true';
+
+            // Previous Link
+            if($currentPage > 1){
+
+                $disabled = '';
+                $dataDisabled = 'false';
+            }
+
+            $html .= '
+            <li class="page-item '. $disabled .'">
+                <a class="page-link" aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage - 1 .'" href="'. $previousPage .'">
+                    <span aria-hidden="true">&laquo;</span> Previous
+                </a>
+            </li>';
+
+            for($i = 1; $i <= $lastPage; $i++) {
+
+                $active = '';
+
+                if($i == (int) $currentPage){
+
+                    $active = 'active';
+                }
+
+                $html .= '
+                    <li class="page-item '. $active .'">
+                        <a class="page-link" data-page-id="'. $i .'" href="'. $url . $i .'">'. $i .'</a>
+                    </li>';
+            }
+
+            $disabled = 'disabled';
+            $dataDisabled = 'true';
+
+            if($currentPage < $lastPage) {
+
+                $disabled = '';
+                $dataDisabled = 'false';
+            }
+
+            $html .= '
+                <li class="page-item '. $disabled .'">
+                    <a class="page-link" aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
+                        Next <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>';
+
+            $html .= '
+                    </ul>
+                </nav>
+            </div>';
+        }
+
+        return $html;
     }
 
     private function getListRow($icon, $listName, $listId, $itemCount, $keyword = ''){

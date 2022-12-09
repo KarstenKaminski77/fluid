@@ -338,6 +338,10 @@ class DistributorClinicsController extends AbstractController
         <br><br>
         <a href="'. $this->getParameter('app.base_url') .'/inventory">Back To Fluid</a>';
 
+        $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+            'html'  => $html,
+        ]);
+
         $email = (new Email())
             ->from($this->getParameter('app.email_from'))
             ->addTo($this->encryptor->decrypt($clinic->getEmail()))

@@ -403,7 +403,7 @@ class ProductsController extends AbstractController
                                             >
                                                 <img 
                                                     src="/images/products/'. $firstImage .'" 
-                                                    alt="Los Angeles" 
+                                                    alt="" 
                                                     class="img-fluid active" 
                                                     style="max-height:140px"
                                                 >

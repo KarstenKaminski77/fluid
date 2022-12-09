@@ -96,6 +96,12 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $clinicRetailUsers;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=Countries::class, inversedBy="retailUsers")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $country;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -371,6 +377,18 @@ class RetailUsers implements UserInterface, PasswordAuthenticatedUserInterface
                 $clinicRetailUser->setRetailUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCountry(): ?Countries
+    {
+        return $this->country;
+    }
+
+    public function setCountry(?Countries $country): self
+    {
+        $this->country = $country;
 
         return $this;
     }
