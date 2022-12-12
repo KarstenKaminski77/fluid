@@ -137,9 +137,9 @@
             {
                 getAddresses(1);
             }
-            if(isSearch != null)
+            if(isSearch != null && '{{ clinic }}' > 0)
             {
-                if((keywords != 'undefined' || keywords != '') && '{{ retailUser.clinic }}' != '')
+                if(keywords != 'undefined' || keywords != '')
                 {
                     getSearchResults(keywords,1);
                 }

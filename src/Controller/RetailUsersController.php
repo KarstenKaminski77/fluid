@@ -153,18 +153,12 @@ class RetailUsersController extends AbstractController
 
         $retailUserId = $this->getUser()->getId();
         $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $retailClinic = $retailUser->getClinic() ? $retailUser->getClinic()->getId() : 0;
         $pageId = $request->request->get('page_id') ?? 1;
         $isAjax = $request->request->get('is-ajax') ?? false;
-        $isConnected = false;
         $html = '';
-        $clinic = '';
 
-        if($retailUser->getClinic() != null)
-        {
-            $isConnected = true;
-            $clinic = $this->getUser()->getClinic();
-        }
-        else
+        if($retailUser->getClinic() == null)
         {
             $retailClinics = $this->em->getRepository(Clinics::class)->adminFindAll(1);
             $results = $this->pageManager->paginate($retailClinics[0], $request, self::ITEMS_PER_PAGE);
@@ -265,7 +259,7 @@ class RetailUsersController extends AbstractController
         return $this->render('frontend/retail/index.html.twig',[
             'retailUser' => $retailUser,
             'html' => $html,
-            'clinic' => $clinic,
+            'clinic' => $retailClinic,
         ]);
     }
 
