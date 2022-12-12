@@ -66,7 +66,7 @@ class RetailAuthenticator extends AbstractLoginFormAuthenticator
             return new RedirectResponse($targetPath);
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('retail_search'));
+        return new RedirectResponse($this->urlGenerator->generate('retail_personal_information'));
     }
 
     protected function getLoginUrl(Request $request): string
