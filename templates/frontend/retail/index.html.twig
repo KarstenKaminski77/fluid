@@ -778,7 +778,11 @@
             {
                 e.preventDefault();
 
+                let clinicId = $(this).attr('data-clinic-id');
+                let logo = $(this).attr('data-clinic-logo')
+
                 $('#btn_request_connection').attr('data-clinic-id', $(this).attr('data-clinic-id'));
+                $('#logo_img').attr('src', logo);
                 $('#modal_connect').modal('toggle');
             });
             $(document).on('click', '#btn_request_connection', function ()
