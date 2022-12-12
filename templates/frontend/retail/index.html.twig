@@ -139,8 +139,8 @@
             }
             if(isSearch != null)
             {
-                if(keywords != 'undefined' || keywords != '')
-                {
+                if((keywords != 'undefined' || keywords != '') && '{{ retailUser.clinic }}' != '')
+                { 
                     getSearchResults(keywords,1);
                 }
             }
