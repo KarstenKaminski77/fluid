@@ -128,9 +128,16 @@ class ListItemsRepository extends ServiceEntityRepository
             ->join('li.distributorProduct', 'dp')
             ->join('d.api', 'a')
             ->andWhere('li.list = :listId')
-            ->setParameter('listId', $listId)
-            ->andWhere("MATCH_AGAINST(p.name,p.activeIngredient,p.description,p.slug) AGAINST(:search_term boolean) > 0")
-            ->setParameter('search_term', '*'.$keywords.'*')
+            ->setParameter('listId', $listId);
+
+        if($keywords != null)
+        {
+            $queryBuilder
+                ->andWhere("MATCH_AGAINST(p.name,p.activeIngredient,p.description,p.slug) AGAINST(:search_term boolean) > 0")
+                ->setParameter('search_term', '*'.$keywords.'*');
+        }
+
+        $queryBuilder
             ->andWhere("li.itemId != ''");
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
