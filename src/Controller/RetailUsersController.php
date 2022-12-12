@@ -157,11 +157,12 @@ class RetailUsersController extends AbstractController
         $isAjax = $request->request->get('is-ajax') ?? false;
         $isConnected = false;
         $html = '';
+        $clinic = '';
 
         if($retailUser->getClinic() != null)
         {
             $isConnected = true;
-            $clinicId = $this->getUser()->getClinic()->getId();
+            $clinic = $this->getUser()->getClinic();
         }
         else
         {
@@ -264,6 +265,7 @@ class RetailUsersController extends AbstractController
         return $this->render('frontend/retail/index.html.twig',[
             'retailUser' => $retailUser,
             'html' => $html,
+            'clinic' => $clinic,
         ]);
     }
 
