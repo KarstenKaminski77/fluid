@@ -216,6 +216,7 @@ class RetailUsersController extends AbstractController
                                 class="btn btn-primary w-100 btn-retail-connect"
                                 data-clinic-id="'. $clinic->getId() .'"
                                 data-clinic-logo="'. $logo .'"
+                                data-clinic-name="'. $this->encryptor->decrypt($clinic->getClinicName()) .'"
                             >
                                 CONNECT
                             </button>
@@ -237,7 +238,7 @@ class RetailUsersController extends AbstractController
                             <div class="row">
                                 <div class="col-12 mb-0 text-center">
                                     <img src="" id="logo_img" class="img-fluid">
-                                    <p class="fw-bold">Request an account with '. $this->encryptor->decrypt($clinic->getClinicName()) .'?</p>
+                                    <p class="fw-bold">Request an account with <span id="modal_clinic_name"></span?</p>
                                 </div>
                             </div>
                         </div>

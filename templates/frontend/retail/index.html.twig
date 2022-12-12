@@ -779,10 +779,12 @@
                 e.preventDefault();
 
                 let clinicId = $(this).attr('data-clinic-id');
-                let logo = $(this).attr('data-clinic-logo')
+                let clinicLogo = $(this).attr('data-clinic-logo')
+                let clinicName = $(this).attr('data-clinic-name')
 
-                $('#btn_request_connection').attr('data-clinic-id', $(this).attr('data-clinic-id'));
-                $('#logo_img').attr('src', logo);
+                $('#btn_request_connection').attr('data-clinic-id', clinicId);
+                $('#logo_img').attr('src', clinicLogo);
+                $('#modal_clinic_name').empty().append(clinicName);
                 $('#modal_connect').modal('toggle');
             });
             $(document).on('click', '#btn_request_connection', function ()
