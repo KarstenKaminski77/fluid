@@ -213,7 +213,7 @@
                         {
                             if(e.status === 500)
                             {
-                                window.location.href = '{{ path('clinic_error_500') }}';
+                                window.location.href = '{{ path('retail_error_500') }}';
                             }
                         },
                         success: function (response)
@@ -312,7 +312,7 @@
                         {
                             if(e.status === 500)
                             {
-                                //window.location.href = '{{ path('clinic_error_500') }}';
+                                //window.location.href = '{{ path('retail_error_500') }}';
                             }
                         },
                         success: function (response)
@@ -450,7 +450,7 @@
                         complete: function (e)
                         {
                             if (e.status === 500) {
-                                window.location.href = '{{ path('clinic_error_500') }}';
+                                window.location.href = '{{ path('retail_error_500') }}';
                             }
                         },
                         success: function (response)
