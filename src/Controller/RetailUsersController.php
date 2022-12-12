@@ -185,6 +185,7 @@ class RetailUsersController extends AbstractController
                     'clinic' => $clinic->getId(),
                     'isDefaultBilling' => 1,
                 ]);
+                $logo = $this->getParameter('app.base_url') .'/images/logos/image-not-found.jpg';
 
                 if($address == null)
                 {
@@ -198,10 +199,6 @@ class RetailUsersController extends AbstractController
                 if($clinic->getLogo() != null)
                 {
                     $logo = $this->getParameter('app.base_url') .'/images/logos/'. $clinic->getLogo();
-                }
-                else
-                {
-                    $logo = $this->getParameter('app.base_url') .'/images/logos/image-not-found.jpg';
                 }
 
                 $html .= '
