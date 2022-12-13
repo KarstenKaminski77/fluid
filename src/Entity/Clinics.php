@@ -219,6 +219,11 @@ class Clinics
      */
     private $productRetails;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $PoNumberPrefix;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -1078,6 +1083,18 @@ class Clinics
                 $productRetail->setClinic(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPoNumberPrefix(): ?string
+    {
+        return $this->PoNumberPrefix;
+    }
+
+    public function setPoNumberPrefix(?string $PoNumberPrefix): self
+    {
+        $this->PoNumberPrefix = $PoNumberPrefix;
 
         return $this;
     }

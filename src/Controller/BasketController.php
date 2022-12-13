@@ -9,6 +9,7 @@ use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
+use App\Entity\ListItems;
 use App\Entity\ProductImages;
 use App\Entity\Products;
 use App\Entity\RetailUsers;
@@ -188,7 +189,8 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item')]
     public function removeBasketItemAction(Request $request): Response
     {
-        $basketItem = $this->em->getRepository(BasketItems::class)->find($request->request->get('item_id'));
+        $basketItemId = $request->request->get('item_id') ?? $request->request->get('item-id');
+        $basketItem = $this->em->getRepository(BasketItems::class)->find($basketItemId);
         $basketId = $basketItem->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
@@ -221,7 +223,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/inventory-clear-basket', name: 'inventory_clear_basket')]
     public function clearBasketAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket_id') ?? $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
@@ -930,8 +932,8 @@ class BasketController extends AbstractController
                             </div>
                         </div>';
 
-                        foreach($baskets as $individualBasket){
-
+                        foreach($baskets as $individualBasket)
+                        {
                             $count = $individualBasket->getBasketItems()->count();
                             $bgPrimary = '';
                             $active = '';
@@ -997,362 +999,362 @@ class BasketController extends AbstractController
                             </div>
                         </div>
                     </div>
-
+                
                     <!-- Right Column -->
                     <div class="col-12 col-md-10 col-100 border-left" id="basket_items">
                         <!-- Basket Actions Upper Row -->
                         <div class="row" id="basket_action_row_1">
                             <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
 
+                            $response .= '
+                            <a href="#" id="print_basket">
+                                <i class="fa-regular fa-print me-5 me-md-2"></i>
+                                <span class=" d-none d-md-inline-block pe-4">Print</span>
+                            </a>';
+
+                            if($basketPermission){
+
                                 $response .= '
-                                <a href="#" id="print_basket">
-                                    <i class="fa-regular fa-print me-5 me-md-2"></i>
-                                    <span class=" d-none d-md-inline-block pe-4">Print</span>
+                                <a href="#" class="saved_baskets_link" data-basket-id="'. $basketId .'">
+                                    <i class="fa-regular fa-basket-shopping me-5  me-md-2"></i>
+                                    <span class=" d-none d-md-inline-block pe-4">
+                                        Saved Baskets
+                                    </span>
                                 </a>';
 
-                                if($basketPermission){
-
-                                    $response .= '
-                                    <a href="#" class="saved_baskets_link" data-basket-id="'. $basketId .'">
-                                        <i class="fa-regular fa-basket-shopping me-5  me-md-2"></i>
-                                        <span class=" d-none d-md-inline-block pe-4">
-                                            Saved Baskets
-                                        </span>
-                                    </a>';
-
-                                } else {
-
-                                    $response .= '
-                                    <span class="saved_baskets_link text-disabled">
-                                        <i class="fa-regular fa-basket-shopping me-5  me-md-2 text-disabled"></i>
-                                        <span class=" d-none d-md-inline-block pe-4 text-disabled">
-                                            Saved Baskets
-                                        </span>
-                                    </span>';
-                                }
+                            } else {
 
                                 $response .= '
-                                <a href="#" id="return_to_search" data-basket-id="">
-                                    <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Back To Search</span>
-                                </a>
+                                <span class="saved_baskets_link text-disabled">
+                                    <i class="fa-regular fa-basket-shopping me-5  me-md-2 text-disabled"></i>
+                                    <span class=" d-none d-md-inline-block pe-4 text-disabled">
+                                        Saved Baskets
+                                    </span>
+                                </span>';
+                            }
+
+                            $response .= '
+                            <a href="#" id="return_to_search" data-basket-id="">
+                                <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Back To Search</span>
+                            </a>
+                        </div>
+                    </div>';
+
+        if(count($basket->getBasketItems()) > 0) {
+
+            $response .= '
+            <!-- Basket Actions Lower Row -->
+            <div class="row" id="basket_action_row_2">
+                <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
+
+                    if($basketPermission){
+
+                        $response .= '
+                        <a href="#" class="save-all-items" data-basket-id="' . $basketId . '">
+                            <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
+                        </a>';
+
+                    } else {
+
+                        $response .= '
+                        <span class="save-all-items text-disabled">
+                            <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
+                        </span>';
+                    }
+
+                    if($basketPermission){
+
+                        $response .= '
+                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '">
+                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
+                        </a>';
+
+                    } else {
+
+                        $response .= '
+                        <span class="clear-basket text-disabled">
+                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
+                        </span>';
+                    }
+
+                    $response .= '
+                    <a href="#" class="refresh-basket" data-basket-id="'. $basketId .'">
+                        <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
+                        <span class=" d-none d-md-inline-block pe-4">Refresh Basket</span>
+                    </a>';
+
+                    if($basketPermission){
+
+                        $response .= '
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#modal_save_basket">
+                            <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
+                        </a>';
+
+                    } else {
+
+                        $response .= '
+                        <span class="text-disabled">
+                            <i class="fa-regular fa-shopping-basket me-0 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
+                        </span>';
+                    }
+
+                $response .= '
+                </div>
+            </div>';
+        }
+
+        $basketSummary = false;
+        $col = '12';
+
+        if(count($basket->getBasketItems()) > 0) {
+
+            $basketSummary = true;
+            $col = '9 border-right';
+        }
+
+        $response .= '
+        <!-- Basket Items -->
+        <div class="row col-container d-flex border-0 m-0">
+            <div class="col-12 col-lg-'. $col .' col-cell px-0 pe-sm-2 border-right-0" id="basket_inner">';
+
+        $i = -1;
+        $checkoutDisabled = '';
+        $checkoutBtnDisabled = '';
+        $checkout = true;
+
+        if(count($basket->getBasketItems()) > 0) {
+
+            foreach ($basket->getBasketItems() as $item) {
+
+                $i++;
+                $product = $basket->getBasketItems()[$i]->getProduct();
+                $trackingId = $item->getDistributor()->getTracking()->getId();
+                $shippingPolicy = $item->getDistributor()->getShippingPolicy() ?? $this->encryptor->decrypt($item->getDistributor()->getDistributorName()) ." hasn't updated their shipping policy.";
+                $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+                    'product' => $item->getProduct()->getId(),
+                    'distributor' => $item->getDistributor()->getId(),
+                ]);
+
+                // If in stock
+                if($distributorProduct->getStockCount() > 0){
+
+                    $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
+
+                } else {
+
+                    if($trackingId == 1 || $trackingId == 2) {
+
+                        $stockBadge = '<span class="badge bg-danger me-2">Out Of Stock</span>';
+                        $disabled = 'disabled';
+                        $checkout = false;
+
+                    } else {
+
+                        $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
+                    }
+                }
+
+                // Product Image
+                $productImages = $product->getProductImages();
+                $image = 'image-not-found.jpg';
+
+                if(count($productImages) > 0){
+
+                    $image = $this->em->getRepository(ProductImages::class)->findOneBy([
+                        'product' => $product->getId(),
+                        'isDefault' => 1
+                    ])->getImage();
+                }
+
+                $response .= '
+                <div class="row">
+                    <!-- Thumbnail -->
+                    <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
+                        <img class="img-fluid basket-img" src="/images/products/' . $image . '">
+                    </div>
+                    <div class="col-12 col-sm-10 pt-3 pb-3">
+                        <!-- Product Name and Qty -->
+                        <div class="row">
+                            <!-- Product Name -->
+                            <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
+                                <span class="info">
+                                    '. $this->encryptor->decrypt($distributorProduct->getDistributor()->getDistributorName()) .'
+                                </span>
+                                <h6 class="fw-bold text-primary lh-base">
+                                    ' . $product->getName() . ': ' . $product->getDosage() . ' ' . $product->getUnit() . '
+                                </h6>
                             </div>
-                        </div>';
-
-                        if(count($basket->getBasketItems()) > 0) {
-
-                            $response .= '
-                            <!-- Basket Actions Lower Row -->
-                            <div class="row" id="basket_action_row_2">
-                                <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
-
-                                    if($basketPermission){
-
-                                        $response .= '
-                                        <a href="#" class="save-all-items" data-basket-id="' . $basketId . '">
-                                            <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
-                                        </a>';
-
-                                    } else {
-
-                                        $response .= '
-                                        <span class="save-all-items text-disabled">
-                                            <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
-                                        </span>';
-                                    }
-
-                                    if($basketPermission){
-
-                                        $response .= '
-                                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '">
-                                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
-                                        </a>';
-
-                                    } else {
-
-                                        $response .= '
-                                        <span class="clear-basket text-disabled">
-                                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
-                                        </span>';
-                                    }
-
-                                    $response .= '
-                                    <a href="#" class="refresh-basket" data-basket-id="'. $basketId .'">
-                                        <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
-                                        <span class=" d-none d-md-inline-block pe-4">Refresh Basket</span>
-                                    </a>';
-
-                                    if($basketPermission){
-
-                                        $response .= '
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#modal_save_basket">
-                                            <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
-                                        </a>';
-
-                                    } else {
-
-                                        $response .= '
-                                        <span class="text-disabled">
-                                            <i class="fa-regular fa-shopping-basket me-0 me-md-2"></i>
-                                            <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
-                                        </span>';
-                                    }
-
-                                $response .= '
-                                </div>
-                            </div>';
-                        }
-
-                        $basketSummary = false;
-                        $col = '12';
-
-                        if(count($basket->getBasketItems()) > 0) {
-
-                            $basketSummary = true;
-                            $col = '9 border-right';
-                        }
-
-                        $response .= '
-                        <!-- Basket Items -->
-                        <div class="row col-container d-flex border-0 m-0">
-                            <div class="col-12 col-lg-'. $col .' col-cell px-0 pe-sm-2 border-right-0" id="basket_inner">';
-
-                        $i = -1;
-                        $checkoutDisabled = '';
-                        $checkoutBtnDisabled = '';
-                        $checkout = true;
-
-                        if(count($basket->getBasketItems()) > 0) {
-
-                            foreach ($basket->getBasketItems() as $item) {
-
-                                $i++;
-                                $product = $basket->getBasketItems()[$i]->getProduct();
-                                $trackingId = $item->getDistributor()->getTracking()->getId();
-                                $shippingPolicy = $item->getDistributor()->getShippingPolicy() ?? $this->encryptor->decrypt($item->getDistributor()->getDistributorName()) ." hasn't updated their shipping policy.";
-                                $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
-                                    'product' => $item->getProduct()->getId(),
-                                    'distributor' => $item->getDistributor()->getId(),
-                                ]);
-
-                                // If in stock
-                                if($distributorProduct->getStockCount() > 0){
-
-                                    $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
-
-                                } else {
-
-                                    if($trackingId == 1 || $trackingId == 2) {
-
-                                        $stockBadge = '<span class="badge bg-danger me-2">Out Of Stock</span>';
-                                        $disabled = 'disabled';
-                                        $checkout = false;
-
-                                    } else {
-
-                                        $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
-                                    }
-                                }
-
-                                // Product Image
-                                $productImages = $product->getProductImages();
-                                $image = 'image-not-found.jpg';
-
-                                if(count($productImages) > 0){
-
-                                    $image = $this->em->getRepository(ProductImages::class)->findOneBy([
-                                        'product' => $product->getId(),
-                                        'isDefault' => 1
-                                    ])->getImage();
-                                }
-
-                                $response .= '
+                            <!-- Product Quantity -->
+                            <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3">
                                 <div class="row">
-                                    <!-- Thumbnail -->
-                                    <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
-                                        <img class="img-fluid basket-img" src="/images/products/' . $image . '">
+                                    <div class="col-3 text-center text-sm-end text-md-start text-lg-start">
+                                        ' . number_format($item->getUnitPrice(),2) . '
                                     </div>
-                                    <div class="col-12 col-sm-10 pt-3 pb-3">
-                                        <!-- Product Name and Qty -->
-                                        <div class="row">
-                                            <!-- Product Name -->
-                                            <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
-                                                <span class="info">
-                                                    '. $this->encryptor->decrypt($distributorProduct->getDistributor()->getDistributorName()) .'
-                                                </span>
-                                                <h6 class="fw-bold text-primary lh-base">
-                                                    ' . $product->getName() . ': ' . $product->getDosage() . ' ' . $product->getUnit() . '
-                                                </h6>
-                                            </div>
-                                            <!-- Product Quantity -->
-                                            <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3">
-                                                <div class="row">
-                                                    <div class="col-3 text-center text-sm-end text-md-start text-lg-start">
-                                                        ' . number_format($item->getUnitPrice(),2) . '
-                                                    </div>
-                                                    <div class="col-4">
-                                                        <input
-                                                            type="number"
-                                                            list="qty_list_' . $product->getId() . '"
-                                                            data-basket-item-id="' . $item->getId() . '"
-                                                            name="qty"
-                                                            class="form-control form-control-sm basket-qty"
-                                                            value="' . $item->getQty() . '"
-                                                            ng-value="' . $item->getQty() . '"
-                                                            '. $disabled .'
-                                                        >
-                                                        <div class="hidden_msg" id="stock_count_error_'. $item->getId() .'"></div>
-                                                    </div>
-                                                    <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Item Actions -->
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <!-- In Stock -->
-                                                '. $stockBadge .'
-                                                <!-- Shipping Policy -->
-                                                <span
-                                                    class="badge bg-dark-grey badge-pending-filled-sm" class="btn btn-secondary" data-bs-trigger="hover"
-                                                    data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true"
-                                                    data-bs-content="'. $shippingPolicy .'"
-                                                >
-                                                    Shipping Policy
-                                                </span>
-                                                ';
-
-                                                    if($basketPermission) {
-
-                                                        $response .= '
-                                                        <!-- Remove Item -->
-                                                        <span class="badge bg-danger float-end badge-danger-filled-sm">
-                                                            <a href="#" class="remove-item text-white" data-item-id="' . $item->getId() . '">Remove</a>
-                                                        </span>
-
-                                                        <!-- Save Item -->
-                                                        <span class="badge badge-light badge-light-sm float-end me-0 me-sm-2">
-                                                            <a
-                                                                href="#"
-                                                                class="link-secondary save-item"
-                                                                data-basket-id="' . $basketId . '"
-                                                                data-product-id="' . $product->getId() . '"
-                                                                data-distributor-id="' . $item->getDistributor()->getId() . '"
-                                                                data-item-id="' . $item->getId() . '"
-                                                            >
-                                                                Save Item For later
-                                                            </a>
-                                                        </span>';
-
-                                                    } else {
-
-                                                        $response .= '
-                                                        <!-- Remove Item -->
-                                                        <span class="badge badge-light badge-light-sm float-end bg-disabled">
-                                                            <span class="remove-item">Remove</span>
-                                                        </span>
-
-                                                        <!-- Save Item -->
-                                                        <span class="badge badge-light badge-light-sm float-end me-0 me-sm-2 bg-disabled">
-                                                            <span
-                                                                class="link-secondary save-item"
-                                                            >
-                                                                Save Item For later
-                                                            </span>
-                                                        </span>';
-                                                    }
-
-                                                $response .= '
-                                                </span>
-                                            </div>
-                                        </div>
+                                    <div class="col-4">
+                                        <input
+                                            type="number"
+                                            list="qty_list_' . $product->getId() . '"
+                                            data-basket-item-id="' . $item->getId() . '"
+                                            name="qty"
+                                            class="form-control form-control-sm basket-qty"
+                                            value="' . $item->getQty() . '"
+                                            ng-value="' . $item->getQty() . '"
+                                            '. $disabled .'
+                                        >
+                                        <div class="hidden_msg" id="stock_count_error_'. $item->getId() .'"></div>
                                     </div>
-                                </div>';
-                            }
-                        } else {
-
-                            $response .= '
-                            <div class="row">
-                                <div class="col-12 text-center pt-4">
-                                    <p>
-                                    <h5>Your basket at Fluid Commerce is currently empty </h5><br>
-                                    Were you expecting to see items here? View copies of the items most recently added<br>
-                                    to your basket and restore a basket if needed.
-                                    </p>
-                                </div>
-                            </div>';
-                        }
-
-                        $response .= '
-                        </div>';
-
-                        if($basketSummary) {
-
-                            $checkoutError = '';
-
-                            if(!$checkout){
-
-                                $checkoutDisabled = 'disabled';
-                                $checkoutBtnDisabled = 'btn-secondary disabled';
-                                $checkoutError = '
-                                <div class="text-danger mt-3">
-                                    One or more items in your basket is currently out of stock. Remove or save the item for later
-                                    to proceed to checkout. 
-                                </div>';
-                            }
-
-                            $response .= '
-                            <!-- Basket Summary -->
-                            <div class="col-12 col-lg-3 pt-3 pb-3 pe-0 col-cell" id="basket_summary">
-                                <div class="row">
-                                    <div class="col-12 text-truncate ps-0 ps-sm-2">
-                                        <span class="info">Subtotal:</span>
-                                        <h5 class="d-inline-block text-primary float-end">' . $currency .' '. number_format($basket->getTotal(),2) . '</h5>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12 info ps-0 ps-sm-2">
-                                        Shipping: <span class="float-end fw-bold">'. $currency .' 0.00</span>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12 pt-4 text-center ps-0 ps-sm-2">';
-
-                                        if(in_array(3, $permissions)){
-
-                                            $response .= '
-                                            <a
-                                                href=""
-                                                class="btn btn-primary w-100 '. $checkoutBtnDisabled .'"
-                                                id="btn_checkout"
-                                                data-basket-id="'. $basketId .'"
-                                                '. $checkoutDisabled .'
-                                            >
-                                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
-                                            </a>';
-
-                                        } else {
-
-                                            $response .= '
-                                            <span
-                                                class="btn btn-primary w-100 btn-disabled cursor-disabled"
-                                            >
-                                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
-                                            </span>';
-                                        }
-
-                                        $response .= '
-                                        '. $checkoutError .'
-                                    </div>
+                                    <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
                                 </div>
                             </div>
                         </div>
-                    </div>';
+                        <!-- Item Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <!-- In Stock -->
+                                '. $stockBadge .'
+                                <!-- Shipping Policy -->
+                                <span
+                                    class="badge bg-dark-grey badge-pending-filled-sm" class="btn btn-secondary" data-bs-trigger="hover"
+                                    data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true"
+                                    data-bs-content="'. $shippingPolicy .'"
+                                >
+                                    Shipping Policy
+                                </span>
+                                ';
+
+                                    if($basketPermission) {
+
+                                        $response .= '
+                                        <!-- Remove Item -->
+                                        <span class="badge bg-danger float-end badge-danger-filled-sm">
+                                            <a href="#" class="remove-item text-white" data-item-id="' . $item->getId() . '">Remove</a>
+                                        </span>
+
+                                        <!-- Save Item -->
+                                        <span class="badge badge-light badge-light-sm float-end me-0 me-sm-2">
+                                            <a
+                                                href="#"
+                                                class="link-secondary save-item"
+                                                data-basket-id="' . $basketId . '"
+                                                data-product-id="' . $product->getId() . '"
+                                                data-distributor-id="' . $item->getDistributor()->getId() . '"
+                                                data-item-id="' . $item->getId() . '"
+                                            >
+                                                Save Item For later
+                                            </a>
+                                        </span>';
+
+                                    } else {
+
+                                        $response .= '
+                                        <!-- Remove Item -->
+                                        <span class="badge badge-light badge-light-sm float-end bg-disabled">
+                                            <span class="remove-item">Remove</span>
+                                        </span>
+
+                                        <!-- Save Item -->
+                                        <span class="badge badge-light badge-light-sm float-end me-0 me-sm-2 bg-disabled">
+                                            <span
+                                                class="link-secondary save-item"
+                                            >
+                                                Save Item For later
+                                            </span>
+                                        </span>';
+                                    }
+
+                                $response .= '
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+            }
+        } else {
+
+            $response .= '
+            <div class="row">
+                <div class="col-12 text-center pt-4">
+                    <p>
+                    <h5>Your basket at Fluid Commerce is currently empty </h5><br>
+                    Were you expecting to see items here? View copies of the items most recently added<br>
+                    to your basket and restore a basket if needed.
+                    </p>
+                </div>
+            </div>';
+        }
+
+        $response .= '
+        </div>';
+
+        if($basketSummary) {
+
+            $checkoutError = '';
+
+            if(!$checkout){
+
+                $checkoutDisabled = 'disabled';
+                $checkoutBtnDisabled = 'btn-secondary disabled';
+                $checkoutError = '
+                <div class="text-danger mt-3">
+                    One or more items in your basket is currently out of stock. Remove or save the item for later
+                    to proceed to checkout. 
+                </div>';
+            }
+
+            $response .= '
+            <!-- Basket Summary -->
+            <div class="col-12 col-lg-3 pt-3 pb-3 pe-0 col-cell" id="basket_summary">
+                <div class="row">
+                    <div class="col-12 text-truncate ps-0 ps-sm-2">
+                        <span class="info">Subtotal:</span>
+                        <h5 class="d-inline-block text-primary float-end">' . $currency .' '. number_format($basket->getTotal(),2) . '</h5>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 info ps-0 ps-sm-2">
+                        Shipping: <span class="float-end fw-bold">'. $currency .' 0.00</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 pt-4 text-center ps-0 ps-sm-2">';
+
+                        if(in_array(3, $permissions)){
+
+                            $response .= '
+                            <a
+                                href=""
+                                class="btn btn-primary w-100 '. $checkoutBtnDisabled .'"
+                                id="btn_checkout"
+                                data-basket-id="'. $basketId .'"
+                                '. $checkoutDisabled .'
+                            >
+                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                            </a>';
+
+                        } else {
+
+                            $response .= '
+                            <span
+                                class="btn btn-primary w-100 btn-disabled cursor-disabled"
+                            >
+                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                            </span>';
                         }
+
+                        $response .= '
+                        '. $checkoutError .'
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>';
+        }
 
         $response .= '
         </div>';
@@ -1925,7 +1927,6 @@ class BasketController extends AbstractController
     #[Route('/retail/add-to-basket', name: 'retail_add_to_basket')]
     public function retailAddToBasketAction(Request $request): Response
     {
-        $response = '';
         $response = [];
         $data = $request->request;
         $retailUserId = $this->getUser()->getId();
@@ -1951,6 +1952,7 @@ class BasketController extends AbstractController
             $basket->setStatus('active');
             $basket->setName('fluid Commerce');
             $basket->setIsDefault(1);
+            $basket->setTotal(0.00);
         }
 
         $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
@@ -1981,7 +1983,266 @@ class BasketController extends AbstractController
         $this->em->persist($basketItem);
         $this->em->flush();
 
+        $basketItems = $this->em->getRepository(BasketItems::class)->findBy([
+            'basket' => $basket->getId(),
+        ]);
+        $basketTotal = 0.00;
+
+        foreach($basketItems as $basketItem)
+        {
+            $basketTotal += $basketItem->getTotal();
+        }
+
+        $basket->setTotal($basketTotal);
+
+        $this->em->persist($basket);
+        $this->em->flush();
+
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> '. $product->getName() .' added to your basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/get-basket', name: 'retail_get_basket')]
+    public function retailGetBasketAction(Request $request): Response
+    {
+        $response = [];
+        $data = $request->request;
+        $retailUserId = $this->getUser()->getId();
+        $basketId = $data->get('basket-id');
+        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $currency = $retailUser->getCountry()->getCurrency();
+        $subTotal = 0.00;
+        $href = '';
+        $textDisabled = 'text-disabled';
+
+        if($basket->getBasketItems()->count() > 0)
+        {
+            $href = 'href="#"';
+            $textDisabled = '';
+        }
+
+        $response['html'] = '
+        <!-- Basket Name -->
+        <div class="row">
+            <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="basket_header">
+                <h4 class="text-primary">Fluid Commerce Basket</h4>
+                <span class="text-primary">
+                    Manage All Your Shopping Carts In One Place
+                </span>
+            </div>
+        </div>
+        <!-- Basket Actions Row -->
+        <div class="row px-3" id="basket_action_row_1">
+            <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
+                <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">
+                    <i class="fa-regular fa-print me-5 me-md-2"></i>
+                    <span class=" d-none d-md-inline-block pe-4">Print</span>
+                </a>
+                <a '. $href .' class="clear-basket '. $textDisabled .'" data-basket-id="'. $basketId .'">
+                    <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
+                    <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
+                </a>
+                <a href="#" id="return_to_search" data-basket-id="'. $basketId .'">
+                    <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                    <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
+                </a>
+            </div>
+        </div>';
+
+        if($basket->getBasketItems()->count() > 0)
+        {
+            $response['html'] .= '
+            <div class="row px-3" id="basket_items">
+                <div class="col-12 col-lg-9 border-right border-left border-right border-bottom bg-white col-cell">';
+
+            if($basket->getBasketItems()->count() > 0)
+            {
+                foreach ($basket->getBasketItems() as $basketItem)
+                {
+                    $total = number_format($basketItem->getQty() * $basketItem->getUnitPrice(), 2);
+                    $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
+                        'product' => $basketItem->getProduct()->getId(),
+                        'isDefault' => 1
+                    ]);
+
+                    if($firstImage == null){
+
+                        $firstImage = 'image-not-found.jpg';
+
+                    } else {
+
+                        $firstImage = $firstImage->getImage();
+                    }
+
+                    $response['html'] .= '
+                    <div class="col-12">
+                        <div class="row">
+                            <!-- Thumbnail -->
+                            <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
+                                <img class="img-fluid basket-img" src="/images/products/'. $firstImage .'">
+                            </div>
+                            <div class="col-12 col-sm-10 pt-3 pb-3">
+                                <!-- Product Name and Qty -->
+                                <div class="row">
+                                    <!-- Product Name -->
+                                    <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
+                                        <span class="info">
+                                            '. $this->encryptor->decrypt($basketItem->getBasket()->getClinic()->getClinicName()) .'
+                                        </span>
+                                        <h6 class="fw-bold text-primary lh-base my-0">
+                                            '. $basketItem->getProduct()->getName() .'
+                                        </h6>
+                                    </div>
+                                    <!-- Product Quantity -->
+                                    <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3 d-table">
+                                        <div class="row d-table-row">
+                                            <div class="col-3 text-center text-sm-end text-md-start text-lg-start d-table-cell align-bottom">
+                                                '. number_format($basketItem->getUnitPrice(), 2) .'
+                                            </div>
+                                            <div class="col-4 d-table-cell align-bottom">
+                                                <input 
+                                                    type="number" 
+                                                    name="qty" 
+                                                    class="form-control form-control-sm basket-qty" 
+                                                    value="'. $basketItem->getQty() .'"
+                                                    data-basket-item-id="'. $basketItem->getId() .'"
+                                                >
+                                                <div class="hidden_msg" id="stock_count_error_6"></div>
+                                            </div>
+                                            <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate d-table-cell align-bottom">
+                                                '. $currency .' '. $total .'
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Item Actions -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <!-- Shipping Policy -->
+                                        <span 
+                                            class="badge bg-dark-grey badge-pending-filled-sm" 
+                                            data-bs-trigger="hover" 
+                                            data-bs-container="body" 
+                                            data-bs-toggle="popover" 
+                                            data-bs-placement="top" 
+                                            data-bs-html="true" 
+                                            data-bs-content=""
+                                        >
+                                            Shipping Policy
+                                        </span>
+                                        <!-- Remove Item -->
+                                        <span class="badge bg-danger float-end badge-danger-filled-sm">
+                                            <a 
+                                                href="#" 
+                                                class="remove-item text-white" 
+                                                data-item-id="'. $basketItem->getId() .'"
+                                            >Remove</a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>';
+                }
+            }
+
+            $response['html'] .= '
+                <!-- Basket Summary -->
+                </div>
+                <div class="col-12 col-lg-3 py-3 pe-0 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
+                    <div class="row">
+                        <div class="col-12 text-truncate ps-0 ps-sm-2">
+                            <span class="info">Subtotal:</span>
+                            <h5 class="d-inline-block text-primary float-end">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 info ps-0 ps-sm-2">
+                            Shipping: <span class="float-end fw-bold">AED 0.00</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 pt-4 text-center ps-0 ps-sm-2">
+                            <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
+                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>';
+        }
+        else
+        {
+            $response['html'] .= '
+            <!-- Basket Items -->
+            <div class="row px-3">
+                <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
+                    <p>
+                    </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>
+                    Were you expecting to see items here? View copies of the items most recently added<br>
+                    to your basket and restore a basket if needed.
+                    <p></p>
+                </div>
+            </div>';
+        }
+
+
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/update-basket', name: 'retail_update_basket')]
+    public function retailUpdateBasketAction(Request $request): Response
+    {
+        $itemId = $request->request->get('item-id');
+        $basketItem = $this->em->getRepository(BasketItems::class)->find($itemId);
+        $productName = $basketItem->getProduct()->getName();
+        $basketId = $basketItem->getBasket()->getId();
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $currency = $this->getUser()->getCountry()->getCurrency();
+        $subTotal = 0.00;
+        $total = 0.00;
+
+        if($basketItem != null){
+
+            $qty = (int) $request->request->get('qty');
+            $basketItem = $this->em->getRepository(BasketItems::class)->find($itemId);
+            $total = $basketItem->getUnitPrice() * $qty;
+
+            $basketItem->setQty($qty);
+            $basketItem->setTotal($total);
+
+            $this->em->persist($basketItem);
+            $this->em->flush();
+        }
+
+        $basketItems = $this->em->getRepository(BasketItems::class)->findBy([
+            'basket' => $basketId
+        ]);
+
+        foreach($basketItems as $basketItem)
+        {
+            $subTotal += $basketItem->getTotal();
+        }
+
+        if($basket != null){
+
+            $subTotal = number_format((float) $subTotal,2, '.','') ?? 0.00;
+
+            $basket->setTotal($subTotal);
+
+            $this->em->persist($basket);
+            $this->em->flush();
+
+        }
+
+        $response = [
+            'total' => $currency .' '. $total,
+            'subTotal' => $currency .' '. $subTotal,
+            'flash' => '<b><i class="fas fa-check-circle"></i> '. $productName .' updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>'
+        ];
 
         return new JsonResponse($response);
     }

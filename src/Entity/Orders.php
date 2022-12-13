@@ -115,6 +115,11 @@ class Orders
      */
     private $orderStatuses;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=RetailUsers::class, inversedBy="orders")
+     */
+    private $retail;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -467,6 +472,18 @@ class Orders
                 $orderStatus->setOrders(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getRetail(): ?RetailUsers
+    {
+        return $this->retail;
+    }
+
+    public function setRetail(?RetailUsers $retail): self
+    {
+        $this->retail = $retail;
 
         return $this;
     }

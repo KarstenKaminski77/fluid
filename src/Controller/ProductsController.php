@@ -82,11 +82,7 @@ class ProductsController extends AbstractController
         $response = 'Please use the search bar above....';
         $distributors = $this->em->getRepository(Distributors::class)->findAll();
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findBy([], ['name' => 'ASC']);
-        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
-            'clinic' => $clinic->getId(),
-            'name' => 'Fluid Commerce',
-            'status' => 'active'
-        ]);
+        $basket = $this->em->getRepository(Baskets::class)->findClinicDefaultBasket($clinic->getId());
         $clinicOrderDetails = false;
         $clinicOrderList = false;
         $charts = $this->forward('App\Controller\ChartsController::getChartsAction')->getContent();
@@ -123,7 +119,7 @@ class ProductsController extends AbstractController
             'distributors' => $distributors,
             'man_1' => $man_first,
             'man_2' => $man_second,
-            'basket_id' => $basket->getId(),
+            'basket_id' => $basket[0]->getId(),
             'clinic_order_details' => $clinicOrderDetails,
             'clinicOrderList' => $clinicOrderList,
             'clinic_id' => $clinic->getId(),

@@ -28,6 +28,7 @@ class BasketsRepository extends ServiceEntityRepository
             ->setParameter('clinic_id', $clinic_id)
             ->andWhere('b.status = :basket_status')
             ->setParameter('basket_status', 'active')
+            ->andWhere('b.retailUser IS NULL')
             ->groupBy('b.clinic')
             ->setMaxResults(1)
             ->getQuery()
@@ -56,10 +57,27 @@ class BasketsRepository extends ServiceEntityRepository
             ->setParameter('status', 'active')
             ->andWhere('b.clinic = :clinic_id')
             ->setParameter('clinic_id', $clinic_id)
+            ->andWhere('b.retailUser IS NULL')
             ->orderBy('b.isDefault', 'DESC')
             ->addOrderBy('b.name', 'ASC')
             ->getQuery()
             ->getResult()
         ;
+    }
+
+    public function findClinicDefaultBasket($clinicId)
+    {
+        return $this->createQueryBuilder('b')
+            ->andWhere('b.status = :status')
+            ->setParameter('status', 'active')
+            ->andWhere('b.clinic = :clinicId')
+            ->setParameter('clinicId', $clinicId)
+            ->andWhere('b.retailUser IS NULL')
+            ->andWhere('b.name = :name')
+            ->setParameter('name', 'Fluid Commerce')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult()
+            ;
     }
 }

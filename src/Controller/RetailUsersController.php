@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Addresses;
+use App\Entity\Baskets;
 use App\Entity\ClinicRetailUsers;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
@@ -142,6 +143,7 @@ class RetailUsersController extends AbstractController
     }
 
     #[Route('/retail/search/{pageNo}', name: 'retail_search')]
+    #[Route('/retail/basket', name: 'retail_basket')]
     #[Route('/retail/personal-information', name: 'retail_personal_information')]
     #[Route('/retail/addresses/{pageId}', name: 'retail_addresses')]
     public function retailBaseAction(Request $request): Response
@@ -153,16 +155,43 @@ class RetailUsersController extends AbstractController
 
         $retailUserId = $this->getUser()->getId();
         $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $firstName = $this->encryptor->decrypt($retailUser->getFirstName());
+        $lastName = $this->encryptor->decrypt($retailUser->getLastName());
         $retailClinic = $retailUser->getClinic() ? $retailUser->getClinic()->getId() : 0;
         $pageId = $request->request->get('page_id') ?? 1;
         $isAjax = $request->request->get('is-ajax') ?? false;
         $html = '';
+
+        // Get basket
+        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
+            'retailUser' => $retailUserId,
+        ]);
+
+        if($basket == null)
+        {
+            $basket = new Baskets();
+
+            $basket->setRetailUser($retailUser);
+            $basket->setName('Fluid Commerce');
+            $basket->setStatus('active');
+            $basket->setIsDefault(1);
+            $basket->setTotal(0,00);
+            $basket->setClinic($retailUser->getClinic());
+            $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
+
+            $this->em->persist($basket);
+            $this->em->flush();
+        }
+
+        $basketId = $basket->getId();
 
         if($retailUser->getClinic() == null)
         {
             $retailClinics = $this->em->getRepository(Clinics::class)->adminFindAll(1);
             $results = $this->pageManager->paginate($retailClinics[0], $request, self::ITEMS_PER_PAGE);
             $pagination = $this->getPagination($pageId, $results);
+            $clinicLogo = $this->getParameter('app.base_url') .'/images/logos/image-not-found.jpg';
+
             $html = '
             <div class="row pt-3">
                 <div class="col-12 text-center mt-1 pt-3 pb-3">
@@ -250,6 +279,15 @@ class RetailUsersController extends AbstractController
                 </div>
             </div>';
         }
+        else
+        {
+            $clinicLogo = $this->getParameter('app.base_url') .'/images/logos/image-not-found.jpg';
+
+            if($retailUser->getClinic()->getLogo() != null)
+            {
+                $clinicLogo = $this->getParameter('app.base_url') .'/images/logos/'. $retailUser->getClinic()->getLogo();
+            }
+        }
 
         if($isAjax)
         {
@@ -260,6 +298,8 @@ class RetailUsersController extends AbstractController
             'retailUser' => $retailUser,
             'html' => $html,
             'clinic' => $retailClinic,
+            'clinicLogo' => $clinicLogo,
+            'basketId' => $basketId,
         ]);
     }
 

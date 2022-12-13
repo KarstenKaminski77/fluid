@@ -11,6 +11,7 @@ use App\Entity\Clinics;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
+use App\Entity\ListItems;
 use App\Entity\Notifications;
 use App\Entity\OrderItems;
 use App\Entity\Orders;
@@ -55,73 +56,115 @@ class OrdersController extends AbstractController
     }
 
     #[Route('/clinics/checkout/options', name: 'checkout_options')]
+    #[Route('/retail/checkout/options', name: 'checkout_options_retail')]
     public function getCheckoutOptionsAction(Request $request): Response
     {
-        $permissions = json_decode($request->request->get('permissions'), true);
-        $resp = $this->accessDeniedAction($permissions, 3);
+        $requiresAuth = $request->request->get('require-auth');
+        $clinic = null;
+        $distributor = null;
+        $retail = null;
+        $isRetail = $request->request->get('retail');
 
-        if($resp != false){
+        if($requiresAuth == null)
+        {
+            $permissions = json_decode($request->request->get('permissions'), true);
+            $resp = $this->accessDeniedAction($permissions, 3);
 
-            return new JsonResponse($resp);
-        };
+            if($resp != false)
+            {
+                return new JsonResponse($resp);
+            };
+        }
 
-        $basketId = $request->request->get('basket_id') ?? 0;
+        $basketId = $request->request->get('basket_id') ?? $request->request->get('basket-id');
         $order = $this->em->getRepository(Orders::class)->findOneBy([
             'basket' => $basketId,
         ]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
-        $clinic = $this->getUser()->getClinic();
-        $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
-            'clinic' => $clinic->getId(),
-            'isActive' => 1,
-            'type' => 2
-        ]);
 
-        $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'clinic' => $clinic->getId(),
-            'isDefault' => 1,
-            'type' => 2,
-            'isActive' => 1,
-        ]);
+        if($isRetail)
+        {
+            $user = $this->getUser();
+            $retail = $this->getUser();
 
-        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'clinic' => $clinic->getId(),
-            'isDefaultBilling' => 1,
-            'type' => 1,
-            'isActive' => 1,
-        ]);
+            $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
+                'retail' => $user->getId(),
+                'isActive' => 1,
+                'type' => 2
+            ]);
 
-        if($defaultAddress != null) {
+            $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'retail' => $user->getId(),
+                'isDefault' => 1,
+                'type' => 2,
+                'isActive' => 1,
+            ]);
 
+            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'retail' => $user->getId(),
+                'isDefaultBilling' => 1,
+                'type' => 1,
+                'isActive' => 1,
+            ]);
+        }
+        else
+        {
+            $user = $this->getUser()->getClinic();
+            $clinic = $this->getUser()->getClinic();
+
+            $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
+                'clinic' => $user->getId(),
+                'isActive' => 1,
+                'type' => 2
+            ]);
+
+            $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'clinic' => $user->getId(),
+                'isDefault' => 1,
+                'type' => 2,
+                'isActive' => 1,
+            ]);
+
+            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'clinic' => $user->getId(),
+                'isDefaultBilling' => 1,
+                'type' => 1,
+                'isActive' => 1,
+            ]);
+        }
+
+        if($defaultAddress != null)
+        {
             $response['default_address_id'] = $defaultAddress->getId();
-
-        } else {
-
+        }
+        else
+        {
             $response['default_address_id'] = '';
         }
 
-        if($defaultBillingAddress != null) {
-
+        if($defaultBillingAddress != null)
+        {
             $response['default_billing_address_id'] = $defaultBillingAddress->getId();
-
-        } else {
-
+        }
+        else
+        {
             $response['default_billing_address_id'] = '';
         }
 
         // Create / update orders
-        if($order == null){
-
+        if($order == null)
+        {
             $order = new Orders();
         }
 
         $deliveryFee = 0;
         $subTotal = $basket->getTotal();
-        $email = $this->encryptor->decrypt($clinic->getEmail());
+        $email = $this->encryptor->decrypt($user->getEmail());
         $tax = 0;
 
         $order->setBasket($basket);
         $order->setClinic($clinic);
+        $order->setRetail($retail);
         $order->setStatus('checkout');
         $order->setDeliveryFee($deliveryFee);
         $order->setSubTotal($subTotal);
@@ -143,46 +186,62 @@ class OrdersController extends AbstractController
         $distributorId = '';
 
         // Remove any previous items
-        if(count($orderItems) > 0){
-
-            foreach($orderItems as $orderItem){
-
+        if(count($orderItems) > 0)
+        {
+            foreach($orderItems as $orderItem)
+            {
                 $this->em->remove($orderItem);
             }
         }
 
         // Remove previous status
-        if(count($orderStatus) > 0){
-
-            foreach($orderStatus as $status){
-
+        if(count($orderStatus) > 0)
+        {
+            foreach($orderStatus as $status)
+            {
                 $this->em->remove($status);
             }
         }
 
         // Create new order items
-        if(count($basket->getBasketItems()) > 0){
-
-            foreach($basket->getBasketItems() as $basketItem){
-
+        if(count($basket->getBasketItems()) > 0)
+        {
+            foreach($basket->getBasketItems() as $basketItem)
+            {
                 // Generate PO prefix if one isn't yet set
-                $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
+                if($isRetail)
+                {
+                    $prefix = $basket->getClinic()->getPoNumberPrefix();
+                    $name = $basket->getClinic()->getClinicName();
+                }
+                else
+                {
+                    $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
+                    $prefix = $distributor->getPoNumberPrefix();
+                    $name = $distributor->getDistributorName();
+                }
 
-                $prefix = $distributor->getPoNumberPrefix();
-
-                if($prefix == null){
-
-                    $words = preg_split("/\s+/", $this->encryptor->decrypt($distributor->getDistributorName()));
+                if($prefix == null)
+                {
+                    $words = preg_split("/\s+/", $this->encryptor->decrypt($name));
                     $prefix = '';
 
-                    foreach($words as $word){
+                    foreach($words as $word)
+                    {
 
                         $prefix .= substr(ucwords($word), 0, 1);
                     }
 
-                    $distributor->setPoNumberPrefix($prefix);
-
-                    $this->em->persist($distributor);
+                    if($isRetail)
+                    {
+                        $basket->getClinic()->setPoNumberPrefix($prefix);
+                        $this->em->persist($basket);
+                    }
+                    else
+                    {
+                        $distributor->setPoNumberPrefix($prefix);
+                        $this->em->persist($distributor);
+                    }
                 }
 
                 $orderItems = new OrderItems();
@@ -190,7 +249,7 @@ class OrdersController extends AbstractController
                 $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
                 $orderItems->setOrders($order);
-                $orderItems->setDistributor($basketItem->getDistributor());
+                $orderItems->setDistributor($distributor);
                 $orderItems->setProduct($basketItem->getProduct());
                 $orderItems->setUnitPrice($basketItem->getUnitPrice());
                 $orderItems->setQuantity($basketItem->getQty());
@@ -214,18 +273,48 @@ class OrdersController extends AbstractController
                 $this->em->persist($orderItems);
 
                 // Order Status
-                if($distributorId != $basketItem->getDistributor()->getId()){
+                if($isRetail == null)
+                {
+                    if($distributorId != $basketItem->getDistributor()->getId())
+                    {
+                        $func = 'getDistributorName';
+                        $distributorId = $basketItem->getDistributor()->getId();
+                        $status = $this->em->getRepository(Status::class)->find(2);
 
-                    $distributorId = $basketItem->getDistributor()->getId();
-                    $status = $this->em->getRepository(Status::class)->find(2);
+                        $orderStatus = new OrderStatus();
 
-                    $orderStatus = new OrderStatus();
+                        $orderStatus->setOrders($order);
+                        $orderStatus->setDistributor($basketItem->getDistributor());
+                        $orderStatus->setStatus($status);
+
+                        $this->em->persist($orderStatus);
+
+                        $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
+                    }
+                }
+                else
+                {
+                    $status = $this->em->getRepository(Status::class)->find(5);
+                    $orderStatus = $this->em->getRepository(OrderStatus::class)->findOneBy([
+                        'orders' => $order->getId(),
+                    ]);
+
+                    if($orderStatus == null)
+                    {
+                        $orderStatus = new OrderStatus();
+                    }
 
                     $orderStatus->setOrders($order);
-                    $orderStatus->setDistributor($basketItem->getDistributor());
+                    $orderStatus->setDistributor(null);
                     $orderStatus->setStatus($status);
 
                     $this->em->persist($orderStatus);
+
+                    $func = 'getClinicName';
+                    $clinicId = $order->getBasket()->getClinic()->getId();
+                    $purchaseOrders = $this->em->getRepository(Clinics::class)->findBy([
+                        'id' => $clinicId,
+                    ]);
                 }
             }
 
@@ -233,7 +322,6 @@ class OrdersController extends AbstractController
         }
 
         $plural = '';
-        $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
 
         if(count($purchaseOrders) > 1){
 
@@ -258,7 +346,7 @@ class OrdersController extends AbstractController
                                 Account ID
                             </div>
                             <div class="col-6 text-end">
-                                '. $clinic->getId() .'
+                                '. $user->getId() .'
                             </div>
                         </div>
                         <div class="row">
@@ -280,20 +368,20 @@ class OrdersController extends AbstractController
 
                     $i = 0;
 
-                    foreach($purchaseOrders as $po) {
-
+                    foreach($purchaseOrders as $po)
+                    {
                         $css = '';
                         $i++;
 
-                        if($i != count($purchaseOrders)){
-
+                        if($i != count($purchaseOrders))
+                        {
                             $css = 'border-bottom-dashed border-dark mb-3 pb-3';
                         }
 
                         $response['body'] .= '
                         <div class="row '. $css .'">
                             <div class="col-6">
-                                ' . $this->encryptor->decrypt($po->getDistributorName()) . '
+                                ' . $this->encryptor->decrypt($po->$func()) . '
                             </div>
                             <div class="col-6 text-end">
                                 ' . $po->getPoNumberPrefix() . '-' . $order->getId() . '
@@ -341,8 +429,8 @@ class OrdersController extends AbstractController
                     </div>
                     <div class="form-control alert alert-secondary" id="checkout_shipping_address">';
 
-                        if($defaultAddress != null) {
-
+                        if($defaultAddress != null)
+                        {
                             $response['body'] .=
                             $this->encryptor->decrypt($defaultAddress->getAddress());
                         }
@@ -376,8 +464,8 @@ class OrdersController extends AbstractController
                     </div>
                     <div class="form-control alert alert-secondary" rows="4" name="address_billing" id="checkout_billing_address">';
 
-                        if($defaultBillingAddress != null) {
-
+                        if($defaultBillingAddress != null)
+                        {
                             $response['body'] .=
                                 $this->encryptor->decrypt($defaultBillingAddress->getAddress());
                         }
@@ -440,13 +528,13 @@ class OrdersController extends AbstractController
         $response['existing_shipping_addresses'] = '';
         $i = 0;
 
-        foreach($shippingAddresses as $address){
-
+        foreach($shippingAddresses as $address)
+        {
             $i++;
             $marginTop = '';
 
-            if($i == 1){
-
+            if($i == 1)
+            {
                 $marginTop = 'mt-3';
             }
 
@@ -480,8 +568,8 @@ class OrdersController extends AbstractController
         $currency = $clinic->getCountry()->getCurrency();
         $response = '';
 
-        if($order != null){
-
+        if($order != null)
+        {
             $shippingAddress = $this->em->getRepository(Addresses::class)->find($data->get('shipping_address_id'));
             $billingAddress = $this->em->getRepository(Addresses::class)->find($data->get('billing_address_id'));
             $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
@@ -489,8 +577,8 @@ class OrdersController extends AbstractController
 
             $plural = '';
 
-            if(count($purchaseOrders) > 1){
-
+            if(count($purchaseOrders) > 1)
+            {
                 $plural = 's';
             }
 
@@ -499,8 +587,8 @@ class OrdersController extends AbstractController
             $order->setAddress($shippingAddress);
             $order->setBillingAddress($billingAddress);
 
-            if($data->get('notes') != null){
-
+            if($data->get('notes') != null)
+            {
                 $order->setNotes($data->get('notes'));
             }
 
@@ -561,8 +649,8 @@ class OrdersController extends AbstractController
             </div>';
 
             // Additional notes
-            if(!empty($data->get('notes'))){
-
+            if(!empty($data->get('notes')))
+            {
                 $response .= '
                 <div class="row">
                     <div class="col-12 mt-2">
@@ -589,13 +677,13 @@ class OrdersController extends AbstractController
                                 PO Number'. $plural .'
                             </div>';
 
-            foreach($purchaseOrders as $po){
-
+            foreach($purchaseOrders as $po)
+            {
                 $css = '';
                 $i++;
 
-                if(count($purchaseOrders) != $i){
-
+                if(count($purchaseOrders) != $i)
+                {
                     $css = 'border-bottom-dashed border-dark mb-3 pb-3';
                 }
 
@@ -618,8 +706,8 @@ class OrdersController extends AbstractController
                 <div class="col-12 mt-2">
                     <div class="alert alert-secondary">';
 
-            foreach($basket->getBasketItems() as $item){
-
+            foreach($basket->getBasketItems() as $item)
+            {
                 $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                     'product' => $item->getProduct()->getId(),
                     'distributor' => $item->getDistributor()->getId(),
@@ -629,8 +717,8 @@ class OrdersController extends AbstractController
                 $productImages = $item->getProduct()->getProductImages();
                 $image = 'image-not-found.jpg';
 
-                if(count($productImages) > 0){
-
+                if(count($productImages) > 0)
+                {
                     $image = $this->em->getRepository(ProductImages::class)->findOneBy([
                         'product' => $item->getProduct()->getId(),
                         'isDefault' => 1
@@ -682,10 +770,204 @@ class OrdersController extends AbstractController
                     </button>
                 </div>
             </div>';
+        }
 
-        } else {
+        return new JsonResponse($response);
+    }
 
+    #[Route('/retail/checkout/save/options', name: 'checkout_save_options_retail')]
+    public function saveCheckoutOptionsRetailAction(Request $request): Response
+    {
+        $data = $request->request;
+        $retail = $this->getUser();
+        $orderId = $data->get('order-id');
+        $order = $this->em->getRepository(Orders::class)->find($orderId);
+        $currency = $retail->getCountry()->getCurrency();
+        $firstName = $this->encryptor->decrypt($retail->getFirstName());
+        $lastName = $this->encryptor->decrypt($retail->getLastName());
+        $response = '';
 
+        if($order != null)
+        {
+            $shippingAddress = $this->em->getRepository(Addresses::class)->find($data->get('shipping_address_id'));
+            $billingAddress = $this->em->getRepository(Addresses::class)->find($data->get('billing_address_id'));
+            $purchaseOrders = $order->getBasket()->getClinic();
+            $basket = $order->getBasket();
+
+            // Update order
+            $order->setEmail($this->encryptor->encrypt($data->get('confirmation_email')));
+            $order->setAddress($shippingAddress);
+            $order->setBillingAddress($billingAddress);
+
+            if($data->get('notes') != null)
+            {
+                $order->setNotes($data->get('notes'));
+            }
+
+            $this->em->persist($order);
+            $this->em->flush();
+
+            // Order Review
+            $response .= '
+            <div class="row">
+                <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="basket_header">
+                    <h4 class="text-primary">Fluid Checkout</h4>
+                    <span class="text-primary">
+                        Order conirmation
+                    </span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light">
+                        <b class="text-primary">Account ID:</b> <span class="float-end">'. $retail->getId() .'</span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light">
+                        <b class="text-primary">Name:</b> <span class="float-end">'. $firstName .' '. $lastName .'</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light">
+                        <b class="text-primary">Telephone:</b> 
+                        <span class="float-end">
+                            '. $this->encryptor->decrypt($retail->getTelephone()) .'
+                        </span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light text-truncate">
+                        <b class="text-primary">Confirmation Email:</b> 
+                        <span class="float-end">
+                            '. $this->encryptor->decrypt($retail->getEmail()) .'
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light">
+                        <div class="text-primary mb-3 fw-bold">Shipping Address</div>
+                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getClinicName()) .'<br>
+                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getAddress()) .'<br><br>
+                        <span class="fw-bold text-primary">Telephone :</span> 
+                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getTelephone()) .'
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 mt-2">
+                    <div class="alert alert-light">
+                        <div class="text-primary mb-3 fw-bold">Billing Address</div>
+                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getClinicName()) .'<br>
+                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getAddress()) .'<br><br>
+                        <span class="fw-bold text-primary">Telephone :</span> 
+                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getTelephone()) .'
+                    </div>
+                </div>
+            </div>';
+
+            // Additional notes
+            if(!empty($data->get('notes')))
+            {
+                $response .= '
+                <div class="row">
+                    <div class="col-12 mt-2">
+                        <div class="alert alert-light">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="text-primary mb-3 fw-bold">Additional Notes</div>
+                                    '. $data->get('notes') .'
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+            }
+
+            // Purchase orders
+            $response .= '
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="alert alert-light">
+                        <div class="text-primary mb-3 fw-bold border-bottom-dashed border-dark mb-3 pb-3">
+                            PO Number
+                        </div>
+                        <div class="row">
+                            <div class="col-12 col-sm-6">
+                                '. $this->encryptor->decrypt($purchaseOrders->getClinicName()) .'
+                            </div>
+                            <div class="col-12 col-sm-6 text-end">
+                                '. $purchaseOrders->getPoNumberPrefix() .'-'. $order->getId() .'
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="alert alert-light">';
+
+                    foreach($basket->getBasketItems() as $item)
+                    {
+                        // Product Image
+                        $productImages = $item->getProduct()->getProductImages();
+                        $image = 'image-not-found.jpg';
+
+                        if(count($productImages) > 0)
+                        {
+                            $image = $this->em->getRepository(ProductImages::class)->findOneBy([
+                                'product' => $item->getProduct()->getId(),
+                                'isDefault' => 1
+                            ])->getImage();
+                        }
+
+                        $response .= '
+                        <div class="row">
+                            <!-- Thumbnail -->
+                            <div class="col-12 col-sm-2 text-center pt-3">
+                                <img class="img-fluid basket-img" src="/images/products/' . $image . '" style="max-height: 45px">
+                            </div>
+                            <div class="col-12 col-sm-10 pt-3">
+                                <!-- Product Name and Qty -->
+                                <div class="row">
+                                    <!-- Product Name -->
+                                    <div class="col-12 col-sm-6">
+                                        <span class="info">'. $this->encryptor->decrypt($item->getBasket()->getClinic()->getClinicName()) .'</span>
+                                        <h6 class="fw-bold text-center text-sm-start text-primary mb-0">
+                                            ' . $item->getProduct()->getName() . ': ' . $item->getProduct()->getDosage() . ' ' . $item->getProduct()->getUnit() . '
+                                        </h6>
+                                    </div>
+                                    <!-- Product Quantity -->
+                                    <div class="col-12 col-sm-6 d-table">
+                                        <div class="row d-table-row">
+                                            <div class="col-5 text-center text-sm-start d-table-cell align-bottom">
+                                                ' . $currency .' '. number_format($item->getUnitPrice(),2) . '
+                                            </div>
+                                            <div class="col-3 text-center d-table-cell align-bottom">
+                                                ' . $item->getQty() . '
+                                            </div>
+                                            <div class="col-5 text-center text-sm-end fw-bold d-table-cell align-bottom">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>';
+                    }
+
+            $response .= '
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary float-end" id="btn_place_order" data-order-id="'. $order->getId() .'">
+                        PLACE ORDER 
+                        <i class="fa-solid fa-circle-right ps-2"></i>
+                    </button>
+                </div>
+            </div>';
         }
 
         return new JsonResponse($response);

@@ -216,12 +216,33 @@ class AddressesController extends AbstractController
     public function getCheckoutAddressModal(Request $request): Response
     {
         $type = $request->get('type');
-        $clinic = $this->getUser()->getClinic();
-        $addresses = $this->em->getRepository(Addresses::class)->findBy([
-            'clinic' => $clinic->getId(),
-            'isActive' => 1,
-            'type' => $type
-        ]);
+
+        if($request->request->get('retail'))
+        {
+            $retailUser = $this->getUser();
+            $addresses = $this->em->getRepository(Addresses::class)->findBy([
+                'retail' => $retailUser->getId(),
+                'isActive' => 1,
+                'type' => $type,
+            ]);
+
+            $response['modal'] = '
+            <input type="hidden" name="addresses_form[is-retail]" value="true">
+            <input type="hidden" name="addresses_form[is-clinic]" value="false">';
+        }
+        else
+        {
+            $clinic = $this->getUser()->getClinic();
+            $addresses = $this->em->getRepository(Addresses::class)->findBy([
+                'clinic' => $clinic->getId(),
+                'isActive' => 1,
+                'type' => $type
+            ]);
+
+            $response['modal'] = '
+            <input type="hidden" name="addresses_form[is-retail]" value="false">
+            <input type="hidden" name="addresses_form[is-clinic]" value="true">';
+        }
 
         $deliveryType = 'Shipping';
 
@@ -233,8 +254,8 @@ class AddressesController extends AbstractController
         $i = 0;
         $response['existing_shipping_addresses'] = '';
 
-        foreach($addresses as $address){
-
+        foreach($addresses as $address)
+        {
             $i++;
             $marginTop = '';
 
@@ -261,8 +282,8 @@ class AddressesController extends AbstractController
             </div>';
         }
 
-        $response['modal'] = '
-        <input type="hidden" value="" name="addresses_form[address_id]" id="address_id">
+        $response['modal'] .= '
+        <input type="hidden" value="" name="addresses_form[address-id]" id="address_id">
         <div class="modal-header" id="modal_header_address">
             <h5 class="modal-title" id="address_modal_label">Create an Address</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -290,7 +311,7 @@ class AddressesController extends AbstractController
                     <label class="info">Clinic Name</label>
                     <input
                         type="text"
-                        name="addresses_form[clinicName]"
+                        name="addresses_form[clinic-name]"
                         id="address_clinic_name"
                         class="form-control"
                         value=""
@@ -305,7 +326,7 @@ class AddressesController extends AbstractController
                     <label class="info">Telephone</label>
                     <input 
                         type="text" 
-                        name="addresses_mobile" 
+                        name="addresses-mobile" 
                         id="address_mobile" 
                         class="form-control" 
                         value=""
@@ -318,13 +339,13 @@ class AddressesController extends AbstractController
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[iso_code]"
+                        name="addresses_form[iso-code]"
                         id="address_iso_code"
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[intl_code]"
+                        name="addresses_form[intl-code]"
                         id="address_intl_code"
                         value=""
                     >
@@ -556,27 +577,52 @@ class AddressesController extends AbstractController
         // Billing Address = 1
         // Shipping Address = 2
 
-        $data = $request->request->get('addresses-form');
-        $clinicId = $this->getUser()->getClinic()->getId();
-        $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
+        $data = $request->request->get('addresses_form');
+        $clinic = null;
+        $retailUser = null;
 
-        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'isActive' => 1,
-            'type' => 1,
-            'isDefaultBilling' => 1,
-            'clinic' => $clinicId,
-        ]);
+        if($data['is-retail'])
+        {
+            $retailUserId = $this->getUser()->getId();
+            $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
 
-        $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'isActive' => 1,
-            'type' => 2,
-            'isDefault' => 1,
-            'clinic' => $clinicId,
-        ]);
+            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'isActive' => 1,
+                'type' => 1,
+                'isDefaultBilling' => 1,
+                'retail' => $retailUserId,
+            ]);
+
+            $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'isActive' => 1,
+                'type' => 2,
+                'isDefault' => 1,
+                'retail' => $retailUserId,
+            ]);
+        }
+        else
+        {
+            $clinicId = $this->getUser()->getClinic()->getId();
+            $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
+
+            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'isActive' => 1,
+                'type' => 1,
+                'isDefaultBilling' => 1,
+                'clinic' => $clinicId,
+            ]);
+
+            $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+                'isActive' => 1,
+                'type' => 2,
+                'isDefault' => 1,
+                'clinic' => $clinicId,
+            ]);
+        }
 
         $addressId = $data['address-id'];
 
-        if($data['address-id'] == 0 || empty($data['address-id'])){
+        if($addressId == 0 || empty($addressId)){
 
             $clinicAddress = new Addresses();
             $flash = '<b><i class="fas fa-check-circle"></i> Address details successfully created.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -588,7 +634,7 @@ class AddressesController extends AbstractController
         }
 
         $clinicAddress->setClinic($clinic);
-        $clinicAddress->setRetail(null);
+        $clinicAddress->setRetail($retailUser);
         $clinicAddress->setType($data['type']);
         $clinicAddress->setClinicName($this->encryptor->encrypt($data['clinic-name']));
         $clinicAddress->setTelephone($this->encryptor->encrypt($data['telephone']));
@@ -628,11 +674,20 @@ class AddressesController extends AbstractController
             $checkoutAddressId = $clinicAddress->getId();
         }
 
-        $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinicId);
+        if($data['is-retail'])
+        {
+            $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
+            $module = 'retail';
+        }
+        else
+        {
+            $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinicId);
+            $module = 'clinic';
+        }
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->request->get('page_id'), $results);
 
-        $addresses = $this->getAddresses($results, 'clinic');
+        $addresses = $this->getAddresses($results, $module);
 
         $response = [
             'flash' => $flash,
