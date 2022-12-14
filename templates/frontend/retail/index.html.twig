@@ -300,10 +300,10 @@
                     },
                     complete: function(e)
                     {
-                        if(e.status === 500)
-                        {
-                            window.location.href = '{{ path('retail_error_500') }}';
-                        }
+                        {#if(e.status === 500)#}
+                        {#{#}
+                        {#    window.location.href = '{{ path('retail_error_500') }}';#}
+                        {#}#}
                     },
                     success: function (response)
                     {
@@ -337,6 +337,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
+                            'clinic-id': clinicId,
                             'product-id': productId,
                             'qty': qty,
                             'price': price,

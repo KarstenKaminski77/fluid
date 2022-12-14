@@ -134,13 +134,14 @@ class ProductsController extends AbstractController
     public function getSearchInventoryAction(Request $request, int $page_no = 1): Response
     {
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
+        $clinic = $this->getUser()->getClinic();
         $html = '';
         $listId = '';
         $level = 0;
         $keywords = $request->get('keyword');
         $categoryKeywords = $request->request->get('keyword');
-        $arraySearch = $request->request->get('search_array');
-        $shoppingListId = $request->request->get('list_id');
+        $arraySearch = $request->request->get('search-array');
+        $shoppingListId = $request->request->get('list-id');
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
         $category = null;
         $filterLists['categoryList'] = null;
@@ -181,8 +182,8 @@ class ProductsController extends AbstractController
             // Return saved list
             } elseif($shoppingListId != null){
 
-                $listItems = $this->em->getRepository(ListItems::class)->findByListId($request->get('list_id'));
-                $listId = 'data-list-id="'. $request->get('list_id') .'"';
+                $listItems = $this->em->getRepository(ListItems::class)->findByListId($request->get('list-id'));
+                $listId = 'data-list-id="'. $request->get('list-id') .'"';
                 $productIds = [];
 
                 foreach($listItems[1] as $item){
@@ -244,6 +245,21 @@ class ProductsController extends AbstractController
                     'product' => $product->getId(),
                     'isDefault' => 1
                 ]);
+
+                // Create Retail List
+                if($retail == null)
+                {
+                    $retail = new Lists();
+
+                    $retail->setClinic($clinic);
+                    $retail->setListType('retail');
+                    $retail->setName('Retail Items');
+                    $retail->setItemCount(0);
+                    $retail->setIsProtected(1);
+
+                    $this->em->persist($retail);
+                    $this->em->flush();
+                }
 
                 if($firstImage == null){
 
@@ -611,7 +627,7 @@ class ProductsController extends AbstractController
                 </div>';
             }
 
-            $currentPage = $request->request->get('page_no');
+            $currentPage = $request->request->get('page-no');
             $lastPage = $this->pageManager->lastPage($results);
 
             $html .= '
@@ -787,7 +803,7 @@ class ProductsController extends AbstractController
 
         $response = [
             'html' => $html,
-            'listId' => $request->get('list_id'),
+            'listId' => $request->get('list-id'),
             'categoryList' => $filterLists['categoryList'],
             'distributorsList' => $filterLists['distributorsList'],
             'manufacturersList' => $filterLists['manufacturersList'],

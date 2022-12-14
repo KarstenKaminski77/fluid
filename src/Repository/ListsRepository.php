@@ -56,6 +56,8 @@ class ListsRepository extends ServiceEntityRepository
             ->leftJoin('li.product', 'p')
             ->andWhere('l.clinic = :clinicId')
             ->setParameter('clinicId', $clinicId)
+            ->andWhere('l.listType != :retailList')
+            ->setParameter('retailList', 'retail')
             ->orderBy('l.isProtected', 'DESC')
             ->addOrderBy('l.name', 'ASC');
 

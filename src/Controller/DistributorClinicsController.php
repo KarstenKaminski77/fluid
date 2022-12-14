@@ -340,7 +340,7 @@ class DistributorClinicsController extends AbstractController
 
         $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
             'html'  => $html,
-        ]);
+        ])->getContent();
 
         $email = (new Email())
             ->from($this->getParameter('app.email_from'))

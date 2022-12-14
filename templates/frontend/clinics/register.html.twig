@@ -16,7 +16,7 @@
         <div class="row pb-3 bg-light border-left border-right border-top pt-3" id="row_1">
             <input type="checkbox" name="call_back_form[contact_me_by_fax_only]" value="1" tabindex="-1" class="hidden" autocomplete="off">
             {# First Name #}
-            <div class="col-12 col-sm-3">
+            <div class="col-12 col-sm-6">
                 <label>First Name <span class="text-danger">*</span></label>
                 <input type="text" name="firstName" id="first_name" class="form-control" placeholder="First Name">
                 <div class="hidden_msg" id="error_first_name">
@@ -25,14 +25,15 @@
             </div>
 
             {# Last Name #}
-            <div class="col-12 col-sm-3">
+            <div class="col-12 col-sm-6">
                 <label>Last Name <span class="text-danger">*</span></label>
                 <input type="text" name="lastName" id="last_name" class="form-control" placeholder="Last Name">
                 <div class="hidden_msg" id="error_last_name">
                     Required Field
                 </div>
             </div>
-
+        </div>
+        <div class="row pb-3 bg-light border-left border-right" id="row_2">
             {# Postionn #}
             <div class="col-12 col-sm-6">
                 <label>Your Position <span class="text-danger">*</span></label>
@@ -41,8 +42,22 @@
                     Required Field
                 </div>
             </div>
+
+            {# Country #}
+            <div class="col-12 col-sm-6">
+                <label>Located In <span class="text-danger">*</span></label>
+                <select name="country" style="color:#b1abb0 !important" id="country" class="form-control">
+                    <option value="">Country</option>
+                    {% for country in countries %}
+                        <option value="{{ country.id }}">{{ country.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="hidden_msg" id="error_country">
+                    Required Field
+                </div>
+            </div>
         </div>
-        <div class="row pb-3 bg-light border-left border-right" id="row_2">
+        <div class="row pb-3 bg-light border-left border-right" id="row_3">
 
             {# Email #}
             <div class="col-12 col-sm-6">
@@ -65,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3 bg-light border-left border-right border-bottom" id="row_3">
+        <div class="row mb-3 bg-light border-left border-right border-bottom" id="row_4">
             {# Clinic Name #}
             <div class="col-12 col-sm-6">
                 <label>Business Name <span class="text-danger">*</span></label>
@@ -86,7 +101,7 @@
                 </div>
             </div>
         </div>
-        <div class="row" id="row_4">
+        <div class="row" id="row_5">
             <div class="col-12 ps-0 pe-0">
                 <button id="form_save" type="submit" class="btn btn-primary w-100">CREATE ACCOUNT</button>
             </div>
@@ -315,7 +330,7 @@
                         },
                         complete: function(e, xhr, settings){
                             if(e.status === 500){
-                                window.location.href = '{{ path('clinic_error_500') }}';
+                                //window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
                         success: function (response) {
@@ -323,6 +338,7 @@
                             $('#row_2').remove();
                             $('#row_3').remove();
                             $('#row_4').remove();
+                            $('#row_5').remove();
                             $('#row_1').append('<div class="col-12 text-center text-primary pt-3 pb-3">'+response+'</div>');
                             $('#error_email').hide();
                             isLoading(false);

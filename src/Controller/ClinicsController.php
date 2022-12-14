@@ -59,9 +59,13 @@ class ClinicsController extends AbstractController
         $clinics->getClinicUsers()->add($clinicUsers);
 
         $form = $this->createForm(ClinicFormType::class, $clinics)->createView();
+        $countries = $this->em->getRepository(Countries::class)->findBy([
+            'isActive' => 1,
+        ]);
 
         return $this->render('frontend/clinics/register.html.twig', [
             'form' => $form,
+            'countries' => $countries,
         ]);
     }
 
@@ -104,13 +108,11 @@ class ClinicsController extends AbstractController
             $clinics = new Clinics();
 
             $plainTextPwd = $this->generatePassword();
-            $country = $this->em->getRepository(Countries::class)->findOneBy([
-                'code' => $data->get('clinic-iso-code'),
-            ]);
 
             if (!empty($plainTextPwd)) {
 
                 $domainName = explode('@', $data->get('email'));
+                $country = $this->em->getRepository(Countries::class)->find($data->get('country'));
 
                 $clinics->setClinicName($this->encryptor->encrypt($data->get('clinicName')));
                 $clinics->setEmail($this->encryptor->encrypt($data->get('email')));
@@ -533,12 +535,19 @@ class ClinicsController extends AbstractController
                             Logo
                         </label>
                         <div class="input-group">
-                            <input type="file" id="logo" name="clinic_form[logo]" class="form-control" placeholder="Logo" value="">
+                            <input type="file" id="logo" name="clinic_form[logo]" class="form-control" placeholder="Logo" value="">';
+
+                            if($clinic->getLogo() != null)
+                            {
+                                $response .= '
                                 <span class="input-group-text">
-                                <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
-                                    <i class="fa-regular fa-image"></i>
-                                </a>
-                            </span>
+                                    <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
+                                        <i class="fa-regular fa-image"></i>
+                                    </a>
+                                </span>';
+                            }
+
+                        $response .= '
                         </div>
                     </div>
                 </div>';
@@ -754,7 +763,7 @@ class ClinicsController extends AbstractController
                     </div>
                 </div>
         
-                <div class="row pt-3 pb-3 border-left border-right border-bottom bg-light">
+                <div class="row pt-3 pb-3 border-left border-right border-bottom bg-light justify-content-evenly">
         
                     <label class="mb-4 d-block">
                         Select All Species Treated By Your Practice

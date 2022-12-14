@@ -40,17 +40,17 @@
     <script>
         $('#btn_basket').attr('data-basket-id', {{ basket_id }});
 
-        $(window).on('load', function(e){
-
+        $(window).on('load', function(e)
+        {
             let uri = window.location.pathname;
             let is_search = uri.match('/clinics/inventory');
             history.pushState(null, null, window.location.href);
             history.back();
             window.onpopstate = () => history.forward();
 
-            if($.session.get('search_key') !== '' && $.session.get('search_key') !== 'undefined' && is_search != null){
-
-                let page_no = 1;
+            if($.session.get('search_key') !== '' && $.session.get('search_key') !== 'undefined' && is_search != null)
+            {
+                let pageNo = 1;
                 let keyword = $.session.get('search_key');
 
                 $.ajax({
@@ -58,13 +58,13 @@
                     url: "{{ path('search_inventory') }}",
                     type: 'POST',
                     data: {
-                        keyword: keyword,
-                        page_no: page_no
+                        'keyword': keyword,
+                        'page-no': pageNo
                     },
-                    success: function (response) {
-
-                        if(window.location.pathname == '/clinics/inventory') {
-
+                    success: function (response)
+                    {
+                        if(window.location.pathname == '/clinics/inventory')
+                        {
                             $('#search_field').val(keyword);
                             $('#inventory').empty().append(response.html);
                             $('.container').removeClass('mt-5').addClass('mt-5');
@@ -76,8 +76,8 @@
 
                             $.session.set('search_key', keyword);
 
-                            $(response.productIds).each(function (index, value) {
-
+                            $(response.productIds).each(function (index, value)
+                            {
                                 let productId = value;
 
                                 $.ajax({
@@ -88,13 +88,15 @@
                                     data: {
                                         'product-id': productId,
                                     },
-                                    complete: function (e, xhr, settings) {
-                                        if (e.status === 500) {
+                                    complete: function (e)
+                                    {
+                                        if (e.status === 500)
+                                        {
                                             window.location.href = '{{ path('clinic_error_500') }}';
                                         }
                                     },
-                                    success: function (response) {
-
+                                    success: function (response)
+                                    {
                                         $('#search_result_distributors_'+ productId).empty().append(response.html);
                                         $('.from_'+ productId).empty().append(response.from);
                                         popOver();
@@ -110,24 +112,24 @@
         $(document).ready(function ()
         {
             let uri = window.location.pathname;
-            let is_order_detail = uri.match('/clinics/order/[0-9]+');
-            let is_order_list = uri.match('/clinics/orders/[0-9]+');
-            let is_basket = uri.match('/clinics/basket');
-            let is_saved_baskets = uri.match('/clinics/saved/baskets');
-            let is_account_settings = uri.match('/clinics/account');
-            let is_users = uri.match('/clinics/users');
-            let is_addresses = uri.match('/clinics/addresses');
-            let is_communication_method = uri.match('/clinics/communication-methods');
-            let is_list = uri.match('/clinics/inventory/list/[0-9]+');
-            let is_edit_list = uri.match('/clinics/inventory/manage/list/[0-9]+');
-            let is_analytics = uri.match('/clinics/analytics');
-            let is_manage_lists = uri.match('/clinics/inventory/lists');
+            let isOrderDetail = uri.match('/clinics/order/[0-9]+');
+            let isOrderList = uri.match('/clinics/orders/[0-9]+');
+            let isBasket = uri.match('/clinics/basket');
+            let isSavedBaskets = uri.match('/clinics/saved/baskets');
+            let isAccountSettings = uri.match('/clinics/account');
+            let isUsers = uri.match('/clinics/users');
+            let isAddresses = uri.match('/clinics/addresses');
+            let isCommunicationMethod = uri.match('/clinics/communication-methods');
+            let isList = uri.match('/clinics/inventory/list/[0-9]+');
+            let isEditList = uri.match('/clinics/inventory/manage/list/[0-9]+');
+            let isAnalytics = uri.match('/clinics/analytics');
+            let isManageLists = uri.match('/clinics/inventory/lists');
             let isManageInventory = uri.match('/clinics/manage-inventory');
             let orderid = '{{app.request.get('order_id')}}';
             let distributorid = '{{app.request.get('distributor_id')}}';
             let iti = '';
-            let iso_code = '';
-            let intl_code = '';
+            let isoCode = '';
+            let intlCode = '';
             let searchArray = [];
             let categoryArray = [];
             let manufacturerArray = [];
@@ -140,106 +142,107 @@
 
             $('#btn_map').hide();
 
-            function isLoading(status){
-
-                if(status) {
-
+            function isLoading(status)
+            {
+                if(status)
+                {
                     $("div.spanner").addClass("show");
                     $("div.overlay").addClass("show");
 
-                } else {
-
+                }
+                else
+                {
                     $("div.spanner").removeClass("show");
                     $("div.overlay").removeClass("show");
                 }
             }
 
             {# Prevent loading overlay on multiple clicks #}
-            $(document).on('click','.account-dropdown-toggle', function (e) {
-
+            $(document).on('click','.account-dropdown-toggle', function (e)
+            {
                 e.preventDefault();
                 isLoading(false);
             });
 
             {# Redirect to company info if not approved #}
-            if(is_order_list != null)
+            if(isOrderList != null)
             {
                 window.location.href = '{{ app.request.schemeAndHttpHost }}/clinics/account';
             }
 
             {# Get correct content on refresh #}
             {# Analytics #}
-            if(is_analytics != null) {
-
+            if(isAnalytics != null)
+            {
                 getAnalytics();
             }
 
             {# Account & Settings #}
-            if(is_account_settings != null) {
-
+            if(isAccountSettings != null)
+            {
                 getAccountSettings();
             }
 
             {# Users #}
-            if(is_users != null) {
-
+            if(isUsers != null)
+            {
                 getUsers(1);
             }
 
             {# Addresses #}
-            if(is_addresses != null) {
-
+            if(isAddresses != null)
+            {
                 getAddresses(1);
             }
 
             {# Communication Methods #}
-            if(is_communication_method != null) {
-
+            if(isCommunicationMethod != null)
+            {
                 getCommunicationMethods();
             }
 
             {# Order List #}
-            if('{{ clinicOrderList }}' == 1) {
-
+            if('{{ clinicOrderList }}' == 1)
+            {
                 let clinic_id = '{{ app.request.get('clinic_id') }}';
 
                 getOrdersList(clinic_id, 1,'','','');
             }
 
             {# Order Details #}
-            if(is_order_detail != null && orderid > 0 && distributorid > 0) {
-
+            if(isOrderDetail != null && orderid > 0 && distributorid > 0)
+            {
                 getOrderDetails(orderid, distributorid, '{{clinic_id}}');
             }
 
             {# Baskets #}
-            if(is_basket != null) {
-
+            if(isBasket != null)
+            {
                 let basket_id = '{{ app.request.get('basket_id') }}';
 
                 getBasket(basket_id, true, '');
             }
 
             {# Saved Baskets #}
-            if(is_saved_baskets != null) {
-
+            if(isSavedBaskets != null)
+            {
                 getSavedBaskets();
             }
 
             {# Shopping list #}
-            if(is_list != null) {
-
+            if(isList != null)
+            {
                 getSearchResults(1, '', true, '{{ app.request.get('list_id') }}', [], '');
             }
 
-            if(is_edit_list != null) {
-
+            if(isEditList != null)
+            {
                 getSingleShoppingList('{{ app.request.get('list_id') }}');
             }
 
             {# Manage Order Lists #}
-            if(is_manage_lists != null) {
-
+            if(isManageLists != null)
+            {
                 let keyword = '';
 
                 getShoppingLists(keyword);
@@ -257,8 +260,8 @@
             let get_messages = '';
 
             {# Categories #}
-            $(document).on('click', '.category-select', function(e) {
-
+            $(document).on('click', '.category-select', function(e)
+            {
                 e.preventDefault();
 
                 let categoryId = $(this).attr('data-category-id');
@@ -273,22 +276,23 @@
             });
 
             {# Distributors #}
-            $(document).on('click', '.distributor-select', function(e) {
-
+            $(document).on('click', '.distributor-select', function(e)
+            {
                 e.preventDefault();
 
                 let distributorId = $(this).attr('data-distributor-id');
                 let checkbox = $(this).find('input:first-child');
 
-                if(checkbox.is(':checked')) {
-
+                if(checkbox.is(':checked'))
+                {
                     checkbox.attr('checked', false);
-                    selectedDistributorArray = $.grep(selectedDistributorArray, function(value) {
+                    selectedDistributorArray = $.grep(selectedDistributorArray, function(value)
+                    {
                         return value != distributorId;
                     });
-
-                } else {
-
+                }
+                else
+                {
                     checkbox.attr('checked', true);
                     selectedDistributorArray.push(distributorId)
                 }
@@ -299,22 +303,23 @@
             });
 
             {# Manufacturers #}
-            $(document).on('click', '.manufacturer-select', function(e) {
-
+            $(document).on('click', '.manufacturer-select', function(e)
+            {
                 e.preventDefault();
 
                 let manufacturerId = $(this).attr('data-manufacturer-id');
                 let checkbox = $(this).find('input:first-child');
 
-                if(checkbox.is(':checked')) {
-
+                if(checkbox.is(':checked'))
+                {
                     checkbox.attr('checked', false);
-                    selectedManufacturerArray = $.grep(selectedManufacturerArray, function(value) {
+                    selectedManufacturerArray = $.grep(selectedManufacturerArray, function(value)
+                    {
                         return value != manufacturerId;
                     });
-
-                } else {
-
+                }
+                else
+                {
                     checkbox.attr('checked', true);
                     selectedManufacturerArray.push(manufacturerId)
                 }
@@ -325,19 +330,20 @@
             });
 
             {# Favourites #}
-            $(document).on('click', '.favourite-select', function (e) {
-
+            $(document).on('click', '.favourite-select', function (e)
+            {
                 e.preventDefault();
 
                 let checkbox = $(this).find('input');
 
-                if(checkbox.is(':checked')) {
-
+                if(checkbox.is(':checked'))
+                {
                     checkbox.attr('checked', false);
                     favourite = false;
 
-                } else {
-
+                }
+                else
+                {
                     checkbox.attr('checked', true);
                     favourite = true;
                 }
@@ -348,19 +354,19 @@
             });
 
             {# In Stock #}
-            $(document).on('click', '.in-stock-select', function (e) {
-
+            $(document).on('click', '.in-stock-select', function (e)
+            {
                 e.preventDefault();
 
                 let checkbox = $(this).find('input');
 
-                if(checkbox.is(':checked')) {
-
+                if(checkbox.is(':checked'))
+                {
                     checkbox.attr('checked', false);
                     inStock = false;
-
-                } else {
-
+                }
+                else
+                {
                     checkbox.attr('checked', true);
                     inStock = true;
                 }
@@ -371,11 +377,11 @@
             });
 
             {# Reset Filters #}
-            $(document).on('click', '#filter_reset_btn', function(e) {
-
+            $(document).on('click', '#filter_reset_btn', function(e)
+            {
                 e.preventDefault();
 
-                let page_no = 1;
+                let pageNo = 1;
                 let keyword = $('#search_field').val();
 
                 $.ajax({
@@ -383,21 +389,24 @@
                     url: "{{ path('search_inventory') }}",
                     type: 'POST',
                     data: {
-                        keyword: keyword,
-                        page_no: page_no
+                        'keyword': keyword,
+                        'page-no': pageNo
                     },
-                    beforeSend: function (){
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (response) {
-
-                        if(window.location.pathname == '/clinics/inventory') {
-
+                    success: function (response)
+                    {
+                        if(window.location.pathname == '/clinics/inventory')
+                        {
                             $('#search_field').val(keyword);
                             $('#inventory').empty().append(response.html);
                             $('.container').removeClass('mt-5').addClass('mt-5');
@@ -425,8 +434,8 @@
                 });
             });
 
-            function getSearchArray() {
-
+            function getSearchArray()
+            {
                 searchArray = [];
 
                 searchArray.push({
@@ -443,67 +452,68 @@
                 return searchArray;
             }
 
-            function unique(list) {
+            function unique(list)
+            {
                 let result = [];
-                $.each(list, function(i, e) {
+                $.each(list, function(i, e)
+                {
                     if ($.inArray(e, result) == -1) result.push(e);
                 });
                 return result;
             }
 
-            $(document).on('click','.page-link',function (e){
-
+            $(document).on('click','.page-link',function ()
+            {
                 page_no = $(this).data('page-id');
             });
-            $(document).on('click','#search_btn',function (e){
-
+            $(document).on('click','#search_btn',function ()
+            {
                 page_no = 1;
             });
-            $(document).on('click','.view-list',function (e){
-
+            $(document).on('click','.view-list',function (e)
+            {
                 e.preventDefault();
                 $.session.set('listSearchKey', $('#search_field').val());
                 $('#search_field').val('');
             });
 
-            function getSearchResults(page_id, object, shipping_list = false, list_id = 0, searchArray = [], elementId = ''){
-
+            function getSearchResults(pageId, object, shippingList = false, listId = 0, searchArray = [], elementId = '')
+            {
                 let keyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
-                let list_keyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
-                let keyword_field = false;
-                let page_no = page_id;
-                let class_name = '';
+                let listKeyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
+                let keywordField = false;
+                let pageNo = pageId;
+                let className = '';
                 let uri = window.location.pathname;
-                let is_list_uri = uri.match('/clinics/inventory/lists');
+                let isListUri = uri.match('/clinics/inventory/lists');
 
                 $('#paginator').empty().hide();
 
-                if(object != 'undefined' && object != '') {
-
-                    class_name = object.className.substring(10);
+                if(object != 'undefined' && object != '')
+                {
+                    className = object.className.substring(10);
                 }
 
-                if($('#search_field').val() != '' || $('#search_field').val() != 'undefined') {
-
+                if($('#search_field').val() != '' || $('#search_field').val() != 'undefined')
+                {
                     keyword = $('#search_field').val();
                 }
 
-                if((object != 'undefined' && object != '') && object.className.substring(23,42) == 'list-back-to-search') {
-
+                if((object != 'undefined' && object != '') && object.className.substring(23,42) == 'list-back-to-search')
+                {
                     keyword = $(object).data('keyword-string');
-                    keyword_field = true;
+                    keywordField = true;
                 }
 
-                if(class_name == 'view-list' || is_list_uri != null) {
-
-                    list_keyword = $(object).data('keyword-string');
+                if(className == 'view-list' || isListUri != null)
+                {
+                    listKeyword = $(object).data('keyword-string');
                 }
 
-                if($(object).data('list-id') != '' && $(object).data('list-id') != 'undefined' && list_id == 0){
-
-                    list_id = $(object).data('list-id');
+                if($(object).data('list-id') != '' && $(object).data('list-id') != 'undefined' && listId == 0)
+                {
+                    listId = $(object).data('list-id');
                 }
-
 
                 $.ajax({
                     async: "true",
@@ -511,25 +521,27 @@
                     type: 'POST',
                     dataType: 'json',
                     data: {
-                        keyword: keyword,
-                        list_keyword: list_keyword,
-                        list_id: list_id,
-                        page_no: page_no,
-                        page_id: page_id,
-                        search_array: searchArray,
+                        'keyword': keyword,
+                        'list-keyword': listKeyword,
+                        'list-id': listId,
+                        'page-no': pageNo,
+                        'page-id': pageId,
+                        'search-array': searchArray,
                     },
-                    beforeSend: function (){
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
                             //window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         $('#inventory').empty().append(response.html).show();
-                        //$('.container').removeClass('mt-5').addClass('mt-5');
                         $('#basket_container').empty().hide();
                         $('#inventory_container').show();
                         $('.has-megamenu').show(700);
@@ -537,8 +549,8 @@
                         $('#in_stock_label').empty().append('('+ response.inStockCount +') In Stock');
                         $('.manage-lists').attr('data-keyword-string', keyword);
 
-                        $(response.productIds).each(function (index, value) {
-
+                        $(response.productIds).each(function (index, value)
+                        {
                             let productId = value;
 
                             $.ajax({
@@ -549,13 +561,15 @@
                                 data: {
                                     'product-id': productId,
                                 },
-                                complete: function (e, xhr, settings) {
-                                    if (e.status === 500) {
+                                complete: function (e)
+                                {
+                                    if (e.status === 500)
+                                    {
                                         window.location.href = '{{ path('clinic_error_500') }}';
                                     }
                                 },
-                                success: function (response) {
-
+                                success: function (response)
+                                {
                                     $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
                                     $('#search_result_distributors_'+ productId).empty().append(response.html);
                                     $('.from_'+ productId).empty().append(response.from);
@@ -565,34 +579,34 @@
                         });
 
                         // Category Levels
-                        if(response.level == 3){
-
+                        if(response.level == 3)
+                        {
                             let categoryId = $.map(categoryArray, function(cat) {
                                 return cat.categoryId[0];
                             });
 
-                            $('#dd_categories').find('.category-select').each(function (){
-
+                            $('#dd_categories').find('.category-select').each(function ()
+                            {
                                 $(this).find('label').css('font-weight', '');
                                 $('#megamenu').hide(700);
                             });
 
                             $('*[data-category-id="'+ categoryId +'"]').find('label').css('font-weight', 'bold');
-
-                        } else {
-
+                        }
+                        else
+                        {
                             $('#dd_categories').empty().append(response.categoryList);
                             $('#dd_distributors').empty().append(response.distributorsList);
                             $('#dd_manufacturers').empty().append(response.manufacturersList);
                         }
 
-                        if(elementId == 'search_btn'){
-
+                        if(elementId == 'search_btn')
+                        {
                             {# Manufacrurer Filter List #}
                             manufacturerArray = [];
 
-                            $('.manufacturer-checkbox').each(function () {
-
+                            $('.manufacturer-checkbox').each(function ()
+                            {
                                 let manufacturer = $(this).next().text().trim().substring(4);
                                 let manufacturerId = $(this).val();
                                 let itemCount = $(this).next().text().trim().substring(1,2);
@@ -607,8 +621,8 @@
                             {# Distributor Filter List #}
                             distributorArray = [];
 
-                            $('.distributor-checkbox').each(function () {
-
+                            $('.distributor-checkbox').each(function ()
+                            {
                                 let distributor = $(this).next().text().trim().substring(4);
                                 let distributorId = $(this).val();
                                 let itemCount = $(this).next().text().trim().substring(1,2);
@@ -621,33 +635,32 @@
                             });
                         }
 
-                        if(class_name == 'view-list' || list_id > 0 || is_list_uri != null) {
-
-                            if(list_keyword == '' || list_keyword == 'undefined'){
-
-                                list_keyword = $.session.get('search_key');
+                        if(className == 'view-list' || listId > 0 || isListUri != null)
+                        {
+                            if(listKeyword == '' || listKeyword == 'undefined')
+                            {
+                                listKeyword = $.session.get('search_key');
                             }
 
-                            getListBackButton(list_keyword, list_id);
-                            window.history.pushState(null, "Fluid", '/clinics/inventory/list/' + list_id);
-
-                        }  else {
-
+                            getListBackButton(listKeyword, listId);
+                            window.history.pushState(null, "Fluid", '/clinics/inventory/list/' + listId);
+                        }
+                        else
+                        {
                             window.history.pushState(null, "Fluid", '/clinics/inventory');
                         }
 
-                        if(keyword_field){
-
+                        if(keywordField)
+                        {
                             $('#search_field').val(keyword)
                         }
 
                         isLoading(false);
 
-                        if(keyword != '' || keyword != 'undefined'){
-
+                        if(keyword != '' || keyword != 'undefined')
+                        {
                             $.session.set('search_key', keyword);
                         }
-
 
                         let popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
                         let popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
@@ -657,8 +670,8 @@
                 });
             }
 
-            $(document).on('click','#search_btn, .page-link, .view-list, .list-back-to-search',function (e){
-
+            $(document).on('click','#search_btn, .page-link, .view-list, .list-back-to-search',function (e)
+            {
                 e.preventDefault();
                 clearInterval(get_messages);
                 let object = this;
@@ -728,8 +741,8 @@
                     });
                 }
             });
-            $(document).on('click', '.open-carousel', function (e){
-
+            $(document).on('click', '.open-carousel', function (e)
+            {
                 e.preventDefault();
 
                 let productId = $(this).data('product-id');
@@ -741,26 +754,28 @@
                     data: {
                         productId: productId
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         $('#modal_body_'+ productId).empty().append(response);
                         $('#modal_gallery_'+ productId).modal('toggle');
                     }
                 });
             });
-            $(document).on('click', '.carousel-close', function (){
-
+            $(document).on('click', '.carousel-close', function ()
+            {
                 let carouselId = $(this).data('carousel-id');
 
                 $('#modal_gallery_'+ carouselId).modal('toggle');
             });
-            $(document).on('click','.back-to-search', function (e){
-
+            $(document).on('click','.back-to-search', function (e)
+            {
                 e.preventDefault();
 
                 $('.review_panel').hide();
@@ -770,8 +785,8 @@
                 $('#inventory').show();
                 $('#inventory_container').show();
             });
-            $(document).on('click', '.close-filter', function () {
-
+            $(document).on('click', '.close-filter', function ()
+            {
                 $('#megamenu').slideUp(700);
             });
             function getBackButton(){
@@ -783,8 +798,8 @@
 
                 //$('#back_btn').empty().append(button).removeClass('d-none').addClass('d-flex');
             }
-            function getListBackButton(keyword, list_id){
-
+            function getListBackButton(keyword, list_id)
+            {
                 let button = '<div class="row">';
                 button += '<div class="col-12">';
                 button += '<button data-keyword-string="'+ keyword +'" data-keyword-string="'+ list_id +'" class="btn btn-sm btn-primary list-back-to-search mb-3 w-sm-100 w-auto">';
@@ -798,27 +813,27 @@
 
             {# Basket #}
             {# Add To Basket #}
-            $(document).on('submit', 'form[name="form_add_to_basket"]', function (e){
-
+            $(document).on('submit', 'form[name="form_add_to_basket"]', function (e)
+            {
                 e.preventDefault();
 
                 let data = new FormData(this);
-                let product_id = data.get('product_id');
-                let distributor_id = data.get('distributor_id');
+                let productId = data.get('product_id');
+                let distributorId = data.get('distributor_id');
                 let qty = data.get('qty');
-                let qty_error = $('#error_qty_'+ product_id +'_'+ distributor_id);
-                let is_valid = true;
+                let qtyError = $('#error_qty_'+ productId +'_'+ distributorId);
+                let isValid = true;
 
-                qty_error.hide()
+                qtyError.hide()
 
-                if(qty == '' || qty == 'undefined'){
-
-                    qty_error.show();
-                    is_valid = false;
+                if(qty == '' || qty == 'undefined')
+                {
+                    qtyError.show();
+                    isValid = false;
                 }
 
-                if(is_valid) {
-
+                if(isValid)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('inventory_add_to_basket') }}",
@@ -829,23 +844,26 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
                                window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
-                        success: function (response) {
-
-                            if(response.error.length == 0) {
-
+                        success: function (response)
+                        {
+                            if(response.error.length == 0)
+                            {
                                 getFlash(response.message)
                                 $('#modal_add_to_basket_' + response.product_id + '_' + response.distributor_id).modal('toggle').modal('hide');
                                 $('.modal-backdrop').removeClass('modal-backdrop');
                                 $('.fade').removeClass('fade');
                                 $('.modal-basket-qty').val(1);
 
-                            } else {
-
+                            }
+                            else
+                            {
                                 $('#error_stock_'+ response.product_id +'_'+ response.distributor_id).show().empty().append(response.error);
                             }
                         }
@@ -855,8 +873,8 @@
             {# End Add To Basket #}
 
             {# Update Basket #}
-            function getBasket(basket_id, redirect, saved_basket_response){
-
+            function getBasket(basketId, redirect, savedBasketResponse)
+            {
                 hidePaginator();
 
                 $.ajax({
@@ -865,20 +883,22 @@
                     type: 'POST',
                     dataType: 'json',
                     data: {
-                        basket_id: basket_id,
+                        basket_id: basketId,
                         permissions: '{{ permissions|json_encode }}'
                     },
-                    beforeSend: function (){
-
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         $('#back_btn').hide();
                         $('#inventory_container').hide();
                         $('#basket_container').empty().append(response).fadeIn(500);
@@ -889,16 +909,17 @@
                         clearInterval(get_messages);
                         $('.back-to-search').remove();
 
-                        if(redirect) {
+                        if(redirect)
+                        {
+                            window.history.pushState(null, "Fluid", '/clinics/basket/' + basketId);
 
-                            window.history.pushState(null, "Fluid", '/clinics/basket/' + basket_id);
+                        }
+                        else
+                        {
+                            $('#basket_items').empty().append(savedBasketResponse);
 
-                        } else {
-
-                            $('#basket_items').empty().append(saved_basket_response);
-
-                            $('.saved-basket-panel').each(function (){
-
+                            $('.saved-basket-panel').each(function ()
+                            {
                                 $('.saved-basket-panel').hide();
                             });
                         }
@@ -907,32 +928,37 @@
                     }
                 });
             }
-            function getFlash(flash){
+            function getFlash(flash)
+            {
                 $('#flash').addClass('alert-success').removeClass('alert-danger').addClass('alert').addClass('text-center');
                 $('#flash').removeClass('users-flash').addClass('users-flash').empty().append(flash).removeClass('hidden');
 
-                setTimeout(function() {
+                setTimeout(function()
+                {
                     $('#flash').removeClass('alert-success').removeClass('alert').removeClass('text-center');
                     $('#flash').removeClass('users-flash').empty().addClass('hidden');
                 }, 5000);
             }
-            function getSavedBaskets(redirect){
-
+            function getSavedBaskets(redirect)
+            {
                 $.ajax({
                     async: "true",
                     url: "{{ path('get_saved_baskets') }}",
                     type: 'GET',
                     dataType: 'json',
-                    beforeSend: function () {
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (saved_basket_response) {
-
+                    success: function (saved_basket_response)
+                    {
                         isLoading(false);
                         getBasket($('#btn_basket').data('basket-id'), false, saved_basket_response);
 
@@ -941,18 +967,18 @@
                 });
             }
             let basket_qty = '';
-            $(document).on('change', '.basket-qty, .modal-basket-qty', function (){
-
+            $(document).on('change', '.basket-qty, .modal-basket-qty', function ()
+            {
                 basket_qty = $(this).val();
             });
-            $(document).on('change', '.basket-qty', function (){
-
+            $(document).on('change', '.basket-qty', function ()
+            {
                 let item_id = $(this).data('basket-item-id');
                 let qty = $(this).val();
                 let is_valid = true;
 
-                if(is_valid) {
-
+                if(is_valid)
+                {
                     $(this).val(1);
 
                     $.ajax({
@@ -964,21 +990,22 @@
                             item_id: item_id,
                             qty: qty
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        success: function (response) {
-
-                            if(response.error.length == 0) {
-
+                        success: function (response)
+                        {
+                            if(response.error.length == 0)
+                            {
                                 $('#inventory_container').fadeOut(900);
 
                                 let basket_id = response.basket_id;
 
                                 getBasket(basket_id, true, '');
-
-                            } else {
-
+                            }
+                            else
+                            {
                                 isLoading(false);
                                 $('#stock_count_error_'+ response.item_id).show().empty().append(response.error);
                             }
@@ -986,18 +1013,18 @@
                     });
                 }
             });
-            $(document).on('change', '.modal-basket-qty', function (){
-
+            $(document).on('change', '.modal-basket-qty', function ()
+            {
                 basket_qty = $(this).val();
             });
-            $(document).on('click', '.remove-item', function (e){
-
+            $(document).on('click', '.remove-item', function (e)
+            {
                 e.preventDefault();
 
                 let item_id = $(this).data('item-id');
 
-                if(item_id > 0) {
-
+                if(item_id > 0)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('inventory_remove_basket_item') }}",
@@ -1006,15 +1033,19 @@
                         data: {
                             item_id: item_id
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
                                 window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
-                        success: function (response) {
+                        success: function (response)
+                        {
                             $('#inventory_container').hide();
 
                             let basket_id = response.basket_id;
@@ -1024,14 +1055,14 @@
                     });
                 }
             });
-            $(document).on('click', '.clear-basket', function (e){
-
+            $(document).on('click', '.clear-basket', function (e)
+            {
                 e.preventDefault();
 
                 let basket_id = $(this).data('basket-id');
 
-                if(basket_id > 0) {
-
+                if(basket_id > 0)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('inventory_clear_basket') }}",
@@ -1040,10 +1071,12 @@
                         data: {
                             basket_id: basket_id
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        success: function (response) {
+                        success: function (response)
+                        {
                             $('#inventory_container').hide();
 
                             let basket_id = response.basket_id;
@@ -2468,8 +2501,8 @@
             function getMessages(order_id, distributor_id, clinic_id){
 
                 let uri = window.location.pathname;
-                let is_order_detail = uri.match('/[a-zA-Z]+/[a-zA-Z]+/[0-9]+/[0-9]+');
-                if(is_order_detail != null) {
+                let isOrderDetail = uri.match('/[a-zA-Z]+/[a-zA-Z]+/[0-9]+/[0-9]+');
+                if(isOrderDetail != null) {
 
                     let messages_sent = $('.speech-bubble-right').length;
                     let messages_received = $('.speech-bubble-left').length;
@@ -4128,10 +4161,10 @@
 
                         // International Numbers
                         let input = document.querySelector('#mobile');
-                        let iso_code = $('#isocode').val();
+                        let isoCode = $('#isocode').val();
 
                         iti = window.intlTelInput(input, {
-                            initialCountry: iso_code,
+                            initialCountry: isoCode,
                             preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
                             autoPlaceholder: "polite",
                             nationalMode: true,
@@ -4461,12 +4494,12 @@
                         $('#user_iso_code').val('');
                         $('#user_intl_code').val('');
 
-                        iso_code = iti.getSelectedCountryData().iso2;
-                        intl_code = iti.getSelectedCountryData().dialCode;
+                        isoCode = iti.getSelectedCountryData().iso2;
+                        intlCode = iti.getSelectedCountryData().dialCode;
 
                         mobile.val(mobile_number.substring(1));
-                        $('#user_iso_code').val(iso_code);
-                        $('#user_intl_code').val(intl_code);
+                        $('#user_iso_code').val(isoCode);
+                        $('#user_intl_code').val(intlCode);
 
                     }
                 };
@@ -4550,14 +4583,14 @@
                     $("<input />")
                         .attr("type", "hidden")
                         .attr("name", "clinic_users_form[isoCode]")
-                        .attr("value", iso_code)
+                        .attr("value", isoCode)
                         .attr("id", 'user_iso_code')
                         .appendTo("#form_users");
 
                     $("<input />")
                         .attr("type", "hidden")
                         .attr("name", "clinic_users_form[intlCode]")
-                        .attr("value", intl_code)
+                        .attr("value", intlCode)
                         .attr("id", 'user_intl_code')
                         .appendTo("#form_users");
 
@@ -4803,12 +4836,12 @@
 
                     if(mobile_number != false){
 
-                        let iso_code = iti.getSelectedCountryData().iso2;
-                        let intl_code = iti.getSelectedCountryData().dialCode;
+                        let isoCode = iti.getSelectedCountryData().iso2;
+                        let intlCode = iti.getSelectedCountryData().dialCode;
 
                         mobile.val(mobile_number.substring(1));
-                        $('#address_iso_code').val(iso_code);
-                        $('#address_intl_code').val(intl_code);
+                        $('#address_iso_code').val(isoCode);
+                        $('#address_intl_code').val(intlCode);
 
                     }
                 };
@@ -5477,7 +5510,7 @@
 
                 let clinic_method_id = $(this).data('clinic-communication-method-id');
                 let method_id = $(this).data('communication-method-id');
-                let iso_code = '';
+                let isoCode = '';
 
                 if(method_id == 3){
 
@@ -5502,13 +5535,13 @@
                     },
                     success: function (response) {
 
-                        iso_code = response.iso_code;
+                        isoCode = response.iso_code;
 
                         if(method_id == 3){
 
                             input = document.querySelector("#send_to");
                             iti = window.intlTelInput(input, {
-                                initialCountry: iso_code,
+                                initialCountry: isoCode,
                                 preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
                                 autoPlaceholder: "polite",
                                 nationalMode: false,
@@ -5652,14 +5685,14 @@
 
                         let page_id = $('#page_no').val();
                         let iso = iti.getSelectedCountryData().iso2;
-                        let intl_code = iti.getSelectedCountryData().dialCode
+                        let intlCode = iti.getSelectedCountryData().dialCode
 
                         $('<input />').attr('type', 'hidden').attr('name', 'page_id')
                             .attr('value', page_id).appendTo('#form_communication_methods');
                         $('<input />').attr('type', 'hidden').attr('name', 'clinic_communication_methods_form[iso_code]')
                             .attr('value', iso).appendTo('#form_communication_methods');
                         $('<input />').attr('type', 'hidden').attr('name', 'clinic_communication_methods_form[intl_code]')
-                            .attr('value', intl_code).appendTo('#form_communication_methods');
+                            .attr('value', intlCode).appendTo('#form_communication_methods');
                     }
 
                     let data = new FormData(this);
@@ -5712,7 +5745,7 @@
                 } else {
 
                     checkbox.attr('checked', false);
-                    $(this).next('.custom-control-label').find('fa-light').removeClass('.species-icon').addClass('fa-solid');
+                    $(this).next('.custom-control-label').find('.fa-solid').removeClass('fa-solid').addClass('fa-light');
                 }
             });
             {# End Species #}

@@ -602,8 +602,8 @@ class BasketController extends AbstractController
                 'basket' => $request->request->get('basket_id')
             ]);
 
-        if(count($savedBasket) > 0) {
-
+        if(count($savedBasket) > 0)
+        {
             $response = '
             <div class="row border-bottom-dashed">
                 <div class="col-3 pt-3 pb-3">
@@ -625,14 +625,13 @@ class BasketController extends AbstractController
 
             $i = 0;
 
-            foreach ($savedBasket as $basket) {
-
+            foreach ($savedBasket as $basket)
+            {
                 $stockCount = $basket->getProduct()->getDistributorProducts()[0]->getStockCount();
-
                 $status = 'Out Of Stock';
 
-                if($stockCount > 1){
-
+                if($stockCount > 1)
+                {
                     $status = $stockCount . ' In Stock';
                 }
 
@@ -658,8 +657,9 @@ class BasketController extends AbstractController
                     </div>
                 </div>';
             }
-        } else {
-
+        }
+        else
+        {
             $response = '
             <div class="row border-bottom-dashed">
                 <div class="col-12 pt-3 pb-3 text-center">
@@ -701,8 +701,8 @@ class BasketController extends AbstractController
         ]);
         $response = '';
 
-        if(count($savedBaskets) > 1) {
-
+        if(count($savedBaskets) > 1)
+        {
             $response .= '
             <!-- Basket Items -->
             <div class="row border-bottom bg-secondary d-none d-sm-flex">
@@ -721,10 +721,10 @@ class BasketController extends AbstractController
                 <div class="col-2 pt-3 pb-3" style="padding-top: 3px"></div>
             </div>';
 
-            foreach ($savedBaskets as $basket) {
-
-                if ($basket->getName() == 'Fluid Commerce') {
-
+            foreach ($savedBaskets as $basket)
+            {
+                if ($basket->getName() == 'Fluid Commerce')
+                {
                     continue;
                 }
 
@@ -756,9 +756,9 @@ class BasketController extends AbstractController
                 <!-- Baskets -->
                 <div class="saved-basket-panel" id="saved_basket_panel_' . $basket->getId() . '" style="display: none">This basket is empty...</div>';
             }
-
-        } else {
-
+        }
+        else
+        {
             $response .= '
             <div class="row d-none d-sm-flex">
                 <div class="col-12 pt-3 pb-3 text-center">
@@ -1933,6 +1933,7 @@ class BasketController extends AbstractController
         $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
         $firstName = $this->encryptor->decrypt($retailUser->getFirstName());
         $lastName = $this->encryptor->decrypt($retailUser->getLastName());
+        $clinicId = $data->get('clinic-id');
         $productId = $data->get('product-id');
         $price = $data->get('price');
         $qty = $data->get('qty');
@@ -1946,7 +1947,7 @@ class BasketController extends AbstractController
         {
             $basket = new Baskets();
 
-            $basket->setClinic(null);
+            $basket->setClinic($clinicId);
             $basket->setDistributor(null);
             $basket->setRetailUser($retailUser);
             $basket->setStatus('active');
@@ -2034,161 +2035,165 @@ class BasketController extends AbstractController
             </div>
         </div>
         <!-- Basket Actions Row -->
-        <div class="row px-3" id="basket_action_row_1">
-            <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
-                <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">
-                    <i class="fa-regular fa-print me-5 me-md-2"></i>
-                    <span class=" d-none d-md-inline-block pe-4">Print</span>
-                </a>
-                <a '. $href .' class="clear-basket '. $textDisabled .'" data-basket-id="'. $basketId .'">
-                    <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
-                    <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
-                </a>
-                <a href="#" id="return_to_search" data-basket-id="'. $basketId .'">
-                    <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
-                    <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
-                </a>
-            </div>
-        </div>';
+        <div class="row px-3">
+            <div class="col-12 half-border">
+                <div class="row" id="basket_action_row_1">
+                    <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
+                        <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">
+                            <i class="fa-regular fa-print me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Print</span>
+                        </a>
+                        <a '. $href .' class="clear-basket '. $textDisabled .'" data-basket-id="'. $basketId .'">
+                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
+                        </a>
+                        <a href="#" id="return_to_search" data-basket-id="'. $basketId .'">
+                            <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                            <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
+                        </a>
+                    </div>
+                </div>';
 
-        if($basket->getBasketItems()->count() > 0)
-        {
-            $response['html'] .= '
-            <div class="row px-3" id="basket_items">
-                <div class="col-12 col-lg-9 border-right border-left border-right border-bottom bg-white col-cell">';
-
-            if($basket->getBasketItems()->count() > 0)
-            {
-                foreach ($basket->getBasketItems() as $basketItem)
+                if($basket->getBasketItems()->count() > 0)
                 {
-                    $total = number_format($basketItem->getQty() * $basketItem->getUnitPrice(), 2);
-                    $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
-                        'product' => $basketItem->getProduct()->getId(),
-                        'isDefault' => 1
-                    ]);
-
-                    if($firstImage == null){
-
-                        $firstImage = 'image-not-found.jpg';
-
-                    } else {
-
-                        $firstImage = $firstImage->getImage();
-                    }
-
                     $response['html'] .= '
-                    <div class="col-12">
-                        <div class="row">
-                            <!-- Thumbnail -->
-                            <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
-                                <img class="img-fluid basket-img" src="/images/products/'. $firstImage .'">
-                            </div>
-                            <div class="col-12 col-sm-10 pt-3 pb-3">
-                                <!-- Product Name and Qty -->
+                    <div class="row" id="basket_items">
+                        <div class="col-12 col-lg-9 border-right border-left border-right border-bottom bg-white col-cell">';
+
+                    if($basket->getBasketItems()->count() > 0)
+                    {
+                        foreach ($basket->getBasketItems() as $basketItem)
+                        {
+                            $total = number_format($basketItem->getQty() * $basketItem->getUnitPrice(), 2);
+                            $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
+                                'product' => $basketItem->getProduct()->getId(),
+                                'isDefault' => 1
+                            ]);
+
+                            if($firstImage == null){
+
+                                $firstImage = 'image-not-found.jpg';
+
+                            } else {
+
+                                $firstImage = $firstImage->getImage();
+                            }
+
+                            $response['html'] .= '
+                            <div class="col-12">
                                 <div class="row">
-                                    <!-- Product Name -->
-                                    <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
-                                        <span class="info">
-                                            '. $this->encryptor->decrypt($basketItem->getBasket()->getClinic()->getClinicName()) .'
-                                        </span>
-                                        <h6 class="fw-bold text-primary lh-base my-0">
-                                            '. $basketItem->getProduct()->getName() .'
-                                        </h6>
+                                    <!-- Thumbnail -->
+                                    <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
+                                        <img class="img-fluid basket-img" src="/images/products/'. $firstImage .'">
                                     </div>
-                                    <!-- Product Quantity -->
-                                    <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3 d-table">
-                                        <div class="row d-table-row">
-                                            <div class="col-3 text-center text-sm-end text-md-start text-lg-start d-table-cell align-bottom">
-                                                '. number_format($basketItem->getUnitPrice(), 2) .'
+                                    <div class="col-12 col-sm-10 pt-3 pb-3">
+                                        <!-- Product Name and Qty -->
+                                        <div class="row">
+                                            <!-- Product Name -->
+                                            <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
+                                                <span class="info">
+                                                    '. $this->encryptor->decrypt($basketItem->getBasket()->getClinic()->getClinicName()) .'
+                                                </span>
+                                                <h6 class="fw-bold text-primary lh-base my-0">
+                                                    '. $basketItem->getProduct()->getName() .'
+                                                </h6>
                                             </div>
-                                            <div class="col-4 d-table-cell align-bottom">
-                                                <input 
-                                                    type="number" 
-                                                    name="qty" 
-                                                    class="form-control form-control-sm basket-qty" 
-                                                    value="'. $basketItem->getQty() .'"
-                                                    data-basket-item-id="'. $basketItem->getId() .'"
+                                            <!-- Product Quantity -->
+                                            <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3 d-table">
+                                                <div class="row d-table-row">
+                                                    <div class="col-3 text-center text-sm-end text-md-start text-lg-start d-table-cell align-bottom">
+                                                        '. number_format($basketItem->getUnitPrice(), 2) .'
+                                                    </div>
+                                                    <div class="col-4 d-table-cell align-bottom">
+                                                        <input 
+                                                            type="number" 
+                                                            name="qty" 
+                                                            class="form-control form-control-sm basket-qty" 
+                                                            value="'. $basketItem->getQty() .'"
+                                                            data-basket-item-id="'. $basketItem->getId() .'"
+                                                        >
+                                                        <div class="hidden_msg" id="stock_count_error_6"></div>
+                                                    </div>
+                                                    <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate d-table-cell align-bottom">
+                                                        '. $currency .' '. $total .'
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Item Actions -->
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <!-- Shipping Policy -->
+                                                <span 
+                                                    class="badge bg-dark-grey badge-pending-filled-sm" 
+                                                    data-bs-trigger="hover" 
+                                                    data-bs-container="body" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    data-bs-html="true" 
+                                                    data-bs-content=""
                                                 >
-                                                <div class="hidden_msg" id="stock_count_error_6"></div>
-                                            </div>
-                                            <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate d-table-cell align-bottom">
-                                                '. $currency .' '. $total .'
+                                                    Shipping Policy
+                                                </span>
+                                                <!-- Remove Item -->
+                                                <span class="badge bg-danger float-end badge-danger-filled-sm">
+                                                    <a 
+                                                        href="#" 
+                                                        class="remove-item text-white" 
+                                                        data-item-id="'. $basketItem->getId() .'"
+                                                    >Remove</a>
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Item Actions -->
-                                <div class="row">
-                                    <div class="col-12">
-                                        <!-- Shipping Policy -->
-                                        <span 
-                                            class="badge bg-dark-grey badge-pending-filled-sm" 
-                                            data-bs-trigger="hover" 
-                                            data-bs-container="body" 
-                                            data-bs-toggle="popover" 
-                                            data-bs-placement="top" 
-                                            data-bs-html="true" 
-                                            data-bs-content=""
-                                        >
-                                            Shipping Policy
-                                        </span>
-                                        <!-- Remove Item -->
-                                        <span class="badge bg-danger float-end badge-danger-filled-sm">
-                                            <a 
-                                                href="#" 
-                                                class="remove-item text-white" 
-                                                data-item-id="'. $basketItem->getId() .'"
-                                            >Remove</a>
-                                        </span>
-                                    </div>
+                            </div>';
+                        }
+                    }
+
+                    $response['html'] .= '
+                        <!-- Basket Summary -->
+                        </div>
+                        <div class="col-12 col-lg-3 py-3 pe-0 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
+                            <div class="row">
+                                <div class="col-12 text-truncate ps-0 ps-sm-2">
+                                    <span class="info">Subtotal:</span>
+                                    <h5 class="d-inline-block text-primary float-end">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 info ps-0 ps-sm-2">
+                                    Shipping: <span class="float-end fw-bold">AED 0.00</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 pt-4 text-center ps-0 ps-sm-2">
+                                    <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
+                                        PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>';
                 }
-            }
+                else
+                {
+                    $response['html'] .= '
+                    <!-- Basket Items -->
+                    <div class="row px-3">
+                        <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
+                            <p>
+                            </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>
+                            Were you expecting to see items here? View copies of the items most recently added<br>
+                            to your basket and restore a basket if needed.
+                            <p></p>
+                        </div>
+                    </div>';
+                }
 
-            $response['html'] .= '
-                <!-- Basket Summary -->
-                </div>
-                <div class="col-12 col-lg-3 py-3 pe-0 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
-                    <div class="row">
-                        <div class="col-12 text-truncate ps-0 ps-sm-2">
-                            <span class="info">Subtotal:</span>
-                            <h5 class="d-inline-block text-primary float-end">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 info ps-0 ps-sm-2">
-                            Shipping: <span class="float-end fw-bold">AED 0.00</span>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 pt-4 text-center ps-0 ps-sm-2">
-                            <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
-                                PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
-                            </a>
-                        </div>
-                    </div>
+        $response['html'] .= '
                 </div>
             </div>';
-        }
-        else
-        {
-            $response['html'] .= '
-            <!-- Basket Items -->
-            <div class="row px-3">
-                <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
-                    <p>
-                    </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>
-                    Were you expecting to see items here? View copies of the items most recently added<br>
-                    to your basket and restore a basket if needed.
-                    <p></p>
-                </div>
-            </div>';
-        }
-
-
 
         return new JsonResponse($response);
     }
