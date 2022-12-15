@@ -444,10 +444,13 @@ class ClinicsController extends AbstractController
     {
         $species = $this->em->getRepository(Species::class)->findByNameAsc();
         $permissions = json_decode($request->get('permissions'), true);
+        $countries = $this->em->getRepository(Countries::class)->findBy([
+            'isActive' => 1,
+        ]);
 
         // Permissions
-        if(!in_array(10, $permissions)){
-
+        if(!in_array(10, $permissions))
+        {
             $response = '
             <div class="row mt-3 mt-md-5">
                 <div class="col-12 text-center">
@@ -471,7 +474,8 @@ class ClinicsController extends AbstractController
 
         // Ensure trade license is uploaded
         $tradeLicenseAsterisc = '';
-        if($clinic->getTradeLicense() != null) {
+        if($clinic->getTradeLicense() != null)
+        {
             $btnDownload = '
             <span class="input-group-text">
                 <a href="' . $this->generateUrl('download_trade_license', ['trade-license' => $clinic->getTradeLicense()]) . '">
@@ -573,56 +577,6 @@ class ClinicsController extends AbstractController
                         </div>
                     </div>
                 </div>
-        
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
-        
-                    <!-- Email -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Business Email Address <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[email]" 
-                            id="clinic_email" 
-                            class="form-control" 
-                            placeholder="Business Email Address"
-                            value="'. $this->encryptor->decrypt($clinic->getEmail()) .'"
-                        >
-                        <div class="hidden_msg" id="error_clinic_email">
-                            Required Field
-                        </div>
-                    </div>
-        
-                    <!-- Telephone -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>Business Telephone  <span class="text-danger">*</span></label>
-                        <input 
-                            type="hidden"
-                            name="iso-code" 
-                            id="isocode" 
-                            value="'. $this->encryptor->decrypt($clinic->getIsoCode()) .'"
-                        >
-                        <input 
-                            type="hidden"
-                            name="clinic_form[telephone]" 
-                            id="clinic_telephone" 
-                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
-                        >
-                        <input 
-                            type="text" 
-                            name="mobile" 
-                            id="mobile" 
-                            name="mobile" 
-                            class="form-control" 
-                            placeholder="Telephone*"
-                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
-                        >
-                        <div class="hidden_msg" id="error_telephone">
-                            Required Field
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- Manager Name -->
                 <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
@@ -699,6 +653,82 @@ class ClinicsController extends AbstractController
                             value="'. $managerIdExpDate .'"
                         >
                         <div class="hidden_msg" id="error_manager_id_exp_date">
+                            Required Field
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+        
+                    <!-- Email -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>
+                            Business Email Address <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="clinic_form[email]" 
+                            id="clinic_email" 
+                            class="form-control" 
+                            placeholder="Business Email Address"
+                            value="'. $this->encryptor->decrypt($clinic->getEmail()) .'"
+                        >
+                        <div class="hidden_msg" id="error_clinic_email">
+                            Required Field
+                        </div>
+                    </div>
+        
+                    <!-- Telephone -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>Business Telephone  <span class="text-danger">*</span></label>
+                        <input 
+                            type="hidden"
+                            name="iso-code" 
+                            id="isocode" 
+                            value="'. $this->encryptor->decrypt($clinic->getIsoCode()) .'"
+                        >
+                        <input 
+                            type="hidden"
+                            name="clinic_form[telephone]" 
+                            id="clinic_telephone" 
+                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
+                        >
+                        <input 
+                            type="text" 
+                            name="mobile" 
+                            id="mobile" 
+                            name="mobile" 
+                            class="form-control" 
+                            placeholder="Telephone*"
+                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
+                        >
+                        <div class="hidden_msg" id="error_telephone">
+                            Required Field
+                        </div>
+                    </div>
+                    
+                    <!-- Countries -->
+                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                        <label>Located In <span class="text-danger">*</span></label>
+                        <select name="country" style="color:#b1abb0 !important" id="country" class="form-control">
+                            <option value="">Country</option>';
+
+                            foreach($countries as $country)
+                            {
+                                $selected = '';
+
+                                if($country->getId() == $clinic->getCountry()->getId())
+                                {
+                                    $selected = 'selected';
+                                }
+
+                                $response .= '
+                                <option value="'. $country->getId() .'" '. $selected .'>'. $country->getName() .'</option>';
+                            }
+
+                        $response .= '
+                        </select>
+                        <div class="hidden_msg" id="error_country">
                             Required Field
                         </div>
                     </div>

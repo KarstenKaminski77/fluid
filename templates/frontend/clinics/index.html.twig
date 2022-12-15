@@ -957,27 +957,27 @@
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
-                    success: function (saved_basket_response)
+                    success: function (response)
                     {
                         isLoading(false);
-                        getBasket($('#btn_basket').data('basket-id'), false, saved_basket_response);
+                        getBasket($('#btn_basket').data('basket-id'), false, response);
 
                         window.history.pushState(null, "Fluid", '/clinics/saved/baskets');
                     }
                 });
             }
-            let basket_qty = '';
+            let basketQty = '';
             $(document).on('change', '.basket-qty, .modal-basket-qty', function ()
             {
-                basket_qty = $(this).val();
+                basketQty = $(this).val();
             });
             $(document).on('change', '.basket-qty', function ()
             {
-                let item_id = $(this).data('basket-item-id');
+                let itemId = $(this).data('basket-item-id');
                 let qty = $(this).val();
-                let is_valid = true;
+                let isValid = true;
 
-                if(is_valid)
+                if(isValid)
                 {
                     $(this).val(1);
 
@@ -987,7 +987,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            item_id: item_id,
+                            'item-id': itemId,
                             qty: qty
                         },
                         beforeSend: function ()
@@ -1000,14 +1000,14 @@
                             {
                                 $('#inventory_container').fadeOut(900);
 
-                                let basket_id = response.basket_id;
+                                let basketId = response.basketId;
 
-                                getBasket(basket_id, true, '');
+                                getBasket(basketId, true, '');
                             }
                             else
                             {
                                 isLoading(false);
-                                $('#stock_count_error_'+ response.item_id).show().empty().append(response.error);
+                                $('#stock_count_error_'+ response.itemId).show().empty().append(response.error);
                             }
                         }
                     });
@@ -1015,15 +1015,15 @@
             });
             $(document).on('change', '.modal-basket-qty', function ()
             {
-                basket_qty = $(this).val();
+                basketQty = $(this).val();
             });
             $(document).on('click', '.remove-item', function (e)
             {
                 e.preventDefault();
 
-                let item_id = $(this).data('item-id');
+                let itemId = $(this).data('item-id');
 
-                if(item_id > 0)
+                if(itemId > 0)
                 {
                     $.ajax({
                         async: "true",
@@ -1031,7 +1031,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            item_id: item_id
+                            'item-id': itemId
                         },
                         beforeSend: function ()
                         {
@@ -1048,9 +1048,9 @@
                         {
                             $('#inventory_container').hide();
 
-                            let basket_id = response.basket_id;
+                            let basketId = response.basketId;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                         }
                     });
                 }
@@ -1059,9 +1059,9 @@
             {
                 e.preventDefault();
 
-                let basket_id = $(this).data('basket-id');
+                let basketId = $(this).data('basket-id');
 
-                if(basket_id > 0)
+                if(basketId > 0)
                 {
                     $.ajax({
                         async: "true",
@@ -1069,7 +1069,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            basket_id: basket_id
+                            'basket-id': basketId
                         },
                         beforeSend: function ()
                         {
@@ -1079,30 +1079,31 @@
                         {
                             $('#inventory_container').hide();
 
-                            let basket_id = response.basket_id;
+                            let basketId = response.basketId;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                         }
                     });
                 }
             });
-            $(document).on('click', '.refresh-basket', function (e){
-
+            $(document).on('click', '.refresh-basket', function (e)
+            {
                 e.preventDefault();
 
-                let basket_id = $(this).data('basket-id');
+                let basketId = $(this).data('basket-id');
 
-                if(basket_id > 0) {
+                if(basketId > 0)
+                {
+                    let flash = '<b><i class="fas fa-check-circle"></i> Basket Refreshed.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
-                    let flash = '<b><i class="fas fa-check-circle"></i> Basket updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-                    getBasket(basket_id, true, '');
+                    getBasket(basketId, true, '');
                     getFlash(flash);
                 }
             });
-            $(document).on('click', '#print_basket', function(e) {
-
-                $('.basket-qty').each(function (){
+            $(document).on('click', '#print_basket', function(e)
+            {
+                $('.basket-qty').each(function ()
+                {
                     $(this).replaceWith($(this).val())
                 });
 
@@ -1121,15 +1122,15 @@
                 setTimeout(function(){w.print();w.close();},1000);
 
             });
-            $(document).on('click', '.save-item', function(e) {
-
+            $(document).on('click', '.save-item', function(e)
+            {
                 e.preventDefault();
 
-                let product_id = $(this).data('product-id');
-                let distributor_id = $(this).data('distributor-id');
-                let item_id = $(this).data('item-id');
+                let productId = $(this).data('product-id');
+                let distributorId = $(this).data('distributor-id');
+                let itemId = $(this).data('item-id');
 
-                if(distributor_id > 0 && product_id > 0) {
+                if(distributorId > 0 && productId > 0) {
 
                     $.ajax({
                         async: "true",
@@ -1137,39 +1138,41 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            product_id: product_id,
-                            distributor_id: distributor_id,
-                            item_id: item_id
+                            'product-id': productId,
+                            'distributor-id': distributorId,
+                            'item-id': itemId
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        complete: function(e, xhr, settings){
+                        complete: function(e)
+                        {
                             if(e.status === 500){
                                 window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
-                        success: function (response) {
-
-                            let basket_id = response.basket_id;
+                        success: function (response)
+                        {
+                            let basketId = response.basketId;
                             let flash = response.message;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                             getFlash(flash);
                         }
                     });
                 }
             });
-            $(document).on('click', '.restore-item', function(e) {
-
+            $(document).on('click', '.restore-item', function(e)
+            {
                 e.preventDefault();
 
-                let product_id = $(this).data('product-id');
-                let distributor_id = $(this).data('distributor-id');
-                let item_id = $(this).data('item-id');
-                let basket_id = $(this).data('basket-id');
+                let productId = $(this).data('product-id');
+                let distributorId = $(this).data('distributor-id');
+                let itemId = $(this).data('item-id');
+                let basketId = $(this).data('basket-id');
 
-                if(distributor_id > 0 && product_id > 0) {
+                if(distributorId > 0 && productId > 0) {
 
                     $.ajax({
                         async: "true",
@@ -1177,139 +1180,144 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            product_id: product_id,
-                            distributor_id: distributor_id,
-                            item_id: item_id,
-                            basket_id: basket_id
+                            'product-id': productId,
+                            'distributor-id': distributorId,
+                            'item-id': itemId,
+                            'basket-id': basketId
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
                                 window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
-                        success: function (response) {
-
-                            let basket_id = response.basket_id;
+                        success: function (response)
+                        {
+                            let basketId = response.basketId;
                             let flash = response.message;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                             getFlash(flash);
                         }
                     });
                 }
             });
-            $(document).on('click', '.remove-saved-item', function(e) {
-
+            $(document).on('click', '.remove-saved-item', function(e)
+            {
                 e.preventDefault();
 
-                let item_id = $(this).data('item-id');
+                let itemId = $(this).data('item-id');
 
-                if(item_id > 0) {
-
+                if(itemId > 0)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('remove_saved_item') }}",
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            item_id: item_id
+                            'item-id': itemId
                         },
                         beforeSend: function (){
                             isLoading(true);
                         },
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
                                 window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
-                        success: function (response) {
+                        success: function (response)
+                        {
 
-                            let basket_id = response.basket_id;
+                            let basketId = response.basketId;
                             let flash = response.message;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                             getFlash(flash);
                         }
                     });
                 }
             });
-            $(document).on('click', '.save-all-items', function(e) {
-
+            $(document).on('click', '.save-all-items', function(e)
+            {
                 e.preventDefault();
 
-                let basket_id = $(this).data('basket-id');
+                let basketId = $(this).data('basket-id');
 
-                if(basket_id > 0) {
-
+                if(basketId > 0)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('save_all_items') }}",
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            basket_id: basket_id
+                            'basket-id': basketId
                         },
-                        beforeSend: function (){
+                        beforeSend: function ()
+                        {
                             isLoading(true);
                         },
-                        success: function (response) {
-
-                            let basket_id = response.basket_id;
+                        success: function (response)
+                        {
+                            let basketId = response.basketId;
                             let flash = response.message;
 
-                            getBasket(basket_id, true, '');
+                            getBasket(basketId, true, '');
                             getFlash(flash);
                         }
                     });
                 }
             });
-            $(document).on('click', '#saved_items_link', function (e){
-
+            $(document).on('click', '#saved_items_link', function (e)
+            {
                 e.preventDefault();
 
-                if($('#saved_items_container:visible').length) {
-
+                if($('#saved_items_container:visible').length)
+                {
                     $('#saved_items_container').hide(700);
-
-                } else {
-
+                }
+                else
+                {
                     $('#saved_items_container').show(700);
                 }
             });
-            $(document).on('submit', 'form[name="form_save_basket"]', function (e){
-
+            $(document).on('submit', 'form[name="form_save_basket"]', function (e)
+            {
                 e.preventDefault();
 
                 let btn = $(this).find("button[type=submit]:focus" ).html();
                 let clear = 0;
 
-                if(btn == 'SAVE AND CLEAR'){
-
+                if(btn == 'SAVE AND CLEAR')
+                {
                     clear = 1;
                 }
 
                 $("<input />").attr("type", "hidden").attr("name", "clear").attr("value", clear).appendTo("#form_save_basket");
 
                 let data = new FormData(this);
-                let basket_name = $('#basket_name').val();
-                let error_basket_name = $('#error_basket_name');
-                let is_valid = true;
+                let basketName = $('#basket_name').val();
+                let errorBasketName = $('#error_basket_name');
+                let isValid = true;
 
-                error_basket_name.hide();
+                errorBasketName.hide();
 
-                if(basket_name == '' || basket_name == 'undefined'){
-
-                    error_basket_name.show();
-                    is_valid = false;
+                if(basketName == '' || basketName == 'undefined')
+                {
+                    errorBasketName.show();
+                    isValid = false;
                 }
 
-                if(is_valid) {
-
-                    error_basket_name.hide();
-
+                if(isValid)
+                {
                     $.ajax({
                         async: "true",
                         url: "{{ path('save_basket') }}",
@@ -1320,12 +1328,13 @@
                         timeout: 600000,
                         dataType: 'json',
                         data: data,
-                        success: function (response) {
+                        success: function (response)
+                        {
                             getFlash(response.message);
                             $('#modal_save_basket').modal('toggle').modal('hide');
                             $('.modal-backdrop').removeClass('modal-backdrop');
                             $('.fade').removeClass('fade');
-                            getBasket(response.basket_id, true, '');
+                            getBasket(response.basketId, true, '');
                         }
                     });
                 }
@@ -4717,7 +4726,7 @@
                     },
                     complete: function(e, xhr, settings){
                         if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
+                            //window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response) {

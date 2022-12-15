@@ -127,13 +127,13 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/inventory-update-basket', name: 'inventory_update_basket')]
     public function updateBasketAction(Request $request): Response
     {
-        $itemId = $request->request->get('item_id');
+        $itemId = $request->request->get('item-id');
         $basketItem = $this->em->getRepository(BasketItems::class)->find($itemId);
         $basketId = $basketItem->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
-        if($basketItem != null){
-
+        if($basketItem != null)
+        {
             $productId = $basketItem->getProduct()->getId();
             $distributorId = $basketItem->getDistributor()->getId();
             $qty = (int) $request->request->get('qty');
@@ -143,16 +143,18 @@ class BasketController extends AbstractController
                 'distributor' => $distributorId,
             ]);
 
-            if($distributorProducts[0]->getStockCount() < $qty && ($distributorProducts[0]->getDistributor()->getTracking() == 1 || $distributorProducts[0]->getDistributor()->getTracking() == 2)){
-
+            if(
+                $distributorProducts[0]->getStockCount() < $qty && ($distributorProducts[0]->getDistributor()->getTracking() == 1 ||
+                    $distributorProducts[0]->getDistributor()->getTracking() == 2)
+            ){
                 $qty = $distributorProducts[0]->getStockCount();
                 $qtyError = 'Only '. $qty .' units in stock, please select '. $qty .' or less';
 
                 $response = [
                     'error' => $qtyError,
                     'message' => '',
-                    'basket_id' => $basketId,
-                    'item_id' => $itemId,
+                    'basketId' => $basketId,
+                    'itemId' => $itemId,
                 ];
 
                 return new JsonResponse($response);
@@ -167,8 +169,8 @@ class BasketController extends AbstractController
 
         $totals = $this->em->getRepository(BasketItems::class)->getTotalItems($basketId);
 
-        if($basket != null){
-
+        if($basket != null)
+        {
             $basket->setTotal(number_format((float) $totals[0]['total'],2, '.','') ?? 0.00);
 
             $this->em->persist($basket);
@@ -179,8 +181,8 @@ class BasketController extends AbstractController
         $response = [
             'error' => '',
             'message' => '<b><i class="fas fa-check-circle"></i> '. $basketItem->getProduct()->getName() .' updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId,
-            'item_id' => '',
+            'basketId' => $basketId,
+            'itemId' => '',
         ];
 
         return new JsonResponse($response);
@@ -189,7 +191,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item')]
     public function removeBasketItemAction(Request $request): Response
     {
-        $basketItemId = $request->request->get('item_id') ?? $request->request->get('item-id');
+        $basketItemId = $request->request->get('item-id');
         $basketItem = $this->em->getRepository(BasketItems::class)->find($basketItemId);
         $basketId = $basketItem->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
@@ -214,7 +216,7 @@ class BasketController extends AbstractController
         $response = [
 
             'message' => '<b><i class="fas fa-check-circle"></i> '. $basketItem->getProduct()->getName() .' removed.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId,
+            'basketId' => $basketId,
         ];
 
         return new JsonResponse($response);
@@ -223,7 +225,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/inventory-clear-basket', name: 'inventory_clear_basket')]
     public function clearBasketAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id') ?? $request->request->get('basket-id');
+        $basketId = $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
@@ -251,7 +253,7 @@ class BasketController extends AbstractController
         $response = [
 
             'message' => '<b><i class="fas fa-check-circle"></i> All items removed from basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId,
+            'basket-id' => $basketId,
         ];
 
         return new JsonResponse($response);
@@ -260,10 +262,10 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/save-item', name: 'save_item')]
     public function saveItemAction(Request $request): Response
     {
-        $product = $this->em->getRepository(Products::class)->find($request->request->get('product_id'));
-        $distributor = $this->em->getRepository(Distributors::class)->find($request->request->get('distributor_id'));
+        $product = $this->em->getRepository(Products::class)->find($request->request->get('product-id'));
+        $distributor = $this->em->getRepository(Distributors::class)->find($request->request->get('distributor-id'));
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
-        $basketItems = $this->em->getRepository(BasketItems::class)->find($request->request->get('item_id'));
+        $basketItems = $this->em->getRepository(BasketItems::class)->find($request->request->get('item-id'));
         $basketId = $basketItems->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
         $create = false;
@@ -328,7 +330,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => $message,
-            'basket_id' => $basketId
+            'basketId' => $basketId
         ];
 
         return new JsonResponse($response);
@@ -380,7 +382,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i></b> All items saved for later.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId
+            'basketId' => $basketId
         ];
 
         return new JsonResponse($response);
@@ -389,11 +391,11 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/restore-item', name: 'restore_item')]
     public function restoreItemAction(Request $request): Response
     {
-        $product = $this->em->getRepository(Products::class)->find($request->request->get('product_id'));
-        $distributor = $this->em->getRepository(Distributors::class)->find($request->request->get('distributor_id'));
+        $product = $this->em->getRepository(Products::class)->find($request->request->get('product-id'));
+        $distributor = $this->em->getRepository(Distributors::class)->find($request->request->get('distributor-id'));
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
-        $clinicProducts = $this->em->getRepository(ClinicProducts::class)->find($request->request->get('item_id'));
-        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket_id'));
+        $clinicProducts = $this->em->getRepository(ClinicProducts::class)->find($request->request->get('item-id'));
+        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket-id'));
 
         $basketItem = new BasketItems();
 
@@ -431,7 +433,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i> '. $product->getName() .'</b> moved to basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basket->getId()
+            'basketId' => $basket->getId()
         ];
 
         return new JsonResponse($response);
@@ -496,7 +498,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/remove-saved-item', name: 'remove_saved_item')]
     public function removeSavedItemAction(Request $request): Response
     {
-        $item = $this->em->getRepository(ClinicProducts::class)->find($request->request->get('item_id'));
+        $item = $this->em->getRepository(ClinicProducts::class)->find($request->request->get('item-id'));
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
         $product = $item->getProduct()->getName();
 
@@ -511,7 +513,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i> '. $product .'</b> removed.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basket->getId(),
+            'basketId' => $basket->getId(),
         ];
 
         return new JsonResponse($response);
@@ -579,7 +581,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i> '. $product->getName() .'</b> saved for later.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketNew->getId()
+            'basketId' => $basketNew->getId()
 
         ];
 

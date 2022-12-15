@@ -33,6 +33,15 @@ class AddressesController extends AbstractController
 
     private function getAddresses($addresses, $module)
     {
+        $request = Request::createFromGlobals();
+        $path = $request->server->get('PATH_INFO');
+        $class = 'hidden';
+
+        if(strstr($path, 'clinics'))
+        {
+            $class = '';
+        }
+
         $response = '
         <div class="row pt-3">
             <div class="col-12 text-center mt-1 pt-3 pb-3">
@@ -42,10 +51,22 @@ class AddressesController extends AbstractController
                     <strong>A valid address is required for purchasing Fluid Commerce items and redeeming Fluid rewards.</strong>
                 </span>
             </div>
+            <div class="col-12 '. $class .'">
+                <a 
+                    href="#" 
+                    class="align-middle text-primary nav-icon text-truncate float-end mb-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#modal_address"
+                    id="address_new"
+                >
+                    <i class="fa-regular fa-square-plus fa-fw"></i>
+                    <span class="ms-1">Create New</span>
+                </a>
+            </div>
         </div>';
 
-        if(count($addresses) > 0) {
-
+        if(count($addresses) > 0)
+        {
             $response .= '
             <div class="row d-none bg-light d-xl-flex border-bottom border-right border-left border-top">
                 <div class="col-9">
@@ -62,7 +83,6 @@ class AddressesController extends AbstractController
                     </div>
                 </div>
                 <div class="col-md-3">
-    
                 </div>
             </div>
     
@@ -70,30 +90,30 @@ class AddressesController extends AbstractController
 
             $i = 0;
 
-            foreach ($addresses as $address) {
-
+            foreach ($addresses as $address)
+            {
                 $class = 'address-icon';
                 $classBilling = 'address-icon';
                 $i++;
 
                 // Default Shipping Address
-                if ($address->getIsDefault() == 1) {
-
+                if ($address->getIsDefault() == 1)
+                {
                     $class = 'is-default-address-icon';
                 }
 
                 // Default Billing Address
-                if($address->getIsDefaultBilling() == 1){
-
+                if($address->getIsDefaultBilling() == 1)
+                {
                     $classBilling = 'is-default-address-icon';
                 }
 
-                if($address->getType() == 1){
-
+                if($address->getType() == 1)
+                {
                     $type = 'Billing';
-
-                } else {
-
+                }
+                else
+                {
                     $type = 'Shipping';
                 }
 
@@ -125,8 +145,8 @@ class AddressesController extends AbstractController
                                     <i class="fa-solid fa-trash-can"></i>
                                 </a>';
 
-                    if($type == 'Billing') {
-
+                    if($type == 'Billing')
+                    {
                         $response .= '
                         <a href="#" class="address_default_billing float-start float-sm-none" data-billing-address-id="' . $address->getId() . '">
                             <i class="fa-solid fa-star float-end ' . $classBilling . '"></i>
@@ -134,8 +154,8 @@ class AddressesController extends AbstractController
 
                     }
 
-                    if($type == 'Shipping') {
-
+                    if($type == 'Shipping')
+                    {
                         $response .= '
                         <a href="#" class="address_default float-start float-sm-none" data-address-id="' . $address->getId() . '">
                             <i class="fa-solid fa-star float-end ' . $class . '"></i>
@@ -188,9 +208,9 @@ class AddressesController extends AbstractController
                 </div>
             </div>
             <!-- End Addresses -->';
-
-        } else {
-
+        }
+        else
+        {
             $response .= '
             <div class="row border-left border-right border-top border-bottom bg-light">
                 <div class="col-12 text-center mt-3 mb-3 pt-3 pb-3 text-center">
@@ -507,8 +527,8 @@ class AddressesController extends AbstractController
     {
         $permissions = json_decode($request->request->get('permissions'), true);
 
-        if(!in_array(12, $permissions)){
-
+        if(!in_array(12, $permissions))
+        {
             $html = '
             <div class="row mt-3 mt-md-5">
                 <div class="col-12 text-center">

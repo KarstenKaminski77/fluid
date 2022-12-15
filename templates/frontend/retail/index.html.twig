@@ -129,6 +129,8 @@
             let isAddresses = uri.match('/retail/addresses/[0-9]+');
             let keywords = $.session.get('keywords');
 
+            getSearchResults('', 1);
+
             {# Handle Page Rload #}
             if(isPersonalInformation != null)
             {
@@ -196,7 +198,7 @@
             {
                 let isValid = true;
 
-                if(keywords == '' || keywords == 'undefined')
+                if(keywords == 'undefined')
                 {
                     isValid = false;
                 }
@@ -226,7 +228,7 @@
                         success: function (response)
                         {
                             $.session.set('keywords',keywords);
-                            window.history.pushState(null, "Fluid", '/retail/search/'+ pageId);
+                            window.history.pushState(null, "Fluid", '/retail/search');
                             $('#retail_container').empty().append(response.html);
                             $('#search_field').val(keywords);
                             window.scrollTo(0, 0);
@@ -1619,8 +1621,10 @@
                 $('.left-col').css(
                 {
                     'top':topNavHeight,
+                    'bottom':footerHeight,
                     'position':'relative',
-                    'overflow': 'scroll'
+                    'overflow': 'scroll',
+                    'display': 'table-cell'
                 });
 
                 $('.retail-right-col').css(

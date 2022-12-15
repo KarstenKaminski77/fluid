@@ -142,7 +142,7 @@ class RetailUsersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/retail/search/{pageNo}', name: 'retail_search')]
+    #[Route('/retail/search', name: 'retail_search')]
     #[Route('/retail/basket', name: 'retail_basket')]
     #[Route('/retail/personal-information', name: 'retail_personal_information')]
     #[Route('/retail/addresses/{pageId}', name: 'retail_addresses')]

@@ -76,14 +76,6 @@ class ClinicUsersController extends AbstractController
         
         $html = '
         <!-- Users -->
-        <div class="row" id="users">
-            <div class="col-12 col-md-12 mt-0 ps-0 pe-0">
-                <!-- Create New -->
-                <button type="button" class="btn btn-primary float-end w-sm-100 text-truncate" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_new">
-                    <i class="fa-solid fa-circle-plus"></i> ADD COLLEAGUE
-                </button>
-            </div>
-        </div>
         <div class="row">
             <div class="col-12 text-center pt-3 pb-3 mt-3 mt-sm-4 mt-md-0 pt-md-0" id="users_header">
                 <h4 class="text-primary text-truncate">Manage User Accounts</h4>
@@ -92,6 +84,19 @@ class ClinicUsersController extends AbstractController
                     independently participate in the Fluid discussions. You have full control over editing the permissions
                     of each user in your clinic. Use the table below to view the available permission levels.
                 </span>
+            </div>
+            <div class="col-12 col-md-12 mt-0 ps-0 pe-0">
+                <!-- Create New -->
+                <a 
+                    href="" 
+                    class="float-end text-truncate mb-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#modal_user" 
+                    id="user_new"
+                >
+                    <i class="fa-regular fa-square-plus fa-fw"></i> 
+                    <span class="ms-1">Add Colleague</span>
+                </a>
             </div>
         </div>
 

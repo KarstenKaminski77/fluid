@@ -30,41 +30,43 @@ class CommunicationMethodsController extends AbstractController
 
     private function getCommunicationMethods($results)
     {
-        $clinic = $this->getUser()->getClinic();
-        $clinic_communication_methods = $this->em->getRepository(ClinicCommunicationMethods::class)->findByClinic($clinic->getId());
-
         $communication_methods = $this->em->getRepository(CommunicationMethods::class)->findByNotInApp();
 
         $select = '<select name="clinic_communication_methods_form[communicationMethod]" id="communication_methods_type" class="form-control">';
         $select .= '<option value="">Please Select a Communication Method</option>';
 
-        foreach($communication_methods as $method){
-
+        foreach($communication_methods as $method)
+        {
             $select .= '<option value="'. $method->getId() .'">'. $method->getMethod() .'</option>';
         }
 
         $select .= '</select>';
 
         $response = '
-        <div class="row" id="communication_methods">
-            <!-- Create New -->
-            <div class="col-12 col-md-12 mt-0 ps-0 pe-0">
-                <button type="button" class="btn btn-primary w-sm-100 float-end text-truncate" data-bs-toggle="modal" data-bs-target="#modal_communication_methods" id="communication_methods_new">
-                    <i class="fa-solid fa-circle-plus"></i> CREATE NEW COMMUNICATION METHOD
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 mt-3 mt-sm-4 mt-md-0 pt-md-0">
+        <div class="row pt-3">
+            <div class="col-12 text-center mt-1 pt-3 pb-3">
                 <h4 class="text-primary text-truncate">Manage Communication Methods</h4>
                 <span class="mb-5 mt-2 text-center text-primary text-sm-start d-none d-sm-inline">
                     Add or remove communication methods from the list below.
                 </span>
             </div>
+            <!-- Create New -->
+            <div class="col-12">
+                <a 
+                    href="" 
+                    class="float-end text-truncate mb-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#modal_communication_methods" 
+                    id="communication_methods_new"
+                >
+                    <i class="fa-regular fa-square-plus"></i>
+                    <span class="zms-1">Create New</span>
+                </a>
+            </div>
         </div>';
 
-        if($results->count() > 0) {
-
+        if($results->count() > 0)
+        {
             $response .= '
             <div class="row d-none d-xl-flex  bg-light border-bottom border-right border-left border-top">
                 <div class="col-5 pt-3 pb-3 text-primary fw-bold">
@@ -80,24 +82,24 @@ class CommunicationMethodsController extends AbstractController
 
             $i = 0;
 
-            foreach ($results as $method) {
-
+            foreach ($results as $method)
+            {
                 $mobile_no = 0;
                 $i++;
 
                 $col = 10;
 
-                if (!empty($method->getSendTo())) {
-
+                if (!empty($method->getSendTo()))
+                {
                     $col = 5;
                 }
 
-                if ($method->getCommunicationMethod()->getId() == 3) {
-
+                if ($method->getCommunicationMethod()->getId() == 3)
+                {
                     $mobile_no = $this->encryptor->decrypt($method->getSendTo());
-
-                } else {
-
+                }
+                else
+                {
                     $mobile_no = 0;
                 }
 
@@ -108,8 +110,8 @@ class CommunicationMethodsController extends AbstractController
                         ' . $method->getCommunicationMethod()->getMethod() . '
                     </div>';
 
-                if (!empty($method->getSendTo())) {
-
+                if (!empty($method->getSendTo()))
+                {
                     $response .= '
                     <div class="col-4 col-sm-2 d-xl-none  t-cell text-truncate border-list pt-3 pb-3">Send To</div>
                     <div class="col-8 col-sm-10 col-xl-5  t-cell text-truncate border-list pt-3 pb-3">
@@ -225,9 +227,9 @@ class CommunicationMethodsController extends AbstractController
                     </div>
                 </div>
             </div>';
-
-        } else {
-
+        }
+        else
+        {
             $response .= '
             <div class="row border-left border-right border-top border-bottom bg-light">
                 <div class="col-12 text-center mt-3 mb-3 pt-3 pb-3 text-center">
@@ -297,8 +299,8 @@ class CommunicationMethodsController extends AbstractController
     {
         $permissions = json_decode($request->request->get('permissions'), true);
 
-        if(!in_array(13, $permissions)){
-
+        if(!in_array(13, $permissions))
+        {
             $html = '
             <div class="row mt-3 mt-md-5">
                 <div class="col-12 text-center">
