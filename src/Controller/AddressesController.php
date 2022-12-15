@@ -34,7 +34,7 @@ class AddressesController extends AbstractController
     private function getAddresses($addresses, $module)
     {
         $request = Request::createFromGlobals();
-        $path = $request->server->get('PATH_INFO');
+        $path = $request->server->get('REQUEST_URI');
         $class = 'hidden';
 
         if(strstr($path, 'clinics'))
