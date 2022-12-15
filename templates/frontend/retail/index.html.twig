@@ -8,7 +8,7 @@
     <main class="flex-shrink-0">
         <div class="container-fluid pe-4">
         <div class="row flex-nowrap h-100">
-            <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 bg-light border-right left-col">
+            <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 mt-5 pt-4 bg-light border-right left-col">
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
 
@@ -77,6 +77,87 @@
                                 </li>
                             </ul>
                         </li>
+                        <li class="w-100">
+                            <a
+                                href="#submenu3"
+                                data-bs-toggle="collapse"
+                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate dropdown-link"
+                                aria-expanded="false"
+                            >
+                                <i class="fa-regular fa-house-chimney-medical fa-fw"></i>
+                                <span class="ms-1 d-none d-sm-inline text-truncate">{{ nzo_decrypt(retailUser.clinic.clinicName) }}</span>
+                                <span class="float-end">
+                                    <i class="fa-solid fa-caret-right"></i>
+                                </span>
+                            </a>
+                            <ul class="nav flex-column collapse" id="submenu3" data-bs-parent="#menu" style="">
+                                {# About #}
+                                <li class="w-100 mb-3">
+                                    <a
+                                        href="#"
+                                        class="align-middle px-0 text-primary nav-icon text-truncate copy-link"
+                                        id="about_link"
+                                        data-method="getAbout"
+                                        data-name="about"
+                                    >
+                                        <i class="fa-regular fa-circle-question fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">About</span>
+                                    </a>
+                                </li>
+                                {# Operating Hours #}
+                                <li class="w-100 mb-3">
+                                    <a
+                                        href="#"
+                                        class="align-middle px-0 text-primary nav-icon text-truncate copy-link"
+                                        id="operating_hours_link"
+                                        data-method="getOperatingHours"
+                                        data-name="Operating Hours"
+                                    >
+                                        <i class="fa-regular fa-clock fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Operating Hours</span>
+                                    </a>
+                                </li>
+                                {# Refund Polict #}
+                                <li class="w-100 mb-3">
+                                    <a
+                                        href="#"
+                                        class="align-middle px-0 text-primary nav-icon text-truncate copy-link"
+                                        id="refund_policy_link"
+                                        data-method="getRefundPolicy"
+                                        data-name="Refund Policy"
+                                    >
+                                        <i class="fa-regular fa-rotate-left fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Refund Policy</span>
+                                    </a>
+                                </li>
+                                {# Sales Tax Policy #}
+                                <li class="w-100 mb-3">
+                                    <a
+                                        href="#"
+                                        class="align-middle px-0 text-primary nav-icon text-truncate copy-link"
+                                        id="sales_tax_link"
+                                        data-method="getSalesTaxPolicy"
+                                        data-name="Sales Tax Policy"
+                                    >
+                                        <i class="fa-regular fa-scale-unbalanced fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Sales Tax Policy</span>
+                                    </a>
+                                </li>
+                                {# Shipping Policy #}
+                                <li class="w-100 mb-3">
+                                    <a
+                                        href="#"
+                                        class="align-middle px-0 text-primary nav-icon text-truncate copy-link"
+                                        id="shipping_policy_link"
+                                        data-method="getShippingPolicy"
+                                        data-name="Shipping Policy"
+                                    >
+                                        <i class="fa-regular fa-truck-ramp-box fa-fw"></i>
+                                        <span class="ms-1 d-none d-sm-inline">Shipping Policy</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                         <li class="nav-item w-100">
                             <a class="align-middle text-primary nav-icon text-truncate" href="#" id="users_link">
                                 <i class="fa-regular fa-boxes-stacked fa-fw"></i>
@@ -125,11 +206,14 @@
             let uri = window.location.pathname;
             let isPersonalInformation = uri.match('/retail/personal-information');
             let isBasket = uri.match('/retail/basket');
-            let isSearch = uri.match('/retail/search/[0-9]+');
+            let isSearch = uri.match('/retail/search');
             let isAddresses = uri.match('/retail/addresses/[0-9]+');
+            let isAbout = uri.match('/retail/clinic/about');
+            let isOperatingHours = uri.match('/retail/clinic/operating-hours');
+            let isRefundPolicy = uri.match('/retail/clinic/refund-policy');
+            let isSalesTaxPolicy = uri.match('/retail/clinic/sales-tax-policy');
+            let isShippingPolicy = uri.match('/retail/clinic/shipping-policy');
             let keywords = $.session.get('keywords');
-
-            getSearchResults('', 1);
 
             {# Handle Page Rload #}
             if(isPersonalInformation != null)
@@ -142,15 +226,40 @@
             }
             if(isSearch != null && '{{ clinic }}' > 0)
             {
-                if(keywords != 'undefined' || keywords != '')
+                if(keywords != 'undefined' && keywords != '')
                 {
                     getSearchResults(keywords,1);
+                }
+                else
+                {
+                    getSearchResults('',1);
                 }
             }
             if(isBasket != null)
             {
                 getBasket('{{ basketId }}');
             }
+            if(isAbout != null)
+            {
+                getCopy('getAbout', 'About');
+            }
+            if(isOperatingHours != null)
+            {
+                getCopy('getOperatingHours', 'Operating Hours');
+            }
+            if(isSalesTaxPolicy != null)
+            {
+                getCopy('getSalesTaxPolicy', 'Sales Tax Policy');
+            }
+            if(isRefundPolicy != null)
+            {
+                getCopy('getRefundPolicy', 'Refund Policy');
+            }
+            if(isShippingPolicy != null)
+            {
+                getCopy('getShippingPolicy', 'Shipping Policy');
+            }
+
 
             {# Dropdown Menu Carat #}
             $(document).on('click', '.dropdown-link', function (e) {
@@ -1480,7 +1589,7 @@
             });
             {# End Addresses #}
 
-            {# Select Clinic #}
+            {# Clinic #}
             $(document).on('click', '#retail_clinic_link', function (e)
             {
                 e.preventDefault();
@@ -1566,7 +1675,46 @@
                     alert('An error occured');
                 }
             });
-            {# End Select Clinic #}
+            $(document).on('click','.copy-link', function (e)
+            {
+                e.preventDefault();
+
+                let method = $(this).attr('data-method');
+                let name = $(this).attr('data-name');
+
+                getCopy(method, name);
+            })
+            function getCopy(method, name) {
+
+                $.ajax({
+                    async: "true",
+                    url: '{{ path('retail_get_clinic_copy') }}',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'method': method,
+                        'name': name,
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true)
+                    },
+                    complete: function(e)
+                    {
+                        if(e.status === 500)
+                        {
+                           // window.location.href = '{{ path('retail_error_500') }}';
+                        }
+                    },
+                    success: function (response)
+                    {
+                        $('#retail_container').empty().append(response.html).show();
+                        isLoading(false);
+                        window.history.pushState(null, "Fluid", '/retail/clinic/'+ response.uri);
+                    }
+                });
+            }
+            {# End Clinic #}
 
             {# Popovers #}
             function popOver()
@@ -1616,16 +1764,12 @@
                 let footerHeight = $('footer').outerHeight();
                 let windowHeight = document.documentElement.scrollHeight;
                 let leftColHeight = windowHeight - (topNavHeight + footerHeight) + 16;
-                let footerPosition = topNavHeight + leftColHeight;
 
-                $('.left-col').css(
-                {
-                    'top':topNavHeight,
-                    'bottom':footerHeight,
-                    'position':'relative',
-                    'overflow': 'scroll',
-                    'display': 'table-cell'
-                });
+                // $('.left-col').css(
+                // {
+                //     'top':topNavHeight,
+                //     'position':'relative',
+                // });
 
                 $('.retail-right-col').css(
                 {

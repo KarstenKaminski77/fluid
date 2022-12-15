@@ -4133,6 +4133,7 @@
             {# Ebd Analytics #}
 
             {# Account & Settings #}
+            {# Company Information #}
             function getAccountSettings(){
 
                 let search = $('#inventory').html();
@@ -4152,7 +4153,7 @@
 
                         isLoading(true)
                     },
-                    complete: function(e, xhr, settings){
+                    complete: function(e){
                         if(e.status === 500){
                             window.location.href = '{{ path('clinic_error_500') }}';
                         }
@@ -4206,7 +4207,6 @@
                 hidePaginator();
 
             });
-
             $(document).on('submit','#form_clinic_information',function(e){
 
                 e.preventDefault();
@@ -4374,6 +4374,354 @@
                     errorTradeLicense.empty().append('Please select a PDF document').show();
                 }
             });
+            $(document).on('click', '#company_information_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#company_information_tab').find('span').addClass('active');
+                $('#company_information_panel').slideDown(700);
+                $('#about_panel').slideUp(700);
+                $('#operating_hours_panel').slideUp(700);
+                $('#refund_policy_panel').slideUp(700);
+                $('#sales_tax_policy_panel').slideUp(700);
+                $('#shipping_policy_panel').slideUp(700);
+            });
+
+            {# About #}
+            $(document).on('click', '#about_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#about_tab').find('span').addClass('active');
+                $('#company_information_panel').slideUp(700);
+                $('#about_panel').slideDown(700);
+                $('#operating_hours_panel').slideUp(700);
+                $('#refund_policy_panel').slideUp(700);
+                $('#sales_tax_policy_panel').slideUp(700);
+                $('#shipping_policy_panel').slideUp(700);
+
+                iniTinyMce();
+            });
+            $(document).on('submit', '#form_about', function (e)
+            {
+                e.preventDefault();
+
+                let about = $('#about_copy').val();
+                let errorAbout = $('#error_about_copy');
+                let isValid = true;
+                let data = new FormData(this);
+
+                errorAbout.hide();
+
+                if(about == '' || about == 'undefined')
+                {
+                    errorAbout.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('clinic_update_copy') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            isLoading(false);
+                            getFlash(response.flash);
+                        }
+                    });
+                }
+            })
+
+            {# Operating Hours #}
+            $(document).on('click', '#operating_hours_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#operating_hours_tab').find('span').addClass('active');
+                $('#company_information_panel').slideUp(700);
+                $('#about_panel').slideUp(700);
+                $('#operating_hours_panel').slideDown(700);
+                $('#refund_policy_panel').slideUp(700);
+                $('#sales_tax_policy_panel').slideUp(700);
+                $('#shipping_policy_panel').slideUp(700);
+
+                iniTinyMce();
+            });
+            $(document).on('submit', '#form_operating_hours', function (e)
+            {
+                e.preventDefault();
+
+                let operatingHours = $('#operating_hours_copy').val();
+                let errorOperatingHours = $('#error_operating_hours_copy');
+                let isValid = true;
+                let data = new FormData(this);
+
+                errorOperatingHours.hide();
+
+                if(operatingHours == '' || operatingHours == 'undefined')
+                {
+                    errorOperatingHours.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('clinic_update_copy') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            isLoading(false);
+                            getFlash(response.flash);
+                        }
+                    });
+                }
+            })
+
+            {# Refund Policy #}
+            $(document).on('click', '#refund_policy_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#refund_policy_tab').find('span').addClass('active');
+                $('#company_information_panel').slideUp(700);
+                $('#about_panel').slideUp(700);
+                $('#operating_hours_panel').slideUp(700);
+                $('#refund_policy_panel').slideDown(700);
+                $('#sales_tax_policy_panel').slideUp(700);
+                $('#shipping_policy_panel').slideUp(700);
+
+                iniTinyMce();
+            });
+            $(document).on('submit', '#form_refund_policy', function (e)
+            {
+                e.preventDefault();
+
+                let refundPolicy = $('#refund_policy_copy').val();
+                let errorRefundPolicy = $('#error_refund_policy_copy');
+                let isValid = true;
+                let data = new FormData(this);
+
+                errorRefundPolicy.hide();
+
+                if(refundPolicy == '' || refundPolicy == 'undefined')
+                {
+                    errorRefundPolicy.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('clinic_update_copy') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            isLoading(false);
+                            getFlash(response.flash);
+                        }
+                    });
+                }
+            })
+
+            {# Sales Policy #}
+            $(document).on('click', '#sales_tax_policy_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#sales_tax_policy_tab').find('span').addClass('active');
+                $('#company_information_panel').slideUp(700);
+                $('#about_panel').slideUp(700);
+                $('#operating_hours_panel').slideUp(700);
+                $('#refund_policy_panel').slideUp(700);
+                $('#sales_tax_policy_panel').slideDown(700);
+                $('#shipping_policy_panel').slideUp(700);
+
+                iniTinyMce();
+            });
+            $(document).on('submit', '#form_sales_tax_policy', function (e)
+            {
+                e.preventDefault();
+
+                let salesTaxPolicy = $('#sales_tax_policy_copy').val();
+                let errorSalesTaxPolicy = $('#error_sales_tax_policy_copy');
+                let isValid = true;
+                let data = new FormData(this);
+
+                errorSalesTaxPolicy.hide();
+
+                if(salesTaxPolicy == '' || salesTaxPolicy == 'undefined')
+                {
+                    errorSalesTaxPolicy.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('clinic_update_copy') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            isLoading(false);
+                            getFlash(response.flash);
+                        }
+                    });
+                }
+            })
+
+            {# Shipping Policy #}
+            $(document).on('click', '#shipping_policy_tab', function ()
+            {
+                $('.active').removeClass('active');
+                $('#shipping_policy_tab').find('span').addClass('active');
+                $('#company_information_panel').slideUp(700);
+                $('#about_panel').slideUp(700);
+                $('#operating_hours_panel').slideUp(700);
+                $('#refund_policy_panel').slideUp(700);
+                $('#sales_tax_policy_panel').slideUp(700);
+                $('#shipping_policy_panel').slideDown(700);
+
+                iniTinyMce();
+            });
+            $(document).on('submit', '#form_shipping_policy', function (e)
+            {
+                e.preventDefault();
+
+                let shippingPolicy = $('#shipping_policy_copy').val();
+                let errorShippingPolicy = $('#error_shipping_policy_copy');
+                let isValid = true;
+                let data = new FormData(this);
+
+                errorShippingPolicy.hide();
+
+                if(shippingPolicy == '' || shippingPolicy == 'undefined')
+                {
+                    errorShippingPolicy.show();
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    $.ajax({
+                        async: "true",
+                        url: "{{ path('clinic_update_copy') }}",
+                        type: 'POST',
+                        contentType: false,
+                        processData: false,
+                        cache: false,
+                        timeout: 600000,
+                        dataType: 'json',
+                        data: data,
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        complete: function(e)
+                        {
+                            if(e.status === 500)
+                            {
+                                window.location.href = '{{ path('clinic_error_500') }}';
+                            }
+                        },
+                        success: function (response)
+                        {
+                            isLoading(false);
+                            getFlash(response.flash);
+                        }
+                    });
+                }
+            })
+
+            function iniTinyMce()
+            {
+                tinymce.init({
+                    selector: '.tinymce-selector',
+                    plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+                    editimage_cors_hosts: ['picsum.photos'],
+                    menubar: false,
+                    toolbar: 'undo redo | bold italic underline strikethrough | fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist removeformat',
+                    toolbar_sticky: false,
+                    statusbar: false,
+                    height: 300,
+                    image_caption: true,
+                    quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
+                    noneditable_class: 'mceNonEditable',
+                    toolbar_mode: 'sliding',
+                    contextmenu: 'link image table',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+                });
+
+                $('.tox-notifications-container').remove();
+            }
             {# End Account & Settings #}
 
             {# Users #}

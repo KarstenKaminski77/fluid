@@ -146,6 +146,11 @@ class RetailUsersController extends AbstractController
     #[Route('/retail/basket', name: 'retail_basket')]
     #[Route('/retail/personal-information', name: 'retail_personal_information')]
     #[Route('/retail/addresses/{pageId}', name: 'retail_addresses')]
+    #[Route('/retail/clinic/about', name: 'retail_clinic_about')]
+    #[Route('/retail/clinic/operating-hours', name: 'retail_clinic_operating_hours')]
+    #[Route('/retail/clinic/refund-policy', name: 'retail_clinic_refund_policy')]
+    #[Route('/retail/clinic/sales-tax-policy', name: 'retail_clinic_sales_tax_policy')]
+    #[Route('/retail/clinic/shipping-policy', name: 'retail_clinic_shipping_policy')]
     public function retailBaseAction(Request $request): Response
     {
         if($this->getUser() == null)
@@ -724,6 +729,44 @@ class RetailUsersController extends AbstractController
             $response['flash'] = $this->getFlash('An Error Occurred!');
             $response['type'] = 'danger';
         }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/get/clinic-copy', name: 'retail_get_clinic_copy')]
+    public function retailGetClinicCopyAction(Request $request): Response
+    {
+        if($this->getUser() == null)
+        {
+            return new JsonResponse('Please login...');
+        }
+
+        $response = [];
+        $clinic = $this->getUser()->getClinic();
+        $method = $request->request->get('method');
+        $name = $request->request->get('name');
+        $pieces = explode(' ', $name);
+        $uri = '';
+
+        foreach($pieces as $piece)
+        {
+            $uri .= strtolower($piece) .'-';
+        }
+
+        $html = '
+        <div class="row mx-3 mt-3">
+            <div class="col-12 text-center pt-3 pb-3" id="order_header">
+                <h4 class="text-primary text-truncate">'. ucwords($name) .'</h4>
+            </div>
+        </div>
+        <div class="row mx-3 mb-3">
+            <div class="col-12 p-5 bg-white border-xy">
+                '. $clinic->$method() .'
+            </div>
+        </div>';
+
+        $response['html'] = $html;
+        $response['uri'] = trim($uri, '-');
 
         return new JsonResponse($response);
     }

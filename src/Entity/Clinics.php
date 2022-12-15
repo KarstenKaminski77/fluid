@@ -224,6 +224,31 @@ class Clinics
      */
     private $PoNumberPrefix;
 
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $about;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $operatingHours;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $refundPolicy;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $salesTaxPolicy;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $shippingPolicy;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -1095,6 +1120,66 @@ class Clinics
     public function setPoNumberPrefix(?string $PoNumberPrefix): self
     {
         $this->PoNumberPrefix = $PoNumberPrefix;
+
+        return $this;
+    }
+
+    public function getAbout(): ?string
+    {
+        return $this->about;
+    }
+
+    public function setAbout(?string $about): self
+    {
+        $this->about = $about;
+
+        return $this;
+    }
+
+    public function getOperatingHours(): ?string
+    {
+        return $this->operatingHours;
+    }
+
+    public function setOperatingHours(?string $operatingHours): self
+    {
+        $this->operatingHours = $operatingHours;
+
+        return $this;
+    }
+
+    public function getRefundPolicy(): ?string
+    {
+        return $this->refundPolicy;
+    }
+
+    public function setRefundPolicy(?string $refundPolicy): self
+    {
+        $this->refundPolicy = $refundPolicy;
+
+        return $this;
+    }
+
+    public function getSalesTaxPolicy(): ?string
+    {
+        return $this->salesTaxPolicy;
+    }
+
+    public function setSalesTaxPolicy(?string $salesTaxPolicy): self
+    {
+        $this->salesTaxPolicy = $salesTaxPolicy;
+
+        return $this;
+    }
+
+    public function getShippingPolicy(): ?string
+    {
+        return $this->shippingPolicy;
+    }
+
+    public function setShippingPolicy(?string $shippingPolicy): self
+    {
+        $this->shippingPolicy = $shippingPolicy;
 
         return $this;
     }

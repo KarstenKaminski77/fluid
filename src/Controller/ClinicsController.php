@@ -439,6 +439,30 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/clinics/update/copy', name: 'clinic_update_copy')]
+    public function clinicsUpdateCopyAction(Request $request): Response
+    {
+        $response = [];
+
+        if($this->getUser() == null)
+        {
+            return new JsonResponse('Please login..');
+        }
+
+        $clinic = $this->getUser()->getClinic();
+        $copy = $request->request->get('copy');
+        $method = $request->request->get('method');
+
+        $clinic->$method($copy);
+
+        $this->em->persist($clinic);
+        $this->em->flush();
+
+        $response['flash'] = '<b><i class="fa-solid fa-circle-check"></i></i></b> Successfully saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/clinics/get-company-information', name: 'get_company_information')]
     public function clinicsGetCompanyInformationAction(Request $request): Response
     {
@@ -506,322 +530,480 @@ class ClinicsController extends AbstractController
         <div class="row position-relative" id="account_settings">
             <div class="col-12 text-center pt-3 pb-3" id="order_header">
                 <h4 class="text-primary text-truncate">Account & Settings</h4>
-                <span class="mb-5 mt-2 text-center text-primary text-sm-start d-none d-sm-inline">
-                    Clinic Information
-                </span>
             </div>
-            <form name="form_clinic_information" id="form_clinic_information" method="post">
-                <input type="checkbox" name="call_back_form[contact_me_by_fax_only]" value="1" tabindex="-1" class="hidden" autocomplete="off">
-        
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
-        
-                    <!-- Clinic name -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Business Name <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[clinic-name]" 
-                            id="clinic_name" 
-                            class="form-control" 
-                            placeholder="Business Name"
-                            value="'. $this->encryptor->decrypt($clinic->getClinicName()) .'"
-                        >
-                        <div class="hidden_msg" id="error_first_name">
-                            Required Field
+            
+            <!-- Tabs -->
+            <div class="col-12 nav nav-tabs">
+                <div class="nav-item" role="button" id="company_information_tab">
+                    <span class="nav-link text-primary active bg-primary">
+                        Company Information
+                    </span>
+                </div>
+                <div class="nav-item" role="button" id="about_tab">
+                    <span class="nav-link text-primary">
+                        About
+                    </span>
+                </div>
+                <div class="nav-item" role="button" id="operating_hours_tab">
+                    <span class="nav-link text-primary">
+                        Operating Hours
+                    </span>
+                </div>
+                <div class="nav-item" role="button" id="refund_policy_tab">
+                    <span class="nav-link text-primary">
+                        Refund Policy
+                    </span>
+                </div>
+                <div class="nav-item" role="button" id="sales_tax_policy_tab">
+                    <span class="nav-link text-primary">
+                        Sales Tax Policy
+                    </span>
+                </div>
+                <div class="nav-item" role="button" id="shipping_policy_tab">
+                    <span class="nav-link text-primary">
+                        Shipping Policy
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Company Information -->
+            <div class="col-12" id="company_information_panel">
+                <form name="form_clinic_information" id="form_clinic_information" method="post">
+                    <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
+                        <!-- Clinic name -->
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Business Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[clinic-name]" 
+                                id="clinic_name" 
+                                class="form-control" 
+                                placeholder="Business Name"
+                                value="'. $this->encryptor->decrypt($clinic->getClinicName()) .'"
+                            >
+                            <div class="hidden_msg" id="error_first_name">
+                                Required Field
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Logo -->
-                    <div class="col-sm-6 col-12" id="logo_file">
-                        <label>
-                            Logo
-                        </label>
-                        <div class="input-group">
-                            <input type="file" id="logo" name="clinic_form[logo]" class="form-control" placeholder="Logo" value="">';
+                        
+                        <!-- Logo -->
+                        <div class="col-sm-6 col-12" id="logo_file">
+                            <label>
+                                Logo
+                            </label>
+                            <div class="input-group">
+                                <input type="file" id="logo" name="clinic_form[logo]" class="form-control" placeholder="Logo" value="">';
 
-                            if($clinic->getLogo() != null)
-                            {
-                                $response .= '
-                                <span class="input-group-text">
-                                    <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
-                                        <i class="fa-regular fa-image"></i>
-                                    </a>
-                                </span>';
+                                if($clinic->getLogo() != null)
+                                {
+                                    $response .= '
+                                    <span class="input-group-text">
+                                        <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
+                                            <i class="fa-regular fa-image"></i>
+                                        </a>
+                                    </span>';
                             }
 
-                        $response .= '
-                        </div>
-                    </div>
-                </div>';
-
-                $file = $clinic->getLogo() ?? 'image-not-found.jpg';
-                $logo = $this->getParameter('app.base_url') .'/images/logos/'. $file;
-
-                $response .= '
-                <!-- Modal Logo -->
-                <div class="modal fade" id="modal_logo" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header" style="border: none; padding-bottom: 0">
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            $response .= '
                             </div>
-                            <div class="modal-body" style="padding: 0">
-                                <div class="row">
-                                    <div class="col-12 mb-0 text-center">
-                                        <img src="'. $logo .'" id="logo_img" class="img-fluid">
+                        </div>
+                    </div>';
+
+                    $file = $clinic->getLogo() ?? 'image-not-found.jpg';
+                    $logo = $this->getParameter('app.base_url') .'/images/logos/'. $file;
+
+                    $response .= '
+                    <!-- Modal Logo -->
+                    <div class="modal fade" id="modal_logo" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header" style="border: none; padding-bottom: 0">
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body" style="padding: 0">
+                                    <div class="row">
+                                        <div class="col-12 mb-0 text-center">
+                                            <img src="'. $logo .'" id="logo_img" class="img-fluid">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Manager Name -->
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
-        
-                    <!-- First Name -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Managers First Name <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[manager-first-name]" 
-                            id="manager_first_name" 
-                            class="form-control" 
-                            placeholder="Managers First Name"
-                            value="'. $this->encryptor->decrypt($clinic->getManagerFirstName()) .'"
-                        >
-                        <div class="hidden_msg" id="error_manager_first_name">
-                            Required Field
+                    
+                    <!-- Manager Name -->
+                    <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+            
+                        <!-- First Name -->
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers First Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[manager-first-name]" 
+                                id="manager_first_name" 
+                                class="form-control" 
+                                placeholder="Managers First Name"
+                                value="'. $this->encryptor->decrypt($clinic->getManagerFirstName()) .'"
+                            >
+                            <div class="hidden_msg" id="error_manager_first_name">
+                                Required Field
+                            </div>
                         </div>
-                    </div>
-        
-                    <!-- Last Name -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Managers Last Name <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[manager-last-name]" 
-                            id="manager_last_name" 
-                            class="form-control" 
-                            placeholder="Managers Last Name"
-                            value="'. $this->encryptor->decrypt($clinic->getManagerLastName()) .'"
-                        >
-                        <div class="hidden_msg" id="error_manager_last_name">
-                            Required Field
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Manager ID -->
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
-        
-                    <!-- ID No -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Managers Emirates ID No. <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[manager-id-no]" 
-                            id="manager_id_no" 
-                            class="form-control" 
-                            placeholder="Managers Emirates ID Number"
-                            value="'. $this->encryptor->decrypt($clinic->getManagerIdNo()) .'"
-                        >
-                        <div class="hidden_msg" id="error_manager_id_no">
-                            Required Field
-                        </div>
-                    </div>
-        
-                    <!-- ID Expiry Date -->
-                    <div class="col-12 col-sm-6 pt-3 pt-sm-0">
-                        <label>
-                            Managers ID Exp. Date <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="date" 
-                            name="clinic_form[manager-id-exp-date]" 
-                            id="manager_id_exp_date" 
-                            class="form-control" 
-                            placeholder="Managers ID Expiry Date"
-                            value="'. $managerIdExpDate .'"
-                        >
-                        <div class="hidden_msg" id="error_manager_id_exp_date">
-                            Required Field
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
-        
-                    <!-- Email -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>
-                            Business Email Address <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[email]" 
-                            id="clinic_email" 
-                            class="form-control" 
-                            placeholder="Business Email Address"
-                            value="'. $this->encryptor->decrypt($clinic->getEmail()) .'"
-                        >
-                        <div class="hidden_msg" id="error_clinic_email">
-                            Required Field
-                        </div>
-                    </div>
-        
-                    <!-- Telephone -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>Business Telephone  <span class="text-danger">*</span></label>
-                        <input 
-                            type="hidden"
-                            name="iso-code" 
-                            id="isocode" 
-                            value="'. $this->encryptor->decrypt($clinic->getIsoCode()) .'"
-                        >
-                        <input 
-                            type="hidden"
-                            name="clinic_form[telephone]" 
-                            id="clinic_telephone" 
-                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
-                        >
-                        <input 
-                            type="text" 
-                            name="mobile" 
-                            id="mobile" 
-                            name="mobile" 
-                            class="form-control" 
-                            placeholder="Telephone*"
-                            value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
-                        >
-                        <div class="hidden_msg" id="error_telephone">
-                            Required Field
+            
+                        <!-- Last Name -->
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers Last Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[manager-last-name]" 
+                                id="manager_last_name" 
+                                class="form-control" 
+                                placeholder="Managers Last Name"
+                                value="'. $this->encryptor->decrypt($clinic->getManagerLastName()) .'"
+                            >
+                            <div class="hidden_msg" id="error_manager_last_name">
+                                Required Field
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Countries -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>Located In <span class="text-danger">*</span></label>
-                        <select name="country" style="color:#b1abb0 !important" id="country" class="form-control">
-                            <option value="">Country</option>';
+                    <!-- Manager ID -->
+                    <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+            
+                        <!-- ID No -->
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers Emirates ID No. <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[manager-id-no]" 
+                                id="manager_id_no" 
+                                class="form-control" 
+                                placeholder="Managers Emirates ID Number"
+                                value="'. $this->encryptor->decrypt($clinic->getManagerIdNo()) .'"
+                            >
+                            <div class="hidden_msg" id="error_manager_id_no">
+                                Required Field
+                            </div>
+                        </div>
+            
+                        <!-- ID Expiry Date -->
+                        <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                            <label>
+                                Managers ID Exp. Date <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="date" 
+                                name="clinic_form[manager-id-exp-date]" 
+                                id="manager_id_exp_date" 
+                                class="form-control" 
+                                placeholder="Managers ID Expiry Date"
+                                value="'. $managerIdExpDate .'"
+                            >
+                            <div class="hidden_msg" id="error_manager_id_exp_date">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row pt-0 pt-sm-3 border-left border-right bg-light">
+            
+                        <!-- Email -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Business Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[email]" 
+                                id="clinic_email" 
+                                class="form-control" 
+                                placeholder="Business Email Address"
+                                value="'. $this->encryptor->decrypt($clinic->getEmail()) .'"
+                            >
+                            <div class="hidden_msg" id="error_clinic_email">
+                                Required Field
+                            </div>
+                        </div>
+            
+                        <!-- Telephone -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>Business Telephone  <span class="text-danger">*</span></label>
+                            <input 
+                                type="hidden"
+                                name="iso-code" 
+                                id="isocode" 
+                                value="'. $this->encryptor->decrypt($clinic->getIsoCode()) .'"
+                            >
+                            <input 
+                                type="hidden"
+                                name="clinic_form[telephone]" 
+                                id="clinic_telephone" 
+                                value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
+                            >
+                            <input 
+                                type="text" 
+                                name="mobile" 
+                                id="mobile" 
+                                name="mobile" 
+                                class="form-control" 
+                                placeholder="Telephone*"
+                                value="'. $this->encryptor->decrypt($clinic->getTelephone()) .'"
+                            >
+                            <div class="hidden_msg" id="error_telephone">
+                                Required Field
+                            </div>
+                        </div>
+                        
+                        <!-- Countries -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>Located In <span class="text-danger">*</span></label>
+                            <select name="country" style="color:#b1abb0 !important" id="country" class="form-control">
+                                <option value="">Country</option>';
 
-                            foreach($countries as $country)
-                            {
-                                $selected = '';
-
-                                if($country->getId() == $clinic->getCountry()->getId())
+                                foreach($countries as $country)
                                 {
-                                    $selected = 'selected';
+                                    $selected = '';
+
+                                    if($country->getId() == $clinic->getCountry()->getId())
+                                    {
+                                        $selected = 'selected';
+                                    }
+
+                                    $response .= '
+                                    <option value="'. $country->getId() .'" '. $selected .'>'. $country->getName() .'</option>';
                                 }
 
-                                $response .= '
-                                <option value="'. $country->getId() .'" '. $selected .'>'. $country->getName() .'</option>';
-                            }
-
-                        $response .= '
-                        </select>
-                        <div class="hidden_msg" id="error_country">
-                            Required Field
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Trading License -->
-                <div class="row pt-0 pt-sm-3 border-left border-right bg-light pb-0 pb-sm-5">
-        
-                    <!-- Upload License -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>
-                            Trade License '. $tradeLicenseAsterisc .'
-                        </label>
-                        <div class="input-group">
-                            <input 
-                                type="file" 
-                                name="clinic_form[trade-license-file]" 
-                                id="trade_license_file" 
-                                class="form-control"
-                            >
-                            '. $btnDownload .'
-                        </div>
-                        <div class="hidden_msg" id="error_trade_license_file">
-                            Required Field
-                        </div>
-                    </div>
-        
-                    <!-- License No -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>
-                            Trade License No. <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="clinic_form[trade-license-no]" 
-                            id="trade_license_no" 
-                            class="form-control" 
-                            placeholder="Trade License Number"
-                            value="'. $this->encryptor->decrypt($clinic->getTradeLicenseNo()) .'"
-                        >
-                        <div class="hidden_msg" id="error_trade_license_no">
-                            Required Field
+                            $response .= '
+                            </select>
+                            <div class="hidden_msg" id="error_country">
+                                Required Field
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- License Exp Date -->
-                    <div class="col-12 col-sm-4 pt-3 pt-sm-0">
-                        <label>
-                            Expiry Date <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="date" 
-                            name="clinic_form[trade-license-exp-date]" 
-                            id="trade_license_exp_date" 
-                            class="form-control" 
-                            placeholder="Trade License Expiry Date"
-                            value="'. $tradingLicenseExpDate .'"
-                        >
-                        <div class="hidden_msg" id="error_trade_license_exp_date">
-                            Required Field
+                    <!-- Trading License -->
+                    <div class="row pt-0 pt-sm-3 border-left border-right bg-light pb-0 pb-sm-5">
+            
+                        <!-- Upload License -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Trade License '. $tradeLicenseAsterisc .'
+                            </label>
+                            <div class="input-group">
+                                <input 
+                                    type="file" 
+                                    name="clinic_form[trade-license-file]" 
+                                    id="trade_license_file" 
+                                    class="form-control"
+                                >
+                                '. $btnDownload .'
+                            </div>
+                            <div class="hidden_msg" id="error_trade_license_file">
+                                Required Field
+                            </div>
+                        </div>
+            
+                        <!-- License No -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Trade License No. <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="clinic_form[trade-license-no]" 
+                                id="trade_license_no" 
+                                class="form-control" 
+                                placeholder="Trade License Number"
+                                value="'. $this->encryptor->decrypt($clinic->getTradeLicenseNo()) .'"
+                            >
+                            <div class="hidden_msg" id="error_trade_license_no">
+                                Required Field
+                            </div>
+                        </div>
+                        
+                        <!-- License Exp Date -->
+                        <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                            <label>
+                                Expiry Date <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="date" 
+                                name="clinic_form[trade-license-exp-date]" 
+                                id="trade_license_exp_date" 
+                                class="form-control" 
+                                placeholder="Trade License Expiry Date"
+                                value="'. $tradingLicenseExpDate .'"
+                            >
+                            <div class="hidden_msg" id="error_trade_license_exp_date">
+                                Required Field
+                            </div>
                         </div>
                     </div>
-                </div>
-        
-                <div class="row pt-3 pb-3 border-left border-right border-bottom bg-light justify-content-evenly">
-        
-                    <label class="mb-4 d-block">
-                        Select All Species Treated By Your Practice
-                    </label>';
+            
+                    <div class="row pt-3 pb-3 border-left border-right border-bottom bg-light justify-content-evenly">
+            
+                        <label class="mb-4 d-block">
+                            Select All Species Treated By Your Practice
+                        </label>';
 
-                    foreach($species as $specie)
-                    {
-                        $response .= '
-                        <!-- '. $specie->getName() .' -->
-                        <div class="col-6 col-sm-4 col-md-2 text-center">
-                            <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                                <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
-                                <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
-                                    <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
-                                </label>
-                            </div>
-                        </div>';
-                    }
+                        foreach($species as $specie)
+                        {
+                            $response .= '
+                            <!-- '. $specie->getName() .' -->
+                            <div class="col-6 col-sm-4 col-md-2 text-center">
+                                <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
+                                    <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
+                                    <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
+                                        <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
+                                    </label>
+                                </div>
+                            </div>';
+                        }
 
-                $response .= '
-                </div>
-        
-                <div class="row mb-3">
-                    <div class="col-12 mt-2 mb-5 ps-0 pe-0">
-                        <button id="btn_personal_information" type="submit" class="btn btn-primary w-100">UPDATE CLINIC INFORMATION</button>
+                    $response .= '
                     </div>
-                </div>
-            </form>
+            
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_personal_information" type="submit" class="btn btn-primary w-100">UPDATE CLINIC INFORMATION</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- About -->
+            <div class="col-12 hidden" id="about_panel">
+                <form name="form_about" id="form_about" method="post">
+                    <input type="hidden" name="method" value="setAbout">
+                    <div class="row pt-0 border-left border-right bg-light border-bottom">
+                        <div class="col-12 py-3">
+                            <textarea
+                                class="form-control tinymce-selector"
+                                name="copy"
+                                id="about_copy"
+                                placeholder="About Copy"
+                            >'. $clinic->getAbout() .'</textarea>
+                            <div class="hidden_msg" id="error_about_copy">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_about" type="submit" class="btn btn-primary w-100">UPDATE ABOUT</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Operating Hours -->
+            <div class="col-12 hidden" id="operating_hours_panel">
+                <form name="form_operating_hours" id="form_operating_hours" method="post">
+                    <input type="hidden" name="method" value="setOperatingHours">
+                    <div class="row pt-0 border-left border-right bg-light border-bottom">
+                        <div class="col-12 py-3">
+                            <textarea
+                                class="form-control tinymce-selector"
+                                name="copy"
+                                id="operating_hours_copy"
+                                placeholder="Operating Hours Copy"
+                            >'. $clinic->getOperatingHours() .'</textarea>
+                            <div class="hidden_msg" id="error_operating_hours_copy">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_about" type="submit" class="btn btn-primary w-100">UPDATE OPERATING HOURS</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Refund Policy -->
+            <div class="col-12 hidden" id="refund_policy_panel">
+                <form name="form_refund_policy" id="form_refund_policy" method="post">
+                    <input type="hidden" name="method" value="setRefundPolicy">
+                    <div class="row pt-0 border-left border-right bg-light border-bottom">
+                        <div class="col-12 py-3">
+                            <textarea
+                                class="form-control tinymce-selector"
+                                name="copy"
+                                id="refund_policy_copy"
+                                placeholder="Refund Policy Copy"
+                            >'. $clinic->getRefundPolicy() .'</textarea>
+                            <div class="hidden_msg" id="error_refund_policy_copy">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_about" type="submit" class="btn btn-primary w-100">UPDATE REFUND POLICY</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Sales Tax Policy -->
+            <div class="col-12 hidden" id="sales_tax_policy_panel">
+                <form name="form_sales_tax_policy" id="form_sales_tax_policy" method="post">
+                    <input type="hidden" name="method" value="setSalesTaxPolicy">
+                    <div class="row pt-0 border-left border-right bg-light border-bottom">
+                        <div class="col-12 py-3">
+                            <textarea
+                                class="form-control tinymce-selector"
+                                name="copy"
+                                id="sales_tax_policy_copy"
+                                placeholder="Sales Tax Policy Copy"
+                            >'. $clinic->getSalesTaxPolicy() .'</textarea>
+                            <div class="hidden_msg" id="error_sales_tax_policy_copy">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_about" type="submit" class="btn btn-primary w-100">UPDATE SALES TAX POLICY</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Shipping Policy -->
+            <div class="col-12 hidden" id="shipping_policy_panel">
+                <form name="form_shipping_policy" id="form_shipping_policy" method="post">
+                    <input type="hidden" name="method" value="setShippingPolicy">
+                    <div class="row pt-0 border-left border-right bg-light border-bottom">
+                        <div class="col-12 py-3">
+                            <textarea
+                                class="form-control tinymce-selector"
+                                name="copy"
+                                id="shipping_policy_copy"
+                                placeholder="Shipping Policy Copy"
+                            >'. $clinic->getShippingPolicy() .'</textarea>
+                            <div class="hidden_msg" id="error_shipping_policy_copy">
+                                Required Field
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12 mt-2 mb-5 ps-0 pe-0">
+                            <button id="btn_about" type="submit" class="btn btn-primary w-100">UPDATE SHIPPING POLICY</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
         </div>';
 
         return new JsonResponse($response);
