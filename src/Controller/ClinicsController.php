@@ -536,32 +536,38 @@ class ClinicsController extends AbstractController
             <div class="col-12 nav nav-tabs">
                 <div class="nav-item" role="button" id="company_information_tab">
                     <span class="nav-link text-primary active bg-primary">
-                        Company Information
+                        <i class="fa-regular fa-circle-info fa-fw"></i>
+                        <span class="d-none d-sm-block">Company Information</span>
                     </span>
                 </div>
                 <div class="nav-item" role="button" id="about_tab">
                     <span class="nav-link text-primary">
-                        About
+                        <i class="fa-regular fa-circle-question fa-fw"></i>
+                        <span class="d-none d-sm-block">About</span>
                     </span>
                 </div>
                 <div class="nav-item" role="button" id="operating_hours_tab">
                     <span class="nav-link text-primary">
-                        Operating Hours
+                        <i class="fa-regular fa-clock fa-fw"></i>
+                        <span class="d-none d-sm-block">Operating Hours</span>
                     </span>
                 </div>
                 <div class="nav-item" role="button" id="refund_policy_tab">
                     <span class="nav-link text-primary">
-                        Refund Policy
+                        <i class="fa-regular fa-rotate-left fa-fw"></i>
+                        <span class="d-none d-sm-block">Refund Policy</span>
                     </span>
                 </div>
                 <div class="nav-item" role="button" id="sales_tax_policy_tab">
                     <span class="nav-link text-primary">
-                        Sales Tax Policy
+                        <i class="fa-regular fa-scale-unbalanced fa-fw"></i>
+                        <span class="d-none d-sm-block">Sales Tax Policy</span>
                     </span>
                 </div>
                 <div class="nav-item" role="button" id="shipping_policy_tab">
                     <span class="nav-link text-primary">
-                        Shipping Policy
+                        <i class="fa-regular fa-truck-ramp-box fa-fw"></i>
+                        <span class="d-none d-sm-block">Shipping Policy</span>
                     </span>
                 </div>
             </div>

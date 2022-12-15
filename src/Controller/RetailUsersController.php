@@ -754,13 +754,13 @@ class RetailUsersController extends AbstractController
         }
 
         $html = '
-        <div class="row mx-3 mt-3">
+        <div class="row mx-0 mt-0 mx-sm-3 mt-sm-3">
             <div class="col-12 text-center pt-3 pb-3" id="order_header">
                 <h4 class="text-primary text-truncate">'. ucwords($name) .'</h4>
             </div>
         </div>
-        <div class="row mx-3 mb-3">
-            <div class="col-12 p-5 bg-white border-xy">
+        <div class="row mx-0 mt-0 mx-sm-3 mt-sm-3">
+            <div class="col-12 p-2 p-sm-5 bg-white border-xy">
                 '. $clinic->$method() .'
             </div>
         </div>';
