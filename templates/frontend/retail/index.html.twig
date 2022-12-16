@@ -215,6 +215,12 @@
             let isShippingPolicy = uri.match('/retail/clinic/shipping-policy');
             let keywords = $.session.get('keywords');
 
+            {# Toggle Menu #}
+            $(document).on('click', '.navbar-toggler', function ()
+            {
+                $('#main_nav').slideToggle(700);
+            })
+
             {# Handle Page Rload #}
             if(isPersonalInformation != null)
             {
@@ -326,6 +332,9 @@
                         beforeSend: function ()
                         {
                             isLoading(true);
+
+                            $('#main_nav').slideUp(700).removeClass('show');
+                            window.scrollTo(0, 0);
                         },
                         complete: function(e)
                         {
