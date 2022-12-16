@@ -456,7 +456,7 @@ class ProductsController extends AbstractController
                                            <div class="col-12 col-md-6">
                                                 '. $dosage .'
                                             </div>
-                                            <div class="col-12 col-md-6 text-end">
+                                            <div class="col-12 col-md-6 text-md-end justify-content-evenly mb-2 mb-md-0">
                                                 '. $species .'
                                             </div>
                                        </div>
