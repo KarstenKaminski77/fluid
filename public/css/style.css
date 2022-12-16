@@ -2205,10 +2205,10 @@ input[type="text"]::-webkit-input-placeholder {
     }
 
     .border-sm-e {
-        border-right: 1px solid #e2e7eb !important;;
+        border-right: 1px solid #e2e7eb !important;
     }
 
-    .border-sm-t {
+    .border-sm-t, .search-panels-container {
         border-top: none !important;
     }
 }

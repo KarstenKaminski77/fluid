@@ -545,7 +545,7 @@ class ProductsController extends AbstractController
                             </div>
             
                             <!-- Panels -->
-                            <div class="col-12 ps-3 pe-3 border-left border-right bg-white">
+                            <div class="col-12 ps-3 pe-3 border-left border-right border-bottom bg-white">
                                 <div class="col-12 search-panels-container" id="search_panels_container_'. $product->getId() .'" style="display:none;">
             
                                     <!-- Description -->
