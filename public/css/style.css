@@ -745,6 +745,34 @@ a.page-link {
     z-index: 100;
     top: 50%;
     width: 8px;
+    height: calc(50% + 8px); /* or 100px */
+    background: #ccc;
+    display: flex !important;
+}
+
+.half-border-home {
+    width: 100%;
+    position: relative;
+    border-bottom: 8px solid #ccc;
+}
+
+.half-border-home:before {
+    content: "";
+    position: absolute;
+    right: -8px;
+    z-index: 100;
+    top: 50%;
+    width: 8px;
+    height: calc(50% + 8px);  /* or 100px */
+    background: #ccc;
+}
+.half-border-home:after {
+    content: "";
+    position: absolute;
+    left: -8px;
+    z-index: 100;
+    top: 50%;
+    width: 8px;
     height: calc(50% + 8px);  /* or 100px */
     background: #ccc;
     display: flex !important;
