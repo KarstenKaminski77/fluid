@@ -2170,7 +2170,7 @@ class BasketController extends AbstractController
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-12 pt-4 text-center ps-0 ps-sm-2">
+                                <div class="col-12 pt-4 text-center ps-2">
                                     <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
                                         PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
                                     </a>
