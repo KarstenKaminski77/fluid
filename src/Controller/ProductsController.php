@@ -535,7 +535,7 @@ class ProductsController extends AbstractController
             
                             <!-- Distributors -->
                             <div 
-                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 border-sm-e border-bottom search-result-distributors" 
+                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 border-sm-e border-bottom search-result-distributors border-sm-t" 
                                 id="search_result_distributors_'. $product->getId() .'"
                             >
                                 <div class="position-relative">
