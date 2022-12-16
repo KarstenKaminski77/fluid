@@ -1085,7 +1085,7 @@ class ListsController extends AbstractController
                 }
 
                 $response['html'] .= '
-                <div class="col-12 col-sm-3 px-4 pt-3 text-center mx-auto">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 px-4 pt-3  text-center">
                     <div class="row">
                         <span class="half-border">
                             <div class="row">
