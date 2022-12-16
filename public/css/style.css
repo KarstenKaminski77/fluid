@@ -1775,9 +1775,9 @@ a.distributor-logo-container {
     background: #555;
 }
 
-.d-table {
-    table-layout: fixed;
-}
+/*.d-table {*/
+/*    table-layout: fixed;*/
+/*}*/
 
 .modal {
     z-index: 99999;
@@ -2169,9 +2169,9 @@ input[type="text"]::-webkit-input-placeholder {
         padding: 8px;
     }
 
-    .d-table-cell {
-        display: block !important;
-    }
+    /*.d-table-cell {*/
+    /*    display: block !important;*/
+    /*}*/
 
     .border-right-0 {
         border-right: none !important;

@@ -2158,14 +2158,15 @@ class BasketController extends AbstractController
                         </div>
                         <div class="col-12 col-lg-3 py-3 pe-0 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
                             <div class="row">
-                                <div class="col-12 text-truncate ps-0 ps-sm-2">
+                                <div class="col-12 text-truncate ps-sm-2">
                                     <span class="info">Subtotal:</span>
-                                    <h5 class="d-inline-block text-primary float-end">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
+                                    <h5 class="d-inline-block text-primary float-end pe-2">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-12 info ps-0 ps-sm-2">
-                                    Shipping: <span class="float-end fw-bold">AED 0.00</span>
+                                <div class="col-12 text-truncate ps-sm-2">
+                                    <span class="info">Shipping:</span> 
+                                    <span class="float-end fw-bold pe-2">AED 0.00</span>
                                 </div>
                             </div>
                             <div class="row">
