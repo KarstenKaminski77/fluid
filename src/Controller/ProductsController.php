@@ -535,7 +535,7 @@ class ProductsController extends AbstractController
             
                             <!-- Distributors -->
                             <div 
-                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 border-sm-xy search-result-distributors" 
+                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 border-sm-e border-bottom search-result-distributors" 
                                 id="search_result_distributors_'. $product->getId() .'"
                             >
                                 <div class="position-relative">
@@ -545,7 +545,7 @@ class ProductsController extends AbstractController
                             </div>
             
                             <!-- Panels -->
-                            <div class="col-12 ps-3 pe-3 bg-white border-sm-xy">
+                            <div class="col-12 ps-3 pe-3 border-left border-right bg-white">
                                 <div class="col-12 search-panels-container" id="search_panels_container_'. $product->getId() .'" style="display:none;">
             
                                     <!-- Description -->
@@ -1022,6 +1022,7 @@ class ProductsController extends AbstractController
         // Permissions
         $permissions = [];
         $basketPermission = true;
+        $i = 0;
 
         foreach($user->getClinicUserPermissions() as $permission){
 
@@ -1041,6 +1042,7 @@ class ProductsController extends AbstractController
             $stockLevel = $distributor->getStockCount() ?? 0;
             $shippingPolicy = $distributor->getDistributor()->getShippingPolicy() ?? '<p>Shipping policy has not been updated</p>';
             $taxPolicy = $distributor->getDistributor()->getSalesTaxPolicy() ?? '<p>Sales tax policy has not been updated</p>';
+            $i++;
 
             if (
                 ($distributor->getDistributor()->getApiDetails() != null && $trackingId == 1)
@@ -1134,6 +1136,13 @@ class ProductsController extends AbstractController
                     $disabled = 'disabled';
                 }
 
+                $style = '';
+
+                if($i == count($product->getDistributorProducts()))
+                {
+                    $style = 'style="border-bottom: none !important"';
+                }
+
                 $response['html'] = '
                 <a href=""
                    class="basket_link"
@@ -1142,7 +1151,7 @@ class ProductsController extends AbstractController
                    data-bs-toggle="modal"
                    data-bs-target="#modal_add_to_basket_' . $productId . '_' . $distributorId . '"
                 >
-                <div class="row distributor-store-row py-3">
+                <div class="row distributor-store-row py-3" '. $style .'>
                     <div class="col-4">
                         '. $logo .'
                     </div>

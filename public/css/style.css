@@ -726,6 +726,10 @@ a.page-link {
     border: none !important;
 }
 
+.border-sm-e {
+    border-right: none !important;
+}
+
 .half-border {
     width: 100%;
     position: relative;
@@ -2194,6 +2198,10 @@ input[type="text"]::-webkit-input-placeholder {
 
     .border-sm-xy {
         border: 1px solid #e2e7eb !important;
+    }
+
+    .border-sm-e {
+        border-right: 1px solid #e2e7eb !important;;
     }
 }
 
