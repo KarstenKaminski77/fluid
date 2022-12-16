@@ -403,7 +403,7 @@ class ProductsController extends AbstractController
                         <div class="row prd-container">
                             <div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>
                             <!-- Product main container -->
-                            <div class="col-12 col-sm-9 ps-3 text-center text-sm-start">
+                            <div class="col-12 col-sm-9 ps-3 text-center text-sm-start bg-white border-sm-xy">
                                 <div class="row">
                                     <!-- Thumbnail -->
                                     <div class="col-12 col-sm-2 pt-3 text-center position-relative">
@@ -535,7 +535,7 @@ class ProductsController extends AbstractController
             
                             <!-- Distributors -->
                             <div 
-                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 search-result-distributors" 
+                                class="col-12 col-sm-3 mt-0 pt-3 pe-4 border-sm-xy search-result-distributors" 
                                 id="search_result_distributors_'. $product->getId() .'"
                             >
                                 <div class="position-relative">
@@ -545,7 +545,7 @@ class ProductsController extends AbstractController
                             </div>
             
                             <!-- Panels -->
-                            <div class="col-12 ps-3 pe-3">
+                            <div class="col-12 ps-3 pe-3 bg-white border-sm-xy">
                                 <div class="col-12 search-panels-container" id="search_panels_container_'. $product->getId() .'" style="display:none;">
             
                                     <!-- Description -->

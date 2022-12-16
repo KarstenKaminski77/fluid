@@ -12,7 +12,7 @@
 
 {% block body %}
     <div class="hidden users-flash m-0 save-all-items" id="flash"></div>
-    <div class="container-xl mt-5 mb-1 mb-sm-5" id="inventory_container">
+    <div class="container-xl mt-2 mt-sm-5 mb-1 mb-sm-5" id="inventory_container">
         <div class="row">
             <div class="col-12" id="inventory">
                 {{ response|raw }}
@@ -531,6 +531,9 @@
                     beforeSend: function ()
                     {
                         isLoading(true);
+
+                        $('#main_nav').slideToggle(700);
+                        window.scrollTo(0, 0);
                     },
                     complete: function(e)
                     {
