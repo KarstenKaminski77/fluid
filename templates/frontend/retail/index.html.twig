@@ -500,6 +500,7 @@
                 e.preventDefault();
 
                 $('#retail_container').empty().append($.session.get('searchResults'));
+                window.scrollTo(0,0);
             })
             $(document).on('click', '.clear-basket', function (e)
             {
@@ -556,7 +557,7 @@
                         },
                         success: function (response)
                         {
-                            getBasket(response.basket_id);
+                            getBasket(response.basketId);
                             getFlash(response.message);
                             isLoading(false);
                         }

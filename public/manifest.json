@@ -7,7 +7,7 @@
   "scope": "/",
   "short_name": "Fluid",
   "start_url": "/",
-  "theme_color": "#545659",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "images/icons/icon-72x72.png",
