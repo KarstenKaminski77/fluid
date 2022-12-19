@@ -1141,6 +1141,7 @@
                         success: function (response)
                         {
                             $('#retail_container').empty().append(response);
+                            window.scrollTo(0, 0);
                             isLoading(false);
                         }
                     });

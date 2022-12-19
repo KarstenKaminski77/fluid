@@ -339,7 +339,7 @@ class OrdersController extends AbstractController
             <input type="hidden" name="order-id" value="'. $order->getId() .'">
             <div class="row mt-4">
                 <div class="col-12">
-                    <h5>Fluid Account</h5>
+                    <h5 class="text-truncate">Fluid Account</h5>
                     <div class="alert alert-secondary" role="alert">
                         <div class="row border-bottom-dashed border-dark mb-3 pb-3">
                             <div class="col-6 text-truncate">
@@ -365,7 +365,7 @@ class OrdersController extends AbstractController
             <!-- PO Number -->
             <div class="row mt-3">
                 <div class="col-12 text-truncate">
-                    <h5>PO Number'. $plural .'</h5>
+                    <h5 class="text-truncate">PO Number'. $plural .'</h5>
                     <div class="alert alert-secondary" role="alert">';
 
                     $i = 0;
@@ -493,7 +493,7 @@ class OrdersController extends AbstractController
                 <div class="col-12 text-truncate">
                     <button 
                         type="submit"
-                        class="btn btn-primary float-end text-truncate" 
+                        class="btn btn-primary float-end text-truncate w-sm-100" 
                         id="btn_order_review" 
                         data-order-id="5">
                             <div class="text-truncate">
@@ -823,12 +823,12 @@ class OrdersController extends AbstractController
             </div>
             <div class="row">
                 <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light">
+                    <div class="alert alert-light text-truncate">
                         <b class="text-primary">Account ID:</b> <span class="float-end">'. $retail->getId() .'</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light">
+                    <div class="alert alert-light text-truncate">
                         <b class="text-primary">Name:</b> <span class="float-end">'. $firstName .' '. $lastName .'</span>
                     </div>
                 </div>
@@ -845,14 +845,14 @@ class OrdersController extends AbstractController
                 <div class="col-12 col-sm-6 mt-2 text-truncate">
                     <div class="alert alert-light text-truncate">
                         <b class="text-primary">Confirmation Email:</b> 
-                        <span class="float-end">
+                        <span class="float-start float-sm-end">
                             '. $this->encryptor->decrypt($retail->getEmail()) .'
                         </span>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div class="col-col-12 col-sm-6 mt-2 text-truncate">
+                <div class="col-col-12 col-sm-6 mt-2">
                     <div class="alert alert-light">
                         <div class="text-primary mb-3 fw-bold">Shipping Address</div>
                         '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getClinicName()) .'<br>
@@ -861,7 +861,7 @@ class OrdersController extends AbstractController
                         '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getTelephone()) .'
                     </div>
                 </div>
-                <div class="col-12 col-sm-6 mt-2 text-truncate">
+                <div class="col-12 col-sm-6 mt-2">
                     <div class="alert alert-light">
                         <div class="text-primary mb-3 fw-bold">Billing Address</div>
                         '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getClinicName()) .'<br>
@@ -946,13 +946,13 @@ class OrdersController extends AbstractController
                                     <!-- Product Quantity -->
                                     <div class="col-12 col-sm-6 d-table">
                                         <div class="row d-table-row">
-                                            <div class="col-5 text-center text-sm-start d-table-cell align-bottom">
+                                            <div class="col-5 text-center text-sm-start d-table-cell align-bottom text-truncate">
                                                 ' . $currency .' '. number_format($item->getUnitPrice(),2) . '
                                             </div>
                                             <div class="col-3 text-center d-table-cell align-bottom">
                                                 ' . $item->getQty() . '
                                             </div>
-                                            <div class="col-5 text-center text-sm-end fw-bold d-table-cell align-bottom">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
+                                            <div class="col-5 text-center text-sm-end fw-bold d-table-cell align-bottom text-truncate">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
                                         </div>
                                     </div>
                                 </div>
@@ -966,7 +966,12 @@ class OrdersController extends AbstractController
             </div>
             <div class="row mb-2">
                 <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary float-end" id="btn_place_order" data-order-id="'. $order->getId() .'">
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary float-end w-sm-100" 
+                        id="btn_place_order" 
+                        data-order-id="'. $order->getId() .'"
+                    >
                         PLACE ORDER 
                         <i class="fa-solid fa-circle-right ps-2"></i>
                     </button>
