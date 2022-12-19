@@ -147,7 +147,7 @@
                             <i class="fa-light fa-user pe-2 fa-width text-primary"></i>
                             {{ nzo_decrypt(clinic.clinicName) }}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" id="account_menu" style="min-width: 250px">
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-mobile" id="account_menu" style="min-width: 250px">
                             {% if 3 in permissions and clinic.isApproved == 1 %}
                                 {% set openingTag = 'a href="#"' %}
                                 {% set closingTag = 'a' %}

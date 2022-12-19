@@ -2169,6 +2169,11 @@ input[type="text"]::-webkit-input-placeholder {
         padding: 8px;
     }
 
+    .dropdown-mobile {
+        max-height: 200px;
+        overflow: auto;
+    }
+
     /*.d-table-cell {*/
     /*    display: block !important;*/
     /*}*/
