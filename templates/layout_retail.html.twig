@@ -13,11 +13,7 @@
         {% include '/_header_retail.html.twig' %}
     {% endblock header %}
 
-    {# Carousel #}
-    {% block carousel %}
-    {% endblock %}
-
-    {# Carousel #}
+    {# Flash #}
     {% block flash_messages %}
         {% for message in app.flashes('success') %}
             <div class="alert alert-success text-center">

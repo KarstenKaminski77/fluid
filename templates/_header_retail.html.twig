@@ -1,9 +1,10 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top border-bottom">
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top border-bottom">
         <div class="container-fluid">
             <button class="navbar-toggler" type="button">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="navbar nav">
+            <div class="navbar-brand">
                 <a href="{{ path('retail_search', {'pageNo': 1}) }}">
                     <img src="{{ clinicLogo }}" class="img-fluid text-center pe-3 pe-sm-0" style="max-height: 60px">
                 </a>
@@ -36,8 +37,8 @@
                             <span class="">Notifications</span>
                         </a>
                         <span id="notifications_panel" class="position-absolute end-0">
-                            <span class="notification-panel delete-notification">You have no notifications</span>
-                        </span>
+                        <span class="notification-panel delete-notification">You have no notifications</span>
+                    </span>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link  dropdown-toggle" href="{{ path('retail_logout') }}" data-bs-toggle="dropdown">
@@ -56,3 +57,4 @@
             </div>
         </div>
     </nav>
+</header>
