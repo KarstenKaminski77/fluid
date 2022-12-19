@@ -2067,14 +2067,6 @@ input[type="text"]::-webkit-input-placeholder {
         margin-top: 75px;
     }
 
-    .backend-body-pt {
-        padding-top: 65px;
-    }
-
-    .frontend-body-pt {
-        padding-top: 93px;
-    }
-
     .nav-icon {
         text-align: center;
     }

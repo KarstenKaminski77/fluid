@@ -28,13 +28,13 @@
                             <a
                                 href="#submenu1"
                                 data-bs-toggle="collapse"
-                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate"
+                                class="px-0 align-middle text-primary collapsed text-center text-sm-start nav-icon mb-3 text-truncate dropdown-link"
                                 aria-expanded="false"
                             >
                                 <i class="fa-regular fa-user-gear fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">My Account</span>
-                                <span class="float-end">
-                                    <i class="fa-solid fa-caret-down"></i>
+                                <span class="float-end d-none d-sm-inline">
+                                    <i class="fa-solid fa-caret-right"></i>
                                 </span>
                             </a>
                             <ul class="nav flex-column collapse" id="submenu1" data-bs-parent="#menu" style="">
@@ -1479,6 +1479,21 @@
                 }, 5000);
             }
 
+            {# Dropdown Menu Chevron #}
+            $(document).on('click', '.dropdown-link', function (e) {
+
+                e.preventDefault();
+
+                if($(this).attr('aria-expanded') == 'true')
+                {
+                    $(this).find('.fa-caret-right').css({'rotate':'90deg'});
+                }
+                else
+                {
+                    $(this).find('.fa-caret-right').css({'rotate':'0deg'});
+                }
+            });
+
             let brand = $('#brand');
             let account_settings = $('#account_settings');
             let about = $('#about');
@@ -2335,6 +2350,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 clearInterval(get_messages);
                 window.history.pushState(null, "Fluid", '/distributors/account');
             }
@@ -2368,6 +2384,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/about');
             }
 
@@ -2401,6 +2418,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/operating-hours');
             }
 
@@ -2433,6 +2451,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/refund-policy');
             }
 
@@ -2465,6 +2484,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/sales-tax-policy');
             }
 
@@ -2497,6 +2517,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/shipping-policy');
             }
 
@@ -2553,6 +2574,7 @@
                             $('#zoho_error').hide();
                         }
 
+                        $('.distributor-right-col').animate ({scrollTop:0}, 200);
                         window.history.pushState(null, "Fluid", '/distributors/manage-inventory');
                     }
                 });
@@ -2595,6 +2617,7 @@
                 customerContainer.hide();
                 brand.empty().hide();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/inventory/list/1');
                 popOver();
             }
@@ -2707,6 +2730,7 @@
                 customerContainer.hide();
                 brand.empty().append('<button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_new"> <i class="fa-solid fa-circle-plus"></i> ADD COLLEAGUE</button>').show();
 
+                $('.distributor-right-col').animate ({scrollTop:0}, 200);
                 window.history.pushState(null, "Fluid", '/distributors/users');
             }
 
@@ -2734,6 +2758,7 @@
                     },
                     success: function (response) {
                         $('#customer_container').empty().append(response);
+                        $('.distributor-right-col').animate ({scrollTop:0}, 200);
                         account_settings.hide();
                         about.hide();
                         operating_hours.hide();
@@ -3540,9 +3565,6 @@
                 refund_policy.hide();
                 sales_tax_policy.hide();
                 shipping_policy.hide();
-                
-                
-                
                 inventory_item.hide();
                 users.hide();
                 order_container.hide();

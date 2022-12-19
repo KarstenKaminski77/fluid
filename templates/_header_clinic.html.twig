@@ -3,12 +3,12 @@
         <button class="navbar-toggler" id="btn_navbar_toggle">
             <span class="navbar-toggler-icon"></span>
         </button>
+        <div class="navbar-brand">
+            <a href="{{ path('clinic_orders_list', {'clinic_id':app.user.clinic.id }) }}">
+                <img src="{{ asset('images/logo.png') }}" class="img-fluid" style="max-height: 60px">
+            </a>
+        </div>
         <div class="collapse navbar-collapse justify-content-between" id="main_nav">
-            <div class="navbar nav">
-                <a href="{{ path('clinic_orders_list', {'clinic_id':app.user.clinic.id }) }}">
-                    <img src="{{ asset('images/logo.png') }}" class="img-fluid" style="max-height: 60px">
-                </a>
-            </div>
             <div class="navbar-nav mx-0 mx-md-auto w-sm-100-md-50">
                 <form name="search_form" class="w-100" id="search_form" method="post">
                     <ul class="navbar-nav">

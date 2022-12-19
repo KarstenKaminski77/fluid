@@ -267,7 +267,7 @@
             }
 
 
-            {# Dropdown Menu Carat #}
+            {# Dropdown Menu Chevron #}
             $(document).on('click', '.dropdown-link', function (e) {
 
                 e.preventDefault();
@@ -1350,6 +1350,7 @@
                     success: function (response)
                     {
                         $('#retail_container').empty().append(response.html).show();
+                        window.scrollTo(0,0);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/retail/addresses/1');
 
@@ -1723,6 +1724,7 @@
                     success: function (response)
                     {
                         $('#retail_container').empty().append(response.html).show();
+                        window.scrollTo(0,0);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/retail/clinic/'+ response.uri);
                     }
