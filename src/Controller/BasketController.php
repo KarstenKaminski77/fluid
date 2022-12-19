@@ -2038,7 +2038,7 @@ class BasketController extends AbstractController
         </div>
         <!-- Basket Actions Row -->
         <div class="row px-3">
-            <div class="col-12 half-border">
+            <div class="col-12 half-border" id="half_border_row">
                 <div class="row" id="basket_action_row_1">
                     <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
                         <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">

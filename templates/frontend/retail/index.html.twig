@@ -429,6 +429,7 @@
                     success: function (response)
                     {
                         $('#retail_container').empty().append(response.html);
+                        $('#half_border_row').removeClass('px-0 px-sm-2');
                         window.history.pushState(null, "Fluid", '/retail/basket');
                         isLoading(false);
                     }
@@ -651,16 +652,17 @@
                     },
                     complete: function(e)
                     {
-                        {#if(e.status === 500){#}
-                        {#    window.location.href = '{{ path('clinic_error_500') }}';#}
-                        {#}#}
+                        if(e.status === 500){
+                            window.location.href = '{{ path('clinic_error_500') }}';
+                        }
                     },
                     success: function (response)
                     {
                         $('#modal_address').remove();
                         $('#basket_action_row_1').remove();
                         $('#saved_items, #modal_address').remove();
-                        $('#basket_items').empty().append(response.body).addClass('bg-white mx-3');
+                        $('#basket_items').empty().append(response.body).addClass('bg-white mx-0 mx-sm-3');
+                        $('#half_border_row').addClass('px-0 px-sm-2');
                         $('#basket_header').empty().append(response.header);
                         $('#shipping_address_id').val(response.default_address_id);
                         $('#billing_address_id').val(response.default_billing_address_id);
@@ -677,6 +679,7 @@
                             .append('<span class="badge bg-success ms-3 toggle_address" role="button">Create A New Address</span>')
                             .append('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
                         $('#btn_checkout').hide();
+                        window.scrollTo(0, 0);
                     }
                 });
             });
