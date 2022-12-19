@@ -142,6 +142,11 @@
 
             $('#btn_map').hide();
 
+            $(document).on('click', '.dropdown-item, #btn_basket', function ()
+            {
+                $('#main_nav').slideUp();
+            });
+
             function isLoading(status)
             {
                 if(status)
@@ -545,6 +550,7 @@
                     success: function (response)
                     {
                         $('#inventory').empty().append(response.html).show();
+                        window.scrollTo(0,0);
                         $('#basket_container').empty().hide();
                         $('#inventory_container').show();
                         $('.has-megamenu').show(700);
@@ -905,6 +911,7 @@
                         $('#back_btn').hide();
                         $('#inventory_container').hide();
                         $('#basket_container').empty().append(response).fadeIn(500);
+                        window.scrollTo(0,0);
                         $('#return_to_search').attr('data-basket-id', $('#btn_basket').attr('data-basket-id'))
                         $("#basket_container").css({ overflow:"auto" }).addClass('col-container');
                         $('#saved_items_container').hide();
@@ -1749,6 +1756,7 @@
                         $('#inventory_container').hide();
                         $('#basket_container').empty().append(response.html).show();
                         $('#paginator').empty().append(response.pagination).show();
+                        window.scrollTo(0,0);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/orders/'+ clinic_id);
 
@@ -2627,6 +2635,7 @@
                         $('#inventory').hide();
                         $('#inventory_container').hide();
                         $('#basket_container').empty().addClass('col-container').removeClass('border-xy').append(response.response).show();
+                        window.scrollTo(0,0);
                         getBackButton();
                         window.history.pushState(null, "Fluid", '/clinics/inventory/lists');
                     },
@@ -4168,6 +4177,7 @@
                         $('#inventory').hide();
                         $('#main_container')
                         $('#basket_container').empty().removeClass('col-container').append(response).show();
+                        window.scrollTo(0,0);
                         clearInterval(get_messages);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/account');
@@ -4761,6 +4771,7 @@
                         $('#inventory_container').hide();
                         $('#basket_container').empty().removeClass('col-container').append(response.html).show();
                         $('#paginator').empty().append(response.pagination).show();
+                        window.scrollTo(0,0);
                         clearInterval(get_messages);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/users');
@@ -5077,7 +5088,7 @@
                     },
                     complete: function(e, xhr, settings){
                         if(e.status === 500){
-                            //window.location.href = '{{ path('clinic_error_500') }}';
+                            window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response) {
@@ -5087,6 +5098,7 @@
                         $('#inventory_container').hide();
                         $('#basket_container').empty().removeClass('col-container').append(response.html).show();
                         $('#paginator').empty().append(response.pagination).show();
+                        window.scrollTo(0,0);
                         clearInterval(get_messages);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/addresses');
@@ -5785,6 +5797,7 @@
                         $('#inventory_container').hide();
                         $('#basket_container').empty().removeClass('col-container').append(response.html).show();
                         $('#paginator').empty().append(response.pagination).show();
+                        window.scrollTo(0,0);
                         clearInterval(get_messages);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/communication-methods');
@@ -6236,7 +6249,7 @@
                     complete: function(e, xhr, settings){
                         if(e.status === 500)
                         {
-                           //window.location.href = '{{ path('clinic_error_500') }}';
+                           window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response)
@@ -6244,6 +6257,7 @@
                         $('#basket_container').hide();
                         $('#inventory_container').show();
                         $('#inventory').empty().append(response).show();
+                        window.scrollTo(0,0);
                         isLoading(false);
                         window.history.pushState(null, "Fluid", '/clinics/manage-inventory');
                         popOver();
