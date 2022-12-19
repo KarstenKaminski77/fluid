@@ -216,7 +216,7 @@
             let keywords = $.session.get('keywords');
 
             {# Toggle Menu #}
-            $(document).on('click', '.navbar-toggler', function ()
+            $(document).on('click', '.navbar-toggler, #btn_basket', function ()
             {
                 $('#main_nav').slideToggle(700);
             })
@@ -271,7 +271,7 @@
             $(document).on('click', '.dropdown-link', function (e) {
 
                 e.preventDefault();
-                //alert($(this).attr('aria-expanded'));
+
                 if($(this).attr('aria-expanded') == 'true')
                 {
                     $(this).find('.fa-caret-right').css({'rotate':'90deg'});
@@ -417,13 +417,14 @@
                     beforeSend: function ()
                     {
                         isLoading(true);
+                        window.scrollTo(0, 0);
                     },
                     complete: function(e)
                     {
-                        {#if(e.status === 500)#}
-                        {#{#}
-                        {#    window.location.href = '{{ path('retail_error_500') }}';#}
-                        {#}#}
+                        if(e.status === 500)
+                        {
+                            window.location.href = '{{ path('retail_error_500') }}';
+                        }
                     },
                     success: function (response)
                     {

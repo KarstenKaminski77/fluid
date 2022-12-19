@@ -17,7 +17,7 @@
 {% block body %}
 <div class="hidden users-flash mb-0" id="flash"></div>
 <div class="container mb-3">
-    <div class="row mb-3">
+    <div class="row mb-3 px-3 px-sm-0">
         <div class="col-12">
             <div class="row mb-3">
                 <div class="col-12">
@@ -100,7 +100,7 @@
                     </div>
                 {% endfor %}
             {% else %}
-                <div class="row mb-3">
+                <div class="row mb-3 px-3 px-sm-0">
                     <div class="col-12">
                         {{ article.articleDetails[0].copy()|raw }}
                     </div>

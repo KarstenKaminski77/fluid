@@ -2156,7 +2156,7 @@ class BasketController extends AbstractController
                     $response['html'] .= '
                         <!-- Basket Summary -->
                         </div>
-                        <div class="col-12 col-lg-3 py-3 pe-0 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
+                        <div class="col-12 col-lg-3 py-3 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
                             <div class="row">
                                 <div class="col-12 text-truncate ps-sm-2">
                                     <span class="info">Subtotal:</span>
