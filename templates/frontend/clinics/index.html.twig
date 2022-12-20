@@ -3780,6 +3780,11 @@
             $(document).on('click', '.btn_create_review', function (){
 
                 $('#review_product_id').val($(this).data("product-id"))
+
+                if($('.btn_create_review').length == 1)
+                {
+                    $(this).attr('data-bs-target','modal_review_all');
+                }
             });
             $(document).on('click', '.review-like', function (e){
 
@@ -4029,7 +4034,7 @@
 
                         getBackButton();
                         $('#inventory').hide();
-                        $('#inventory_container').hide();
+                        $('#inventory_container').empty().hide();
                         $('.review_panel').empty();
                         $('#basket_container').empty().append(response.response).addClass('bg-light border-xy').css({overflow:''}).show();
                         $('.recent-reviews').empty().append('Showing All Reviews For '+ response.product_name);

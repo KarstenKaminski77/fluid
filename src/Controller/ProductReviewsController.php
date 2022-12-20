@@ -121,6 +121,7 @@ class ProductReviewsController extends AbstractController
 
             $productId = $request->get('product_id');
             $limit = 100;
+            $viewAll = true;
         }
         $productReview = $this->em->getRepository(ProductReviews::class)->findBy([
             'product' => $productId,
@@ -530,6 +531,105 @@ class ProductReviewsController extends AbstractController
         $response .='
             </div>
         </div>';
+
+        if($viewAll)
+        {
+            $response .= '
+            <!-- Modal Review -->
+            <div class="modal fade" id="modal_review_all" tabindex="-1" aria-labelledby="review_label" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header basket-modal-header">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form name="form_review" id="form_review" method="post">
+                            <input type="hidden" name="review_product_id" id="review_product_id" value="0">
+                            <input type="hidden" name="rating" id="rating" value="0">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-12 col-sm-4 mb-0">
+                                        <h6>Review guidelines</h6>
+                                        <br>
+                                        <ul>
+                                            <li>
+                                                <b>Be Helpful and Relevant</b> - Reviews are intended to provide helpful,
+                                                meaningful content to customers.
+                                                <br>
+                                                <br>
+                                            </li>
+                                            <li>
+                                                <b>Be Honest</b> - In order to preserve the integrity of our reviews, content
+                                                should be an accurate representation of your experience with this item.
+                                                Fluid strictly forbids commercial solicitations or compensation in exchange
+                                                for positive reviews.
+                                                <br>
+                                                <br>
+                                            </li>
+                                            <li>
+                                                <b>Stay Relevant</b> - Reviews should focus on the pros and cons of the item.
+                                                Reviews focusing on the supplier or manufacturer directly will not be
+                                                approved.
+                                                <br>
+                                                <br>
+                                            </li>
+                                            <li>
+                                                <b>Acknowledge</b> - Please note that by submitting you acknowledge that
+                                                your review may be used by the manufacturer in future marketing materials
+                                                for this brand.
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-12 col-sm-8 mb-0 ps-3 ps-sm-5">
+                                        <h5>Write a review for:</h5>
+                                        <h6 class="text-primary">Terbinafine Tablets: 250mg, 100 Count</h6>
+                                        <br>
+                                        RATE THIS ITEM
+                                        <div id="review_rating" class="mb-3 mt-2">
+                                            <div style="position: relative; display: inline-block">
+                                                <i class="star star-under fa fa-star star-lg" id="star-under-1"></i>
+                                                <i class="star star-over fa fa-star star-lg" id="star-over-1"></i>
+                                            </div>
+                                            <div style="position: relative; display: inline-block">
+                                                <i class="star star-under fa fa-star star-lg" id="star-under-2"></i>
+                                                <i class="star star-over fa fa-star star-lg" id="star-over-2"></i>
+                                            </div>
+                                            <div style="position: relative; display: inline-block">
+                                                <i class="star star-under fa fa-star star-lg" id="star-under-3"></i>
+                                                <i class="star star-over fa fa-star star-lg" id="star-over-3"></i>
+                                            </div>
+                                            <div style="position: relative; display: inline-block">
+                                                <i class="star star-under fa fa-star star-lg" id="star-under-4"></i>
+                                                <i class="star star-over fa fa-star star-lg" id="star-over-4"></i>
+                                            </div>
+                                            <div style="position: relative; display: inline-block">
+                                                <i class="star star-under fa fa-star star-lg" id="star-under-5"></i>
+                                                <i class="star star-over fa fa-star star-lg" id="star-over-5"></i>
+                                            </div>
+                                            <div class="hidden_msg" id="error_rating">
+                                                Please click to rate this item
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <label>Review</label>
+                                                <textarea rows="4" name="review" id="review" class="form-control"></textarea>
+                                                <div class="hidden_msg" id="error_review">
+                                                    Required Field
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger btn-sm w-sm-100" data-bs-dismiss="modal">CANCEL</button>
+                                <button type="submit" class="btn btn-primary btn-sm w-sm-100">CREATE REVIEW</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>';
+        }
 
         if($product->getForm() == 'Each'){
 
