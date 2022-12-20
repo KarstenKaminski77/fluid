@@ -3784,6 +3784,7 @@
                 if($('.btn_create_review').length == 1)
                 {
                     $(this).attr('data-bs-target','modal_review_all');
+                    $('#modal_review_all').modal('toggle');
                 }
             });
             $(document).on('click', '.review-like', function (e){
