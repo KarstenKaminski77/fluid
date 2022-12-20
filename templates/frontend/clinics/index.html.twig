@@ -4034,8 +4034,8 @@
                     success: function (response) {
 
                         getBackButton();
-                        $('#inventory').hide();
-                        $('#inventory_container').empty().hide();
+                        $('#inventory').empty().hide();
+                        $('#inventory_container').hide();
                         $('.review_panel').empty();
                         $('#basket_container').empty().append(response.response).addClass('bg-light border-xy').css({overflow:''}).show();
                         $('.recent-reviews').empty().append('Showing All Reviews For '+ response.product_name);
