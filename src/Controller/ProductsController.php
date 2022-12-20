@@ -627,79 +627,6 @@ class ProductsController extends AbstractController
                 </div>';
             }
 
-            $currentPage = $request->request->get('page-no');
-            $lastPage = $this->pageManager->lastPage($results);
-
-            $html .= '
-                <!-- Pagination -->
-                <div class="row">
-                    <div class="col-12">';
-
-            if($lastPage > 1) {
-
-                $previousPageNo = $currentPage - 1;
-                $url = '/clinics/inventory/';
-                $previousPage = $url . $previousPageNo;
-
-                $html .= '
-                <nav class="custom-pagination">
-                    <ul class="pagination justify-content-center">
-                ';
-
-                $disabled = 'disabled';
-                $dataDisabled = 'true';
-
-                // Previous Link
-                if($currentPage > 1){
-
-                    $disabled = '';
-                    $dataDisabled = 'false';
-                }
-
-                $html .= '
-                <li class="page-item '. $disabled .'">
-                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage - 1 .'" href="'. $previousPage .'">
-                        <span aria-hidden="true">&laquo;</span> Previous
-                    </a>
-                </li>';
-
-                for($i = 1; $i <= $lastPage; $i++) {
-
-                    $active = '';
-
-                    if($i == (int) $currentPage){
-
-                        $active = 'active';
-                    }
-
-                    $html .= '
-                    <li class="page-item '. $active .'">
-                        <a class="page-link" '. $listId .' data-page-id="'. $i .'" href="'. $url . $i .'">'. $i .'</a>
-                    </li>';
-                }
-
-                $disabled = 'disabled';
-                $dataDisabled = 'true';
-
-                if($currentPage < $lastPage) {
-
-                    $disabled = '';
-                    $dataDisabled = 'false';
-                }
-
-                $html .= '
-                <li class="page-item '. $disabled .'">
-                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
-                        Next <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>';
-
-                $html .= '
-                        </ul>
-                    </nav>
-                </div>';
-            }
-
             $html .= '
             <!-- Modal Review -->
             <div class="modal fade" id="modal_review" tabindex="-1" aria-labelledby="review_label" aria-hidden="true">
@@ -795,6 +722,79 @@ class ProductsController extends AbstractController
                     </div>
                 </div>
             </div>';
+
+            $currentPage = $request->request->get('page-no');
+            $lastPage = $this->pageManager->lastPage($results);
+
+            $html .= '
+                <!-- Pagination -->
+                <div class="row">
+                    <div class="col-12">';
+
+            if($lastPage > 1) {
+
+                $previousPageNo = $currentPage - 1;
+                $url = '/clinics/inventory/';
+                $previousPage = $url . $previousPageNo;
+
+                $html .= '
+                <nav class="custom-pagination">
+                    <ul class="pagination justify-content-center">
+                ';
+
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
+
+                // Previous Link
+                if($currentPage > 1){
+
+                    $disabled = '';
+                    $dataDisabled = 'false';
+                }
+
+                $html .= '
+                <li class="page-item '. $disabled .'">
+                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage - 1 .'" href="'. $previousPage .'">
+                        <span aria-hidden="true">&laquo;</span> Previous
+                    </a>
+                </li>';
+
+                for($i = 1; $i <= $lastPage; $i++) {
+
+                    $active = '';
+
+                    if($i == (int) $currentPage){
+
+                        $active = 'active';
+                    }
+
+                    $html .= '
+                    <li class="page-item '. $active .'">
+                        <a class="page-link" '. $listId .' data-page-id="'. $i .'" href="'. $url . $i .'">'. $i .'</a>
+                    </li>';
+                }
+
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
+
+                if($currentPage < $lastPage) {
+
+                    $disabled = '';
+                    $dataDisabled = 'false';
+                }
+
+                $html .= '
+                <li class="page-item '. $disabled .'">
+                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
+                        Next <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>';
+
+                $html .= '
+                        </ul>
+                    </nav>
+                </div>';
+            }
 
         } else {
 
