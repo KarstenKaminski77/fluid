@@ -180,7 +180,7 @@
     {# Contact Us #}
     <div class="row" id="contact_container">
         <div class="col-12 mx-0 px-0 text-center form-control-bg-grey">
-            <h4 class="my-5" id="contact_title">
+            <h4 class="my-3 my-sm-5" id="contact_title">
                 Contact Us
             </h4>
             <form name="contact_form" id="contact_form" class="text-start px-4 mb-4 mx-sm-5 px-sm-2 mb-sm-0 pb-4">
@@ -319,11 +319,13 @@
 
         $(document).ready(function () {
 
-            $(document).on('click', '#contact_link', function (e) {
+            $(document).on('click', '.contact-link', function (e) {
 
                 e.preventDefault();
 
-                $('body').scrollTo('#contact_container');
+                $([document.documentElement, document.body]).animate({
+                    scrollTop: $("#contact_title").offset().top - 86
+                }, 300);
             });
 
             $('.multiple-items').slick({

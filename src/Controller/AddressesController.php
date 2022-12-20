@@ -68,7 +68,7 @@ class AddressesController extends AbstractController
         if(count($addresses) > 0)
         {
             $response .= '
-            <div class="row d-none bg-light d-xl-flex border-bottom border-right border-left border-top">
+            <div class="row d-none bg-light d-xl-flex border-right border-left border-top">
                 <div class="col-9">
                     <div class="row">
                         <div class="col-md-2 pt-3 pb-3 text-primary fw-bold">
@@ -94,6 +94,7 @@ class AddressesController extends AbstractController
             {
                 $class = 'address-icon';
                 $classBilling = 'address-icon';
+                $topBorder = '';
                 $i++;
 
                 // Default Shipping Address
@@ -117,9 +118,14 @@ class AddressesController extends AbstractController
                     $type = 'Shipping';
                 }
 
+                if($i == 1)
+                {
+                    $topBorder = 'border-top';
+                }
+
                 $response .= '
                 <div class="row t-row border-0">
-                    <div class="col-12 col-xl-9 col-cell border-left border-bottom border-bottom-sm-users border-right-sm-users">
+                    <div class="col-12 col-xl-9 col-cell border-left border-bottom border-bottom-sm-users border-right-sm-users '. $topBorder .'">
                         <div class="row">
                             <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary border-list pt-3 pb-3">Name</div>
                             <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">

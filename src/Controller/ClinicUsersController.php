@@ -73,6 +73,7 @@ class ClinicUsersController extends AbstractController
         $user_permissions = $this->em->getRepository(UserPermissions::class)->findBy([
             'isClinic' => 1
         ]);
+        $i = 0;
         
         $html = '
         <!-- Users -->
@@ -100,7 +101,7 @@ class ClinicUsersController extends AbstractController
             </div>
         </div>
 
-        <div class="row d-none d-xl-flex bg-light border-bottom border-right border-left border-top">
+        <div class="row d-none d-xl-flex bg-light border-right border-left border-top">
             <div class="col-md-2 pt-3 pb-3 text-primary fw-bold">
                 First Name
             </div>
@@ -123,8 +124,16 @@ class ClinicUsersController extends AbstractController
 
         foreach($results as $user) {
 
+            $i++;
+            $borderTop = '';
+
+            if($i == 1)
+            {
+                $borderTop = 'border-top';
+            }
+
             $html .= '
-           <div class="row border-bottom border-right border-left t-row">
+           <div class="row border-bottom border-right border-left t-row '. $borderTop .'">
                <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">First Name</div>
                <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
                    '. $this->encryptor->decrypt($user->getFirstName()) .'
@@ -332,8 +341,8 @@ class ClinicUsersController extends AbstractController
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
-                                <button type="submit" class="btn btn-primary" id="create_user">SAVE</button>
+                                <button type="button" class="btn btn-secondary w-sm-100" data-bs-dismiss="modal">CANCEL</button>
+                                <button type="submit" class="btn btn-primary w-sm-100" id="create_user">SAVE</button>
                             </div>
                         </form>
                     </div>

@@ -164,6 +164,7 @@ class ListsController extends AbstractController
     {
         $clinic = $this->getUser()->getClinic();
         $listId = $request->request->get('list_id') ?? 0;
+        $i =  0;
 
         // user permissions
         if(is_array($request->request->get('permissions'))){
@@ -219,6 +220,8 @@ class ListsController extends AbstractController
                 $tag = 'a';
                 $classDelete = 'delete-list';
                 $classEdit = 'edit-list';
+                $bottomBorder = 'border-bottom-dashed';
+                $i++;
 
                 if(is_array($permissions) && !in_array(2, $permissions)){
 
@@ -256,8 +259,13 @@ class ListsController extends AbstractController
                     $class = 'text-disabled';
                 }
 
+                if($i == count($lists))
+                {
+                    $bottomBorder = '';
+                }
+
                 $html .= '
-                <div class="row pt-3 pb-3 border-bottom-dashed border-left border-right t-row">
+                <div class="row pt-3 pb-3 border-left border-right t-row '. $bottomBorder .'">
                     <div class="col-7 col-sm-9 col-md-10">
                         <b>'. $list->getName() .' ('. $list->getListItems()->count() .')</b><br>
                         Fluid '. $listType .' List

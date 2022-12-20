@@ -148,6 +148,17 @@
                 $('#account_menu').slideUp();
             });
 
+            $(document).click(function (event) {
+
+                /// If *navbar-collapse* is not among targets of event
+                if (!$(event.target).is('.navbar-collapse *')) {
+
+                    /// Collapse every *navbar-collapse*
+                    $('.navbar-collapse').collapse('hide');
+
+                }
+            });
+
             function isLoading(status)
             {
                 if(status)
@@ -538,7 +549,7 @@
                     {
                         isLoading(true);
 
-                        $('#main_nav').slideToggle(700);
+                        $('#main_nav').slideUp(700);
                         window.scrollTo(0, 0);
                     },
                     complete: function(e)
@@ -914,11 +925,16 @@
                         $('#basket_container').empty().append(response).fadeIn(500);
                         window.scrollTo(0,0);
                         $('#return_to_search').attr('data-basket-id', $('#btn_basket').attr('data-basket-id'))
-                        $("#basket_container").css({ overflow:"auto" }).addClass('col-container');
+                        $("#basket_container").addClass('col-container');
                         $('#saved_items_container').hide();
                         isLoading(false);
                         clearInterval(get_messages);
                         $('.back-to-search').remove();
+
+                        if($(window).width() < 992)
+                        {
+                            $('#basket_container').css({ overflow:"hidden" });
+                        }
 
                         if(redirect)
                         {
@@ -4797,7 +4813,7 @@
             });
             $(document).on('click', '.open-user-modal', function () {
 
-                $('#create_user').empty().append('UPDATE USER');
+                $('#create_user').empty().append('UPDATE');
                 let user_id = $(this).data('user-id');
                 let page_id = $(this).data('page-id');
 
@@ -4882,7 +4898,7 @@
             });
             $(document).on('click','#user_new',function (){
 
-                $('#create_user').empty().append('CREATE USER');
+                $('#create_user').empty().append('CREATE');
                 $('#user_modal_label').empty().append('Create a User');
                 $('#user_id').val(0);
                 $('#user_first_name').val('');
@@ -5820,7 +5836,7 @@
             });
             $(document).on('click','#communication_methods_new', function (){
                 $('#col_send_to').hide();
-                $('#btn_save_communication_method').empty().append('CREATE COMMUNICATION METHOD');
+                $('#btn_save_communication_method').empty().append('CREATE');
             });
             $(document).on('change','#communication_methods_type',function (){
 
@@ -5832,7 +5848,6 @@
                 if(communication_method == 0 || communication_method == 1){
 
                     $('#col_send_to').hide();
-                    $('#col_communication_method').removeClass('col-6').removeClass('col-12').addClass('col-12');
                 }
 
                 if(communication_method == 2){
@@ -5875,7 +5890,6 @@
 
                 if(communication_method == 2 || communication_method == 3) {
 
-                    $('#col_communication_method').removeClass('col-12').addClass('col-6')
                     $('#col_send_to').show();
                     $('#send_to').show();
                 }
@@ -5940,7 +5954,6 @@
 
                     $('#col_send_to').hide();
                     $('#label_send_to').hide();
-                    $('#col_communication_method').removeClass('col-6').removeClass('col-12').addClass('col-12');
                 }
 
                 if(communication_method == 2){
@@ -5951,7 +5964,6 @@
 
                 if(communication_method == 2 || communication_method == 3) {
 
-                    $('#col_communication_method').removeClass('col-12').addClass('col-6')
                     $('#col_send_to').show();
                 }
 
@@ -5959,7 +5971,7 @@
                 $('#clinic_communication_methods_form_communicationMethod_clinicCommunicationMethods option[value="'+ communication_method +'"]').attr('selected','selected');
                 $('#communication_method_id').val(clinic_method_id);
                 $('#communication_methods_modal_label').empty().append('Update A Communication Method');
-                $('#btn_save_communication_method').empty().append('UPDATE COMMUNICATION METHOD');
+                $('#btn_save_communication_method').empty().append('UPDATE');
             });
             $(document).on('focus','#send_to', function (){
 

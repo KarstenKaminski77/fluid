@@ -68,7 +68,7 @@ class CommunicationMethodsController extends AbstractController
         if($results->count() > 0)
         {
             $response .= '
-            <div class="row d-none d-xl-flex  bg-light border-bottom border-right border-left border-top">
+            <div class="row d-none d-xl-flex  bg-light border-right border-left border-top">
                 <div class="col-5 pt-3 pb-3 text-primary fw-bold">
                     Method
                 </div>
@@ -85,6 +85,7 @@ class CommunicationMethodsController extends AbstractController
             foreach ($results as $method)
             {
                 $mobile_no = 0;
+                $borderTop = '';
                 $i++;
 
                 $col = 10;
@@ -103,8 +104,13 @@ class CommunicationMethodsController extends AbstractController
                     $mobile_no = 0;
                 }
 
+                if($i == 1)
+                {
+                    $borderTop = 'border-top';
+                }
+
                 $response .= '
-                <div class="row t-row">
+                <div class="row t-row '. $borderTop .'">
                     <div class="col-4 col-sm-2 d-xl-none  t-cell text-truncate border-list pt-3 pb-3">Method</div>
                     <div class="col-8 col-sm-10 col-xl-' . $col . '  t-cell text-truncate border-list pt-3 pb-3">
                         ' . $method->getCommunicationMethod()->getMethod() . '
@@ -160,15 +166,15 @@ class CommunicationMethodsController extends AbstractController
                                 </div>
                                 <div class="modal-body">
                                     <div class="row mb-3">
-                                        <div class="col-12" id="col_communication_method">
-                                            <label>Method</label>
+                                        <div class="col-12 col-sm-6" id="col_communication_method">
+                                            <label>Method</label>xxxx
                                             ' . $select . '
                                             <div class="hidden_msg" id="error_communication_method">
                                                 Required Field
                                             </div>
                                         </div>
             
-                                        <div class="col-6" id="col_send_to">
+                                        <div class="col-12 col-sm-6" id="col_send_to">
                                             <label id="label_send_to">
                                             </label>
                                             <span id="send_to_container">
@@ -191,9 +197,9 @@ class CommunicationMethodsController extends AbstractController
             
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
-                                    <button type="submit" id="btn_save_communication_method" class="btn btn-primary">
-                                        CREATE COMMUNICATION METHOD
+                                    <button type="button" class="btn btn-secondary w-sm-100" data-bs-dismiss="modal">CANCEL</button>
+                                    <button type="submit" id="btn_save_communication_method" class="btn btn-primary w-sm-100">
+                                        CREATE
                                     </button>
                                 </div>
                             </form>
@@ -280,9 +286,9 @@ class CommunicationMethodsController extends AbstractController
         
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
-                                <button type="submit" id="btn_save_communication_method" class="btn btn-primary">
-                                    CREATE COMMUNICATION METHOD
+                                <button type="button" class="btn btn-secondary w-sm-100" data-bs-dismiss="modal">CANCEL</button>
+                                <button type="submit" id="btn_save_communication_method" class="btn btn-primary w-sm-100">
+                                    CREATE
                                 </button>
                             </div>
                         </form>
