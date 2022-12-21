@@ -189,6 +189,7 @@ class BasketController extends AbstractController
     }
 
     #[Route('/clinics/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item')]
+    #[Route('/retail/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item_retail')]
     public function removeBasketItemAction(Request $request): Response
     {
         $basketItemId = $request->request->get('item-id');
