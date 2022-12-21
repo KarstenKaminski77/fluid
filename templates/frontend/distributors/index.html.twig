@@ -1195,7 +1195,7 @@
                     </div>
                     <div class="col-12" id="users_list">
                         {% for user in users %}
-                            <div class="row border-left border-right border-bottom bg-light">
+                            <div class="row border-left border-right border-bottom border-md-top-0 bg-light mb-3 mb-lg-0">
                                 <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                                     First Name:
                                 </div>
@@ -1226,7 +1226,7 @@
                                 <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
                                     {{ nzo_decrypt(user.position) }}
                                 </div>
-                                <div class="col-md-2  t-cell text-truncate border-list pt-3 pb-3">
+                                <div class="col-md-2  t-cell text-truncate pt-3 pb-3">
                                     <a href="" class="float-end update-user" data-user-id="{{ user.id }}" data-bs-toggle="modal" data-bs-target="#modal_user">
                                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                     </a>
