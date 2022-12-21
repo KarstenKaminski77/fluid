@@ -694,8 +694,8 @@ a.page-link {
     border-top: 1px solid #e2e7eb !important;
 }
 
-.border-sm-top-0 {
-    border-top: none;
+.border-md-top-0 {
+    border-top: 1px solid #e2e7eb !important;
 }
 
 .border-bottom {
@@ -2234,6 +2234,10 @@ input[type="text"]::-webkit-input-placeholder {
 
     .w-md-auto {
         width: auto !important;
+    }
+
+    .border-md-top-0 {
+        border-top: none !important;
     }
 }
 

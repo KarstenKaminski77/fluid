@@ -306,16 +306,17 @@ class DistributorProductsController extends AbstractController
         $productsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId, $manufacturerId, $speciesId);
         $distributorProductsResults = $this->pageManager->paginate($productsRepo[0], $request, self::ITEMS_PER_PAGE);
         $response['distributorProductsPagination'] = $this->getPagination(1, $distributorProductsResults, $distributorId);
+        $i = 0;
 
         foreach ($distributorProductsResults as $product)
         {
             $html .= '
-            <div class="row border-left border-right border-bottom bg-light" id="distributor_product_'. $product->getId() .'">
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+            <div class="row border-left border-right border-bottom bg-light mb-3 mb-md-0" id="distributor_product_'. $product->getId() .'">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list border-md-top-0 pt-3 pb-3">
                     Name:
                 </div>
                 <div 
-                    class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                    class="col-7 col-md-3 col-lg-3 text-truncate border-list border-md-top-0 pt-3 pb-3"
                     data-bs-trigger="hover"
                     data-bs-container="body"
                     data-bs-toggle="popover"
@@ -325,43 +326,43 @@ class DistributorProductsController extends AbstractController
                 >
                     '. $product->getName() .'
                 </div>
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Active Ingredient:
                 </div>
-                <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-2 col-lg-2 text-truncate border-list pt-3 pb-3">
                     '. $product->getActiveIngredient() .'
                 </div>
-                <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-1 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Dosage:
                 </div>
-                <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-1 col-lg-1 text-truncate border-list pt-3 pb-3">
                     '. $product->getDosage() .'
                 </div>
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Size:
                 </div>
-                <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-1 col-lg-1 text-truncate border-list pt-3 pb-3">
                     '. $product->getSize() .'
                 </div>
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Unit:
                 </div>
-                <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-1 col-lg-1 text-truncate border-list pt-3 pb-3">
                     '. $product->getUnit() .'
                 </div>
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Stock:
                 </div>
-                <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-1 col-lg-1 text-truncate border-list pt-3 pb-3">
                     '. $product->getdistributorProducts()[0]->getStockCount() .'
                 </div>
-                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                <div class="col-5 col-md-2 d-md-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
                     Price:
                 </div>
-                <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                <div class="col-7 col-md-1 col-lg-1 text-truncate border-list pt-3 pb-3">
                     '. $product->getdistributorProducts()[0]->getUnitPrice() .'
                 </div>
-                <div class="col-md-2  t-cell text-truncate border-list pt-3 pb-3">
+                <div class="col-md-2  t-cell text-truncate pt-3 pb-3">
                     <a
                         href=""
                         class="float-end update-product"
