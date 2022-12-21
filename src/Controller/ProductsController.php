@@ -290,7 +290,7 @@ class ProductsController extends AbstractController
 
                     $reviewCount = '
                     <span 
-                        class="position-absolute text-opacity-25 start-100 translate-middle badge border rounded-circle bg-primary"
+                        class="position-absolute text-opacity-25 start-25 start-sm-100 translate-middle badge border rounded-circle bg-primary"
                         style="z-index: 999"
                     >
                         '. count($countReviews) .'
@@ -301,7 +301,7 @@ class ProductsController extends AbstractController
 
                     $noteCount = '
                     <span 
-                        class="position-absolute text-opacity-25 start-100 translate-middle badge border rounded-circle bg-primary"
+                        class="position-absolute text-opacity-25 start-25 start-sm-100 translate-middle badge border rounded-circle bg-primary"
                         style="z-index: 999"
                     >
                         '. $countNotes .'
