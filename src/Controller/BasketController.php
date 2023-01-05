@@ -254,7 +254,7 @@ class BasketController extends AbstractController
         $response = [
 
             'message' => '<b><i class="fas fa-check-circle"></i> All items removed from basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket-id' => $basketId,
+            'basketId' => $basketId,
         ];
 
         return new JsonResponse($response);
@@ -340,7 +340,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/save-all-items', name: 'save_all_items')]
     public function saveAllItemAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
 

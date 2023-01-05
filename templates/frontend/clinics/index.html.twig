@@ -915,7 +915,7 @@
                     {
                         if(e.status === 500)
                         {
-                            window.location.href = '{{ path('clinic_error_500') }}';
+                            //window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response)
@@ -1086,7 +1086,7 @@
             {
                 e.preventDefault();
 
-                let basketId = $(this).data('basket-id');
+                let basketId = $(this).attr('data-basket-id');
 
                 if(basketId > 0)
                 {
@@ -1107,7 +1107,7 @@
                             $('#inventory_container').hide();
 
                             let basketId = response.basketId;
-
+                            
                             getBasket(basketId, true, '');
                         }
                     });
