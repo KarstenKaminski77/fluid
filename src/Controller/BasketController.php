@@ -1004,7 +1004,7 @@ class BasketController extends AbstractController
                     </div>
                 
                     <!-- Right Column -->
-                    <div class="col-12 col-md-10 col-100 border-left" id="basket_items">
+                    <div class="col-12 col-md-10 col-100 border-left position-relative" id="basket_items">
                         <!-- Basket Actions Upper Row -->
                         <div class="row" id="basket_action_row_1">
                             <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
@@ -1373,7 +1373,7 @@ class BasketController extends AbstractController
             }
 
             $response .= '
-            <div class="row" style="background: #f4f8fe" id="saved_items">
+            <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0" id="saved_items">
                 <div class="col-12 border-bottom border-top pt-3 pb-3 text-center text-sm-start">
                     <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
                 </div>
@@ -1605,7 +1605,7 @@ class BasketController extends AbstractController
             </div>
         </div>
         <!-- Right Column -->
-        <div class="col-12 col-md-10 col-100 border-left" id="basket_items">
+        <div class="col-12 col-md-10 col-100 border-left position-relative" id="basket_items">
             <!-- Basket Name -->
             <div class="row">
                 <div class="col-12 bg-primary bg-gradient text-center pt-3 pb-3">
@@ -1825,20 +1825,20 @@ class BasketController extends AbstractController
             }
 
             $response .= '
-                    <div class="row" style="background: #f4f8fe">
-                        <div class="col-12 border-bottom border-top pt-3 pb-3">
-                            <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+            <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0">
+                <div class="col-12 border-bottom border-top pt-3 pb-3">
+                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                </div>
+            </div>
+            <div class="row" id="saved_items_container">
+                <div class="col-12 border-bottom border-top pt-3 pb-3 position-relative">
+                    <div class="row">
+                        <div class="col-12">
+                            <a href="" class="btn btn-primary btn-sm w-sm-100 float-end restore-all" id="restore_all" data-basket-id="'. $basketId .'">
+                                Move All To Basket
+                            </a>
                         </div>
-                    </div>
-                    <div class="row" id="saved_items_container">
-                        <div class="col-12 border-bottom border-top pt-3 pb-3 position-relative">
-                            <div class="row">
-                                <div class="col-12">
-                                    <a href="" class="btn btn-primary btn-sm w-sm-100 float-end restore-all" id="restore_all" data-basket-id="'. $basketId .'">
-                                        Move All To Basket
-                                    </a>
-                                </div>
-                            </div>    
+                    </div>    
                 ';
 
             foreach($savedItems as $item){
