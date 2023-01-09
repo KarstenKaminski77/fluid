@@ -903,16 +903,85 @@ class AddressesController extends AbstractController
     #[Route('/retail/get-retail-addresses', name: 'get_retail_addresses')]
     public function getRetailAddressesAction(Request $request): Response
     {
+        $pageId = $request->request->get('page_id') ?? 1;
         $retailUserId = $this->getUser()->getId();
         $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->getPagination($pageId, $results);
 
         $html = $this->getAddresses($results, 'retail');
 
         $response = [
             'html' => $html,
             'pagination' => $pagination
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/address/default', name: 'retail_address_default')]
+    public function retailDefaultAddress(Request $request): Response
+    {
+        $addressId = $request->request->get('id');
+        $pageId = $request->request->get('page-id') ?? 1;
+        $retailId = $this->getUser()->getId();
+        $this->em->getRepository(Addresses::class)->getRetailDefaultAddresses($retailId, $addressId);
+        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailId);
+        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($pageId, $results);
+        $addresses = $this->forward('App\Controller\AddressesController::getRetailAddressesAction', [
+            'page_id'  => $pageId
+        ])->getContent();
+        $addresses = json_decode($addresses, true);
+        $flash = '<b><i class="fas fa-check-circle"></i> Default address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        $response = [
+            'addresses' => $addresses['html'],
+            'flash' => $flash,
+            'pagination' => $pagination,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/retail/address/default-billing', name: 'clinic_billing_address_default')]
+    public function retailDefaultBillingAddress(Request $request): Response
+    {
+        $addressId = $request->request->get('id');
+        $defaultAddress = $this->em->getRepository(Addresses::class)->find($addressId);
+        $retailId = $this->getUser()->getId();
+
+        $addresses = $this->em->getRepository(Addresses::class)->findBy([
+            'retail' => $retailId,
+            'isActive' => 1
+        ]);
+
+        // Clear default
+        foreach($addresses as $address){
+
+            $address->setIsDefaultBilling(0);
+            $this->em->persist($address);
+        }
+
+        $this->em->flush();
+
+        $defaultAddress->setIsDefaultBilling(1);
+
+        $this->em->persist($defaultAddress);
+        $this->em->flush();
+
+        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailId);
+        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+
+        $addresses = $this->getAddresses($results, 'retail');
+
+        $flash = '<b><i class="fas fa-check-circle"></i> Default address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        $response = [
+            'addresses' => $addresses,
+            'flash' => $flash,
+            'pagination' => $pagination,
         ];
 
         return new JsonResponse($response);

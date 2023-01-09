@@ -1603,6 +1603,64 @@
 
                 $('#delete_address').attr('data-address-id', $(this).data('address-id'));
             });
+            $(document).on('click', '.address_default', function (e)
+            {
+                e.preventDefault();
+
+                let addressId = $(this).data('address-id');
+                let pageId = $('#page_no').val();
+
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('retail_address_default') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        id: addressId,
+                        'page-id': pageId
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true);
+                    },
+                    success: function (response)
+                    {
+                        getFlash(response.flash);
+                        $('#retail_container').empty().append(response.addresses);
+                        $('#paginator').empty().append(response.pagination).show();
+                        isLoading(false);
+                    }
+                });
+            });
+            $(document).on('click', '.address_default_billing', function (e)
+            {
+                e.preventDefault();
+
+                let addressId = $(this).data('billing-address-id');
+                let pageId = $('#page_no').val();
+
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('clinic_billing_address_default') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        id: addressId,
+                        'page-id': pageId,
+                    },
+                    beforeSend: function ()
+                    {
+                        isLoading(true);
+                    },
+                    success: function (response)
+                    {
+                        getFlash(response.flash);
+                        $('#retail_container').empty().append(response.addresses);
+                        $('#paginator').empty().append(response.pagination).show();
+                        isLoading(false);
+                    }
+                });
+            });
             {# End Addresses #}
 
             {# Clinic #}
