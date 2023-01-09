@@ -7,6 +7,13 @@
 
 // any CSS you import will output into a single css file (app.css in this case)
 import './styles/app.css';
+const $ = require('jquery');
+global.$ = global.jQuery = $;
+import 'slick-carousel';
+import 'bootstrap';
+import 'intl-tel-input';
+import 'jquery-scrollTo';
+import '@popperjs/core';
 
 // start the Stimulus application
 import './bootstrap';
