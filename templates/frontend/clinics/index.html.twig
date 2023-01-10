@@ -869,7 +869,7 @@
                         {
                             if(e.status === 500)
                             {
-                               window.location.href = '{{ path('clinic_error_500') }}';
+                               //window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
                         success: function (response)
@@ -1239,6 +1239,7 @@
                 e.preventDefault();
 
                 let itemId = $(this).data('item-id');
+                let productRow = $(this).closest('.saved-item-row');
 
                 if(itemId > 0)
                 {
@@ -1262,12 +1263,9 @@
                         },
                         success: function (response)
                         {
-
-                            let basketId = response.basketId;
-                            let flash = response.message;
-
-                            getBasket(basketId, true, '');
-                            getFlash(flash);
+                            productRow.remove();
+                            getFlash(response.message);
+                            isLoading(false);
                         }
                     });
                 }
@@ -1310,10 +1308,13 @@
                 if($('#saved_items_container:visible').length)
                 {
                     $('#saved_items_container').hide(700);
+                    $('#saved_items').css({'position':'absolute', 'right': 0, 'left':12});
                 }
                 else
                 {
                     $('#saved_items_container').show(700);
+                    $('#saved_items').css({'position':'relative', 'right': '', 'left':''});
+                    $(this).closest('.col-12').removeClass('border-bottom');
                 }
             });
             $(document).on('submit', 'form[name="form_save_basket"]', function (e)

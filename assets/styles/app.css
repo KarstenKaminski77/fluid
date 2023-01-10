@@ -405,6 +405,7 @@ label {
 
 .basket-img {
     max-height: 70px;
+    height: unset !important;
 }
 
 .prd-img {

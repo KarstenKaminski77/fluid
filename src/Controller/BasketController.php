@@ -50,6 +50,7 @@ class BasketController extends AbstractController
             'distributor' => $distributorId
         ]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $isDefault = $basket->getIsDefault() ?? 0;
 
         if($basket == null){
 
@@ -61,6 +62,7 @@ class BasketController extends AbstractController
         $basket->setClinic($clinic);
         $basket->setDistributor($distributor);
         $basket->setStatus($request->get('status'));
+        $basket->setIsDefault($isDefault);
         $basket->setSavedBy($this->encryptor->encrypt($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName()));
 
         $this->em->persist($basket);
@@ -1354,9 +1356,7 @@ class BasketController extends AbstractController
                         '. $checkoutError .'
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>';
+            </div>';
         }
 
         $response .= '
@@ -1426,7 +1426,7 @@ class BasketController extends AbstractController
                 }
 
                 $response .= '
-                <div class="row">
+                <div class="row saved-item-row">
                     <!-- Thumbnail -->
                     <div class="col-12 col-sm-2 text-center pt-3 pb-3">
                         <img class="img-fluid basket-img" src="/images/products/' . $image . '">

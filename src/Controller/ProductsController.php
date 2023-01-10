@@ -417,7 +417,7 @@ class ProductsController extends AbstractController
                                                     src="/images/products/'. $firstImage .'" 
                                                     alt="" 
                                                     class="img-fluid active" 
-                                                    style="max-height:140px"
+                                                    style="max-height:140px; height: unset !important;"
                                                 >
                                             </a>
                                         </div>            
