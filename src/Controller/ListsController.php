@@ -691,7 +691,7 @@ class ListsController extends AbstractController
     public function clinicsEditListAction(Request $request): Response
     {
         $data = $request->request;
-        $list = $this->em->getRepository(Lists::class)->getIndividualList($data->get('list_id'));
+        $list = $this->em->getRepository(Lists::class)->getIndividualList($data->get('list-id'));
         $col = '12';
         $listHasItems = false;
         $moveToBasket = true;

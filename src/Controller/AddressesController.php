@@ -31,7 +31,7 @@ class AddressesController extends AbstractController
         $this->encryptor = $encryptor;
     }
 
-    private function getAddresses($addresses, $module)
+    private function getAddresses($addresses, $module = 'clinic')
     {
         $request = Request::createFromGlobals();
         $path = $request->server->get('REQUEST_URI');
@@ -603,11 +603,12 @@ class AddressesController extends AbstractController
         // Billing Address = 1
         // Shipping Address = 2
 
-        $data = $request->request->get('addresses_form');
+        $data = $request->request->get('addresses-form');
+        $isRetail = $data['is-retail'] ?? 0;
         $clinic = null;
         $retailUser = null;
 
-        if($data['is-retail'])
+        if($isRetail)
         {
             $retailUserId = $this->getUser()->getId();
             $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
@@ -646,7 +647,7 @@ class AddressesController extends AbstractController
             ]);
         }
 
-        $addressId = $data['address-id'];
+        $addressId = $data['address-id'] ?? 0;
 
         if($addressId == 0 || empty($addressId)){
 
@@ -700,7 +701,7 @@ class AddressesController extends AbstractController
             $checkoutAddressId = $clinicAddress->getId();
         }
 
-        if($data['is-retail'])
+        if($isRetail)
         {
             $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
             $module = 'retail';
@@ -944,7 +945,7 @@ class AddressesController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/retail/address/default-billing', name: 'clinic_billing_address_default')]
+    #[Route('/retail/address/default-billing', name: 'retail_billing_address_default')]
     public function retailDefaultBillingAddress(Request $request): Response
     {
         $addressId = $request->request->get('id');

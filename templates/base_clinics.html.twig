@@ -30,10 +30,7 @@
 
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
-            <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/style.min.css') }}">
             <link rel="stylesheet" href="{{ asset('css/fontawesome-pro/css/all.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/intlTelInput.min.css') }}">
             <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
             <script type="text/javascript">
@@ -64,10 +61,8 @@
             <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.umd.min.js"></script>
 
             <!-- jQuery -->
-            <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
-            <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
+            {{ encore_entry_script_tags('app') }}
             <script src="{{ asset('js/jquery.session.min.js') }}"></script>
-            <script src="{{ asset('js/intlTelInput.min.js') }}"></script>
 
             <script>
 

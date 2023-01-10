@@ -10,12 +10,13 @@ import './styles/app.css';
 const $ = require('jquery');
 global.$ = global.jQuery = $;
 import 'slick-carousel';
-import 'bootstrap';
+import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
+window.bootstrap = bootstrap;
 import intlTelInput from  'intl-tel-input' ;
 import  'intl-tel-input/build/css/intlTelInput.css' ;
 window [ 'intlTelInput' ] = intlTelInput;
 import 'jquery-scrollTo';
-import '@popperjs/core';
+import 'popper.js';
 
 // start the Stimulus application
 import './bootstrap';

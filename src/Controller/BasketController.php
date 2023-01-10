@@ -2184,7 +2184,7 @@ class BasketController extends AbstractController
                 {
                     $response['html'] .= '
                     <!-- Basket Items -->
-                    <div class="row px-3">
+                    <div class="row">
                         <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
                             <p>
                             </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>

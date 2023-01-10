@@ -104,8 +104,9 @@ class ListItemsRepository extends ServiceEntityRepository
     public function findListItem($clinicId, $listId, $productId)
     {
         return $this->createQueryBuilder('li')
-            ->select('li', 'l')
+            ->select('li', 'l', 'p')
             ->join('li.list', 'l')
+            ->join('li.product', 'p')
             ->andWhere('li.list = :listId')
             ->setParameter('listId', $listId)
             ->andWhere('li.product = :productId')

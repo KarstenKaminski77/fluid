@@ -2665,8 +2665,8 @@
                     }
                 });
             }
-            function getSingleShoppingList(list_id){
-
+            function getSingleShoppingList(listId)
+            {
                 $.ajax({
                     async: "true",
                     url: "{{ path('inventory_edit_list') }}",
@@ -2675,7 +2675,7 @@
                     timeout: 600000,
                     dataType: 'json',
                     data: {
-                        list_id: list_id,
+                        'list-id': listId,
                         permissions: '{{ permissions|json_encode }}'
                     },
                     beforeSend: function () {
@@ -2687,9 +2687,9 @@
                         $('#inventory').hide();
                         $('#inventory_container').hide();
                         $('#basket_container').empty().append(response.html).show();
+                        isLoading(false);
                         getBackButton();
                         popOver();
-                        isLoading(false);
 
                         var maxWidth = Math.max.apply( null, $( '.stock-status' ).map( function () {
                             return $( this ).outerWidth( true );
@@ -2697,13 +2697,13 @@
 
                         $('.stock-status').css({'width':maxWidth+'px'});
 
-                        window.history.pushState(null, "Fluid", '/clinics/inventory/manage/list/'+ list_id);
+                        window.history.pushState(null, "Fluid", '/clinics/inventory/manage/list/'+ listId);
                     },
-                    {#complete: function(e, xhr, settings){#}
-                    {#    if(e.status === 500){#}
-                    {#        window.location.href = '{{ path('clinic_error_500') }}';#}
-                    {#    }#}
-                    {#},#}
+                    complete: function(e, xhr, settings){
+                        if(e.status === 500){
+                            window.location.href = '{{ path('clinic_error_500') }}';
+                        }
+                    },
                 });
             }
             $(document).on('click', '.view-list', function (){
@@ -2987,13 +2987,13 @@
                     }
                 });
             });
-            $(document).on('click', '.edit-list', function (e){
-
+            $(document).on('click', '.edit-list', function (e)
+            {
                 e.preventDefault();
 
-                let list_id = $(this).data('list-id');
+                let listId = $(this).data('list-id');
 
-                getSingleShoppingList(list_id);
+                getSingleShoppingList(listId);
             });
             $(document).on('change', '.shopping-list-qty', function (){
 
@@ -3169,6 +3169,13 @@
                     }
                 });
             });
+            $(document).on('click', '.list-item', function (e)
+            {
+                let productId = $(this).attr('data-product-id');
+                let listId = $(this).attr('data-list-id');
+
+                getProductDistributors(productId, listId);
+            })
             {# End Order Lists #}
 
             {# Tracking #}
@@ -6595,6 +6602,37 @@
                         $('#product_name').empty();
                         $('#product_name').append(name + response.dosage + response.unit + response.size);
                         $('#inventory_item').slideDown(700);
+                    }
+                });
+
+                $("#search_inventory_field").val(name);
+                $("#suggestion_field").hide();
+            }
+        }
+
+        function getProductDistributors(productId, listId)
+        {
+            if (productId > 0)
+            {
+                $.ajax({
+                    async: "true",
+                    url: "{{ path('inventory_get_list_modal') }}",
+                    type: 'POST',
+                    cache: false,
+                    timeout: 600000,
+                    dataType: 'json',
+                    data: {
+                        'product-id': productId,
+                        'list-id': listId
+
+                    },
+                    success: function (response)
+                    {
+                        $('#modal_list_distributors').remove();
+                        $('#basket_container').append(response);
+                        $('#modal_list_distributors').modal('toggle');
+                        //$('#save_list_distributor').attr('data-favourite','false');
+                        $('body').css('overflow', '');
                     }
                 });
 
