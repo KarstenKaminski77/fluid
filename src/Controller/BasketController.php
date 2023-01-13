@@ -2042,15 +2042,30 @@ class BasketController extends AbstractController
             <div class="col-12 half-border" id="half_border_row">
                 <div class="row" id="basket_action_row_1">
                     <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
-                        <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">
+                        <a '. $href .' class="'. $textDisabled .'" 
+                            id="print_basket" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickPrintBasket"
+                        >
                             <i class="fa-regular fa-print me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Print</span>
                         </a>
-                        <a '. $href .' class="clear-basket '. $textDisabled .'" data-basket-id="'. $basketId .'">
+                        <a 
+                            '. $href .' 
+                            class="clear-basket 
+                            '. $textDisabled .'" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickClearBasket"
+                        >
                             <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
                         </a>
-                        <a href="#" id="return_to_search" data-basket-id="'. $basketId .'">
+                        <a 
+                            href="#" 
+                            id="return_to_search" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickBackToSearch"
+                        >
                             <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
                         </a>
@@ -2114,6 +2129,7 @@ class BasketController extends AbstractController
                                                             class="form-control form-control-sm basket-qty" 
                                                             value="'. $basketItem->getQty() .'"
                                                             data-basket-item-id="'. $basketItem->getId() .'"
+                                                            data-action="change->retail-basket#onChangeQty"
                                                         >
                                                         <div class="hidden_msg" id="stock_count_error_6"></div>
                                                     </div>
@@ -2144,6 +2160,7 @@ class BasketController extends AbstractController
                                                         href="#" 
                                                         class="remove-item text-white" 
                                                         data-item-id="'. $basketItem->getId() .'"
+                                                        data-action="retail-basket#onClickRemoveItem"
                                                     >Remove</a>
                                                 </span>
                                             </div>
@@ -2172,7 +2189,13 @@ class BasketController extends AbstractController
                             </div>
                             <div class="row">
                                 <div class="col-12 pt-4 text-center ps-2">
-                                    <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
+                                    <a 
+                                        href="" 
+                                        class="btn btn-primary w-100 " 
+                                        id="btn_checkout" 
+                                        data-basket-id="'. $basketId .'"
+                                        data-action="click->retail-checkout#onClickProceedToCheckout"
+                                    >
                                         PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
                                     </a>
                                 </div>

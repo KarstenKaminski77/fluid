@@ -144,17 +144,35 @@ class AddressesController extends AbstractController
                     <div class="col-12 col-xl-3 text-center text-sm-start border-right col-cell border-right border-bottom">
                         <div class="row">
                             <div class="col-12 col-xl-12 t-cell pt-3 pb-3 border-left-sm-users">
-                                <a href="" class="float-end address_update" data-address-id="' . $address->getId() . '" data-bs-toggle="modal" data-bs-target="#modal_address">
+                                <a 
+                                    href="" 
+                                    class="float-end address_update" 
+                                    data-address-id="' . $address->getId() . '" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modal_address"
+                                    data-action="click->retail#getAddressEditModal"
+                                >
                                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                 </a>
-                                <a href="" class="delete-icon float-none float-sm-end open-delete-address-modal" data-bs-toggle="modal" data-address-id="' . $address->getId() . '" data-bs-target="#modal_address_delete">
+                                <a 
+                                    href="" 
+                                    class="delete-icon float-none float-sm-end open-delete-address-modal" 
+                                    data-bs-toggle="modal" data-address-id="' . $address->getId() . '" 
+                                    data-bs-target="#modal_address_delete"
+                                    data-action="click->retail#getAddressDeleteModal"
+                                >
                                     <i class="fa-solid fa-trash-can"></i>
                                 </a>';
 
                     if($type == 'Billing')
                     {
                         $response .= '
-                        <a href="#" class="address_default_billing float-start float-sm-none" data-billing-address-id="' . $address->getId() . '">
+                        <a 
+                            href="#" 
+                            class="address_default_billing float-start float-sm-none" 
+                            data-billing-address-id="' . $address->getId() . '"
+                            data-action="click->retail#defaultBillingAddress"
+                        >
                             <i class="fa-solid fa-star float-end ' . $classBilling . '"></i>
                         </a>';
 
@@ -163,7 +181,11 @@ class AddressesController extends AbstractController
                     if($type == 'Shipping')
                     {
                         $response .= '
-                        <a href="#" class="address_default float-start float-sm-none" data-address-id="' . $address->getId() . '">
+                        <a 
+                            href="#" class="address_default float-start float-sm-none" 
+                            data-address-id="' . $address->getId() . '"
+                            data-action="click->retail#defaultShippingAddress"
+                        >
                             <i class="fa-solid fa-star float-end ' . $class . '"></i>
                         </a>';
                     }
@@ -182,7 +204,7 @@ class AddressesController extends AbstractController
                 <div class="modal fade" id="modal_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-xl">
                         <div class="modal-content">
-                            <form name="form_addresses" id="form_addresses" method="post">
+                            <form name="form_addresses" id="form_addresses" method="post" data-action="submit->retail#onAddressSubmit">
                                 ' . $this->getAddressModal($module)->getContent() . '
                             </form>
                         </div>
@@ -207,7 +229,11 @@ class AddressesController extends AbstractController
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
-                                <button type="button" class="btn btn-danger btn-sm" id="delete_address">DELETE</button>
+                                <button 
+                                    type="button" 
+                                    class="btn btn-danger btn-sm" id="delete_address"
+                                    data-action="click->retail#deleteAddress"
+                                >DELETE</button>
                             </div>
                         </div>
                     </div>
@@ -323,7 +349,7 @@ class AddressesController extends AbstractController
                     <input type="text" class="form-control" value="'. $deliveryType .'" readonly>
                     <input 
                         type="hidden" 
-                        name="addresses_form[type]"
+                        name="addresses-form[type]"
                         id="address_type"
                         class="form-control"
                         value="'. $type .'">
@@ -337,7 +363,7 @@ class AddressesController extends AbstractController
                     <label class="info">Clinic Name</label>
                     <input
                         type="text"
-                        name="addresses_form[clinic-name]"
+                        name="addresses-form[clinic-name]"
                         id="address_clinic_name"
                         class="form-control"
                         value=""
@@ -356,22 +382,23 @@ class AddressesController extends AbstractController
                         id="address_mobile" 
                         class="form-control" 
                         value=""
+                        data-action="keyup->retail-checkout#onKeyUpMobileNo"
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[telephone]"
+                        name="addresses-form[telephone]"
                         id="address_telephone"
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[iso-code]"
+                        name="addresses-form[iso-code]"
                         id="address_iso_code"
                         value=""
                     >
                     <input
                         type="hidden"
-                        name="addresses_form[intl-code]"
+                        name="addresses-form[intl-code]"
                         id="address_intl_code"
                         value=""
                     >
@@ -387,10 +414,10 @@ class AddressesController extends AbstractController
                     </label>
                     <span role="button" class="text-primary float-end d-sm-block" id="btn_map_checkout_'. strtolower($deliveryType) .'">
                         <img src="/images/google-maps.png" class="google-map-icon">
-                        Find on Map
+                        Find on Mapxxxxx
                     </span>
                     <textarea
-                        name="addresses_form[address]"
+                        name="addresses-form[address]"
                         id="address_line_1"
                         class="form-control"
                         rows="5"
@@ -499,7 +526,12 @@ class AddressesController extends AbstractController
                     <label class="info">
                         Address
                     </label>
-                    <span role="button" class="text-primary float-end d-sm-block" id="btn_map">
+                    <span 
+                        role="button" 
+                        class="text-primary float-end d-sm-block" 
+                        id="btn_map"
+                        data-action="click->retail#btnMap"
+                    >
                         <img src="/images/google-maps.png" class="google-map-icon">
                         Find on Map
                     </span>
@@ -727,7 +759,7 @@ class AddressesController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/update-retail-address', name: 'update_retail_address')]
+    #[Route('/retail/update-retail-address', name: 'update_retail_address')]
     public function updateRetailAddressAction(Request $request): Response
     {
         // Billing Address = 1

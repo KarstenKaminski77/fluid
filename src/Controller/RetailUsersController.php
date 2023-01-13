@@ -246,6 +246,7 @@ class RetailUsersController extends AbstractController
                                 data-clinic-id="'. $clinic->getId() .'"
                                 data-clinic-logo="'. $logo .'"
                                 data-clinic-name="'. $this->encryptor->decrypt($clinic->getClinicName()) .'"
+                                data-action="click->retail#onClickBtnConnect"
                             >
                                 CONNECT
                             </button>
@@ -538,7 +539,13 @@ class RetailUsersController extends AbstractController
         if($retailUser != null)
         {
             $response = '
-            <form name="retail_form" id="retail_form" method="post" enctype="multipart/form-data">
+            <form 
+                name="retail-form" 
+                id="retail_form" 
+                method="post" 
+                enctype="multipart/form-data"
+                data-action="submit->retail#onPersonalInfoSubmit"
+            >
                 <input type="hidden" name="retail-user-id" id="retail_user_id" value="'. $retailUserId .'">
                 <div class="row pt-3">
                     <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
@@ -546,7 +553,7 @@ class RetailUsersController extends AbstractController
                     </div>
                 </div>
         
-                <div class="row pb-3 bg-light border-left border-right">
+                <div class="row pb-3 bg-light border-left border-right border-top pt-3">
                 
                     <!-- First Name -->
                     <div class="col-12 col-sm-6">
@@ -634,8 +641,8 @@ class RetailUsersController extends AbstractController
                     </div>
                 </div>
         
-                <div class="row">
-                    <div class="col-12">
+                <div class="row border-left border-right border-bottom">
+                    <div class="col-12 pb-3">
                         <button id="form_save" type="submit" class="btn btn-primary float-end w-100">SAVE</button>
                     </div>
                 </div>

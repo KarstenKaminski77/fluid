@@ -33,7 +33,10 @@
             <link rel="stylesheet" href="{{ asset('css/fontawesome-pro/css/all.min.css') }}">
         {% endblock %}
     </head>
-    <body>
+    <body
+        data-controller="retail retail-search retail-basket retail-checkout"
+        data-basket-id="{{ basketId }}"
+    >
         {% block header %}{% endblock %}
         {% block body %}{% endblock %}
         {% block footer %}{% endblock %}

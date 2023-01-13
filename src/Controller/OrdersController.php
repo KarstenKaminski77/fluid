@@ -335,7 +335,12 @@ class OrdersController extends AbstractController
         </span>';
 
         $response['body'] = '
-        <form id="form_checkout_options" name="form_checkout_options" method="post">
+        <form 
+            id="form_checkout_options" 
+            name="form_checkout_options" 
+            method="post"
+            data-action="submit->retail-checkout#onSubmitCheckoutOptions"
+        >
             <input type="hidden" name="order-id" value="'. $order->getId() .'">
             <div class="row mt-4">
                 <div class="col-12">
@@ -424,6 +429,7 @@ class OrdersController extends AbstractController
                                 data-bs-toggle="modal"
                                 data-bs-target="#modal_shipping_address"
                                 id="link_shipping_address_modal"
+                                data-action="click->retail-checkout#onClickModalShippingAddress"
                             >
                                 Change Address
                             </a>
@@ -459,6 +465,7 @@ class OrdersController extends AbstractController
                                 href="" class="text-truncate"
                                 data-bs-toggle="modal" data-bs-target="#modal_billing_address"
                                 id="link_billing_address_modal"
+                                data-action="click->retail-checkout#onClickModalBillingAddress"
                             >
                                 Change Address
                             </a>
@@ -509,7 +516,12 @@ class OrdersController extends AbstractController
         <div class="modal fade" id="modal_shipping_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
-                    <form name="form_addresses_shipping_checkout" id="form_addresses_shipping_checkout" method="post">
+                    <form 
+                        name="form_addresses_shipping_checkout" 
+                        id="form_addresses_shipping_checkout" 
+                        method="post"
+                        data-action="submit->retail-checkout#onSubmitShippingAddress"
+                    >
                         <input type="hidden" value="'. $order->getId() .'" name="checkout">
                         <div id="shipping_address_modal"></div>
                     </form>
