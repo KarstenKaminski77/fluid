@@ -417,7 +417,7 @@ class ProductsController extends AbstractController
                                                     src="/images/products/'. $firstImage .'" 
                                                     alt="" 
                                                     class="img-fluid active" 
-                                                    style="max-height:140px"
+                                                    style="max-height:140px; height: unset !important;"
                                                 >
                                             </a>
                                         </div>            
@@ -965,10 +965,10 @@ class ProductsController extends AbstractController
                 $size = ' | '. $product->getSize();
             }
 
-            $select .= "
-            <li onClick=\"selectProduct('$id', '$name','$listId');\">
-                $name$dosage$size
-            </li>";
+            $select .= '
+            <li data-product-id="'. $id .'" data-list-id="'. $listId .'" data-retail="false" class="list-item">
+                '. $name . $dosage . $size .'
+            </li>';
         }
 
         $select .= '</ul>';
@@ -1980,7 +1980,7 @@ class ProductsController extends AbstractController
             if($listItem != null)
             {
                 $sku = $listItem[0]->getDistributorProduct()->getSku() ?? '';
-                $costPrice = $listItem[0]->getUnitPrice() ?? '';
+                $costPrice = $listItem[0]->getProduct()->getUnitPrice() ?? '';
             }
 
             $response['distributors'] = $select;

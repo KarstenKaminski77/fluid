@@ -16,6 +16,7 @@ use App\Entity\Products;
 use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -691,7 +692,7 @@ class ListsController extends AbstractController
     public function clinicsEditListAction(Request $request): Response
     {
         $data = $request->request;
-        $list = $this->em->getRepository(Lists::class)->getIndividualList($data->get('list_id'));
+        $list = $this->em->getRepository(Lists::class)->getIndividualList($data->get('list-id'));
         $col = '12';
         $listHasItems = false;
         $moveToBasket = true;
@@ -1106,11 +1107,22 @@ class ListsController extends AbstractController
                                 </div>
                                 <div class="col-12 col-sm-6 bg-white border-left px-3 pb-3">
                                     <div class="input-group  ">
-                                        <button style="min-width: 2.5rem" class="btn btn-decrement btn-outline-secondary btn-minus" type="button" disabled>
+                                        <button 
+                                            style="min-width: 2.5rem" 
+                                            class="btn btn-decrement btn-outline-secondary btn-minus" 
+                                            type="button" 
+                                            data-action="click->retail-search#onMinusClick"
+                                            disabled
+                                        >
                                             <strong>−</strong>
                                         </button>
                                         <input type="text" inputmode="decimal" style="text-align: center" class="form-control prd-qty px-0" value="1">
-                                        <button style="min-width: 2.5rem" class="btn btn-increment btn-outline-secondary btn-plus" type="button">
+                                        <button 
+                                            style="min-width: 2.5rem" 
+                                            class="btn btn-increment btn-outline-secondary btn-plus" 
+                                            type="button"
+                                            data-action="click->retail-search#onPlusClick"
+                                        >
                                             <strong>+</strong>
                                         </button>
                                     </div>
@@ -1123,6 +1135,7 @@ class ListsController extends AbstractController
                                         data-list-item-id="'. $result->getId() .'"
                                         data-price="'. $result->getUnitPrice() .'"
                                         data-qty="1"
+                                        data-action="click->retail-basket#onAddToClick"
                                     >
                                         <i class="fa-light fa-basket-shopping me-2"></i>
                                         ADD
@@ -1183,7 +1196,13 @@ class ListsController extends AbstractController
 
             $html .= '
             <li class="page-item '. $disabled .'">
-                <a class="page-link" aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage - 1 .'" href="'. $previousPage .'">
+                <a 
+                    class="page-link" 
+                    aria-disabled="'. $dataDisabled .'" 
+                    data-page-id="'. $currentPage - 1 .'" 
+                    href="'. $previousPage .'"
+                    data-action="click->retail-search#onPaginationClick"
+                >
                     <span aria-hidden="true">&laquo;</span> Previous
                 </a>
             </li>';
@@ -1199,7 +1218,12 @@ class ListsController extends AbstractController
 
                 $html .= '
                     <li class="page-item '. $active .'">
-                        <a class="page-link" data-page-id="'. $i .'" href="'. $url . $i .'">'. $i .'</a>
+                        <a 
+                            class="page-link" 
+                            data-page-id="'. $i .'" 
+                            href="'. $url . $i .'"
+                            data-action="click->retail-search#onPaginationClick"
+                        >'. $i .'</a>
                     </li>';
             }
 
@@ -1214,7 +1238,13 @@ class ListsController extends AbstractController
 
             $html .= '
                 <li class="page-item '. $disabled .'">
-                    <a class="page-link" aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
+                    <a 
+                        class="page-link" 
+                        aria-disabled="'. $dataDisabled .'" 
+                        data-page-id="'. $currentPage + 1 .'" 
+                        href="'. $url . $currentPage + 1 .'"
+                        data-action="click->retail-search#onPaginationClick"
+                    >
                         Next <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>';

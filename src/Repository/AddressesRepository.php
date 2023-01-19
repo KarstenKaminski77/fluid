@@ -14,9 +14,12 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class AddressesRepository extends ServiceEntityRepository
 {
+    private $conn;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Addresses::class);
+        $this->conn = $this->_em->getConnection();
     }
 
     /**
@@ -49,15 +52,28 @@ class AddressesRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
-    /*
-    public function findOneBySomeField($value): ?Addresses
+    public function getRetailDefaultAddresses($retailId, $addressId)
     {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        $sql = "
+            UPDATE 
+                 addresses
+            SET
+                is_default = 0
+            WHERE 
+                  retail_id = $retailId
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->executeQuery();
+
+        $sql = "
+            UPDATE 
+                 addresses
+            SET
+                is_default = 1
+            WHERE 
+                  id = $addressId
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->executeQuery();
     }
-    */
 }

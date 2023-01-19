@@ -535,7 +535,7 @@ class ClinicsController extends AbstractController
             <!-- Tabs -->
             <div class="col-12 nav nav-tabs">
                 <div class="nav-item" role="button" id="company_information_tab">
-                    <span class="nav-link text-primary active bg-primary">
+                    <span class="nav-link text-primary active">
                         <i class="fa-regular fa-circle-info fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Company Information</span>
                     </span>

@@ -28,16 +28,10 @@
             document.body.appendChild(el);
         </script>
 
+        <link rel="stylesheet" href="{{ asset('css/fontawesome-pro/css/all.min.css') }}">
+
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
-            <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/bootstrap-icons/font/bootstrap-icons.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/style.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/fontawesome-pro/css/all.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/intlTelInput.min.css') }}">
-            <link rel="stylesheet" href="{{ asset('css/slick.min.css') }}"/>
-            <link rel="stylesheet" href="{{ asset('css/slick-theme.min.css') }}"/>
-            <link rel="stylesheet" href="{{ asset('css/cookies.min.css') }}">
         {% endblock %}
     </head>
     <body class="frontend-body-pt d-flex flex-column h-100">
@@ -52,13 +46,9 @@
             <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.umd.min.js"></script>
 
             <!-- jQuery -->
-            <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
-            <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-            <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-            <script src="{{ asset('js/slick.min.js') }}"></script>
+            {{ encore_entry_script_tags('app') }}
             <script src="{{ asset('js/jquery.scrollTo.min.js') }}"></script>
             <script src="{{ asset('js/jquery.ihavecookies.min.js') }}"></script>
-            <script src="{{ asset('js/intlTelInput.min.js') }}"></script>
 
             <script>
                 let options = {

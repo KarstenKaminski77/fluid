@@ -50,6 +50,7 @@ class BasketController extends AbstractController
             'distributor' => $distributorId
         ]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $isDefault = $basket->getIsDefault() ?? 0;
 
         if($basket == null){
 
@@ -61,6 +62,7 @@ class BasketController extends AbstractController
         $basket->setClinic($clinic);
         $basket->setDistributor($distributor);
         $basket->setStatus($request->get('status'));
+        $basket->setIsDefault($isDefault);
         $basket->setSavedBy($this->encryptor->encrypt($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName()));
 
         $this->em->persist($basket);
@@ -254,7 +256,7 @@ class BasketController extends AbstractController
         $response = [
 
             'message' => '<b><i class="fas fa-check-circle"></i> All items removed from basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket-id' => $basketId,
+            'basketId' => $basketId,
         ];
 
         return new JsonResponse($response);
@@ -340,7 +342,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/save-all-items', name: 'save_all_items')]
     public function saveAllItemAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
 
@@ -1004,7 +1006,7 @@ class BasketController extends AbstractController
                     </div>
                 
                     <!-- Right Column -->
-                    <div class="col-12 col-md-10 col-100 border-left" id="basket_items">
+                    <div class="col-12 col-md-10 col-100 border-left position-relative" id="basket_items">
                         <!-- Basket Actions Upper Row -->
                         <div class="row" id="basket_action_row_1">
                             <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
@@ -1354,9 +1356,7 @@ class BasketController extends AbstractController
                         '. $checkoutError .'
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>';
+            </div>';
         }
 
         $response .= '
@@ -1373,7 +1373,7 @@ class BasketController extends AbstractController
             }
 
             $response .= '
-            <div class="row" style="background: #f4f8fe" id="saved_items">
+            <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0" id="saved_items">
                 <div class="col-12 border-bottom border-top pt-3 pb-3 text-center text-sm-start">
                     <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
                 </div>
@@ -1426,7 +1426,7 @@ class BasketController extends AbstractController
                 }
 
                 $response .= '
-                <div class="row">
+                <div class="row saved-item-row">
                     <!-- Thumbnail -->
                     <div class="col-12 col-sm-2 text-center pt-3 pb-3">
                         <img class="img-fluid basket-img" src="/images/products/' . $image . '">
@@ -1605,7 +1605,7 @@ class BasketController extends AbstractController
             </div>
         </div>
         <!-- Right Column -->
-        <div class="col-12 col-md-10 col-100 border-left" id="basket_items">
+        <div class="col-12 col-md-10 col-100 border-left position-relative" id="basket_items">
             <!-- Basket Name -->
             <div class="row">
                 <div class="col-12 bg-primary bg-gradient text-center pt-3 pb-3">
@@ -1825,20 +1825,20 @@ class BasketController extends AbstractController
             }
 
             $response .= '
-                    <div class="row" style="background: #f4f8fe">
-                        <div class="col-12 border-bottom border-top pt-3 pb-3">
-                            <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+            <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0">
+                <div class="col-12 border-bottom border-top pt-3 pb-3">
+                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                </div>
+            </div>
+            <div class="row" id="saved_items_container">
+                <div class="col-12 border-bottom border-top pt-3 pb-3 position-relative">
+                    <div class="row">
+                        <div class="col-12">
+                            <a href="" class="btn btn-primary btn-sm w-sm-100 float-end restore-all" id="restore_all" data-basket-id="'. $basketId .'">
+                                Move All To Basket
+                            </a>
                         </div>
-                    </div>
-                    <div class="row" id="saved_items_container">
-                        <div class="col-12 border-bottom border-top pt-3 pb-3 position-relative">
-                            <div class="row">
-                                <div class="col-12">
-                                    <a href="" class="btn btn-primary btn-sm w-sm-100 float-end restore-all" id="restore_all" data-basket-id="'. $basketId .'">
-                                        Move All To Basket
-                                    </a>
-                                </div>
-                            </div>    
+                    </div>    
                 ';
 
             foreach($savedItems as $item){
@@ -2042,15 +2042,30 @@ class BasketController extends AbstractController
             <div class="col-12 half-border" id="half_border_row">
                 <div class="row" id="basket_action_row_1">
                     <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
-                        <a '. $href .' class="'. $textDisabled .'" id="print_basket" data-basket-id="'. $basketId .'">
+                        <a '. $href .' class="'. $textDisabled .'" 
+                            id="print_basket" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickPrintBasket"
+                        >
                             <i class="fa-regular fa-print me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Print</span>
                         </a>
-                        <a '. $href .' class="clear-basket '. $textDisabled .'" data-basket-id="'. $basketId .'">
+                        <a 
+                            '. $href .' 
+                            class="clear-basket 
+                            '. $textDisabled .'" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickClearBasket"
+                        >
                             <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
                         </a>
-                        <a href="#" id="return_to_search" data-basket-id="'. $basketId .'">
+                        <a 
+                            href="#" 
+                            id="return_to_search" 
+                            data-basket-id="'. $basketId .'"
+                            data-action="click->retail-basket#onClickBackToSearch"
+                        >
                             <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
                         </a>
@@ -2114,6 +2129,7 @@ class BasketController extends AbstractController
                                                             class="form-control form-control-sm basket-qty" 
                                                             value="'. $basketItem->getQty() .'"
                                                             data-basket-item-id="'. $basketItem->getId() .'"
+                                                            data-action="change->retail-basket#onChangeQty"
                                                         >
                                                         <div class="hidden_msg" id="stock_count_error_6"></div>
                                                     </div>
@@ -2144,6 +2160,7 @@ class BasketController extends AbstractController
                                                         href="#" 
                                                         class="remove-item text-white" 
                                                         data-item-id="'. $basketItem->getId() .'"
+                                                        data-action="retail-basket#onClickRemoveItem"
                                                     >Remove</a>
                                                 </span>
                                             </div>
@@ -2172,7 +2189,13 @@ class BasketController extends AbstractController
                             </div>
                             <div class="row">
                                 <div class="col-12 pt-4 text-center ps-2">
-                                    <a href="" class="btn btn-primary w-100 " id="btn_checkout" data-basket-id="'. $basketId .'">
+                                    <a 
+                                        href="" 
+                                        class="btn btn-primary w-100 " 
+                                        id="btn_checkout" 
+                                        data-basket-id="'. $basketId .'"
+                                        data-action="click->retail-checkout#onClickProceedToCheckout"
+                                    >
                                         PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
                                     </a>
                                 </div>
@@ -2184,7 +2207,7 @@ class BasketController extends AbstractController
                 {
                     $response['html'] .= '
                     <!-- Basket Items -->
-                    <div class="row px-3">
+                    <div class="row">
                         <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
                             <p>
                             </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>
