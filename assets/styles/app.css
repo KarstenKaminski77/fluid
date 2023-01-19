@@ -1182,6 +1182,10 @@ a.page-link {
     text-align: left;
 }
 
+.dropdown-menu[data-bs-popper] {
+    left: unset !important;
+}
+
 @keyframes dotPulseBefore {
     0% {
         box-shadow: 9984px 0 0 -5px #b3b4b2;
