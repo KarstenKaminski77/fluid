@@ -4,13 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Addresses;
 use App\Entity\Clinics;
-use App\Entity\ClinicUsers;
 use App\Entity\Orders;
-use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
-use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -414,7 +411,7 @@ class AddressesController extends AbstractController
                     </label>
                     <span role="button" class="text-primary float-end d-sm-block" id="btn_map_checkout_'. strtolower($deliveryType) .'">
                         <img src="/images/google-maps.png" class="google-map-icon">
-                        Find on Mapxxxxx
+                        Find on Map
                     </span>
                     <textarea
                         name="addresses-form[address]"
@@ -636,48 +633,23 @@ class AddressesController extends AbstractController
         // Shipping Address = 2
 
         $data = $request->request->get('addresses-form');
-        $isRetail = $data['is-retail'] ?? 0;
-        $clinic = null;
-        $retailUser = null;
 
-        if($isRetail)
-        {
-            $retailUserId = $this->getUser()->getId();
-            $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
+        $clinicId = $this->getUser()->getClinic()->getId();
+        $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
 
-            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'isActive' => 1,
-                'type' => 1,
-                'isDefaultBilling' => 1,
-                'retail' => $retailUserId,
-            ]);
+        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'isActive' => 1,
+            'type' => 1,
+            'isDefaultBilling' => 1,
+            'clinic' => $clinicId,
+        ]);
 
-            $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'isActive' => 1,
-                'type' => 2,
-                'isDefault' => 1,
-                'retail' => $retailUserId,
-            ]);
-        }
-        else
-        {
-            $clinicId = $this->getUser()->getClinic()->getId();
-            $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
-
-            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'isActive' => 1,
-                'type' => 1,
-                'isDefaultBilling' => 1,
-                'clinic' => $clinicId,
-            ]);
-
-            $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'isActive' => 1,
-                'type' => 2,
-                'isDefault' => 1,
-                'clinic' => $clinicId,
-            ]);
-        }
+        $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'isActive' => 1,
+            'type' => 2,
+            'isDefault' => 1,
+            'clinic' => $clinicId,
+        ]);
 
         $addressId = $data['address-id'] ?? 0;
 
@@ -693,7 +665,6 @@ class AddressesController extends AbstractController
         }
 
         $clinicAddress->setClinic($clinic);
-        $clinicAddress->setRetail($retailUser);
         $clinicAddress->setType($data['type']);
         $clinicAddress->setClinicName($this->encryptor->encrypt($data['clinic-name']));
         $clinicAddress->setTelephone($this->encryptor->encrypt($data['telephone']));
@@ -733,16 +704,9 @@ class AddressesController extends AbstractController
             $checkoutAddressId = $clinicAddress->getId();
         }
 
-        if($isRetail)
-        {
-            $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
-            $module = 'retail';
-        }
-        else
-        {
-            $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinicId);
-            $module = 'clinic';
-        }
+        $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinicId);
+        $module = 'clinic';
+
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
         $pagination = $this->getPagination($request->request->get('page_id'), $results);
 
@@ -753,82 +717,6 @@ class AddressesController extends AbstractController
             'addresses' => $addresses,
             'checkout_address' => $checkoutAddress,
             'checkout_address_id' => $checkoutAddressId,
-            'pagination' => $pagination,
-        ];
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/update-retail-address', name: 'update_retail_address')]
-    public function updateRetailAddressAction(Request $request): Response
-    {
-        // Billing Address = 1
-        // Shipping Address = 2
-
-        $data = $request->request->get('addresses-form');
-        $retailUserId = $this->getUser()->getId();
-        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
-
-        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'isActive' => 1,
-            'type' => 1,
-            'isDefaultBilling' => 1,
-            'retail' => $retailUserId,
-        ]);
-
-        $defaultShippingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-            'isActive' => 1,
-            'type' => 2,
-            'isDefault' => 1,
-            'retail' => $retailUserId,
-        ]);
-
-        $addressId = $data['address-id'];
-
-        if($data['address-id'] == 0 || empty($data['address-id'])){
-
-            $retailAddress = new Addresses();
-            $flash = '<b><i class="fas fa-check-circle"></i> Address successfully created.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
-            $retailAddress = $this->em->getRepository(Addresses::class)->find($addressId);
-            $flash = '<b><i class="fas fa-check-circle"></i> Address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-        }
-
-        $retailAddress->setClinic(null);
-        $retailAddress->setRetail($retailUser);
-        $retailAddress->setType($data['type']);
-        $retailAddress->setClinicName($this->encryptor->encrypt($data['retail-name']));
-        $retailAddress->setTelephone($this->encryptor->encrypt($data['telephone']));
-        $retailAddress->setAddress($this->encryptor->encrypt($data['address']));
-        $retailAddress->setIsDefault(0);
-        $retailAddress->setIsActive(1);
-        $retailAddress->setIsoCode($this->encryptor->encrypt($data['iso-code']));
-        $retailAddress->setIntlCode($this->encryptor->encrypt($data['intl-code']));
-
-        if($defaultShippingAddress == null){
-
-            $retailAddress->setIsDefault(1);
-        }
-
-        if($defaultBillingAddress == null){
-
-            $retailAddress->setIsDefaultBilling(1);
-        }
-
-        $this->em->persist($retailAddress);
-        $this->em->flush();
-
-        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
-        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
-
-        $addresses = $this->getAddresses($results, 'retail');
-
-        $response = [
-            'flash' => $flash,
-            'addresses' => $addresses,
             'pagination' => $pagination,
         ];
 
@@ -931,93 +819,6 @@ class AddressesController extends AbstractController
     public function clinicFindAddress(Request $request): Response
     {
         return $this->render('frontend/clinics/map.html.twig');
-    }
-
-    #[Route('/retail/get-retail-addresses', name: 'get_retail_addresses')]
-    public function getRetailAddressesAction(Request $request): Response
-    {
-        $pageId = $request->request->get('page_id') ?? 1;
-        $retailUserId = $this->getUser()->getId();
-        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailUserId);
-        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($pageId, $results);
-
-        $html = $this->getAddresses($results, 'retail');
-
-        $response = [
-            'html' => $html,
-            'pagination' => $pagination
-        ];
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/address/default', name: 'retail_address_default')]
-    public function retailDefaultAddress(Request $request): Response
-    {
-        $addressId = $request->request->get('id');
-        $pageId = $request->request->get('page-id') ?? 1;
-        $retailId = $this->getUser()->getId();
-        $this->em->getRepository(Addresses::class)->getRetailDefaultAddresses($retailId, $addressId);
-        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailId);
-        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($pageId, $results);
-        $addresses = $this->forward('App\Controller\AddressesController::getRetailAddressesAction', [
-            'page_id'  => $pageId
-        ])->getContent();
-        $addresses = json_decode($addresses, true);
-        $flash = '<b><i class="fas fa-check-circle"></i> Default address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        $response = [
-            'addresses' => $addresses['html'],
-            'flash' => $flash,
-            'pagination' => $pagination,
-        ];
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/address/default-billing', name: 'retail_billing_address_default')]
-    public function retailDefaultBillingAddress(Request $request): Response
-    {
-        $addressId = $request->request->get('id');
-        $defaultAddress = $this->em->getRepository(Addresses::class)->find($addressId);
-        $retailId = $this->getUser()->getId();
-
-        $addresses = $this->em->getRepository(Addresses::class)->findBy([
-            'retail' => $retailId,
-            'isActive' => 1
-        ]);
-
-        // Clear default
-        foreach($addresses as $address){
-
-            $address->setIsDefaultBilling(0);
-            $this->em->persist($address);
-        }
-
-        $this->em->flush();
-
-        $defaultAddress->setIsDefaultBilling(1);
-
-        $this->em->persist($defaultAddress);
-        $this->em->flush();
-
-        $addresses = $this->em->getRepository(Addresses::class)->getRetailAddresses($retailId);
-        $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
-
-        $addresses = $this->getAddresses($results, 'retail');
-
-        $flash = '<b><i class="fas fa-check-circle"></i> Default address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        $response = [
-            'addresses' => $addresses,
-            'flash' => $flash,
-            'pagination' => $pagination,
-        ];
-
-        return new JsonResponse($response);
     }
 
     public function getPagination($pageId, $results)

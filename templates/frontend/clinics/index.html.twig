@@ -591,9 +591,9 @@
                                 },
                                 success: function (response)
                                 {
-                                    $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
                                     $('#search_result_distributors_'+ productId).empty().append(response.html);
                                     $('.from_'+ productId).empty().append(response.from);
+                                    $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
                                     popOver();
                                 }
                             });
@@ -4946,6 +4946,8 @@
                 let user_email = $('#user_email').val();
                 let user_telephone = $('#user_telephone').val();
                 let user_mobile = $('#user_mobile');
+                let isoCode = $('#user_iso_code').val();
+                let intlCode = $('#user_intl_code').val();
                 let error_user_first_name = $('#error_user_first_name');
                 let error_user_last_name = $('#error_user_last_name');
                 let error_user_email = $('#error_user_email');
@@ -5013,7 +5015,7 @@
                         data: data,
                         complete: function(e, xhr, settings){
                             if(e.status === 500){
-                                window.location.href = '{{ path('clinic_error_500') }}';
+                                //window.location.href = '{{ path('clinic_error_500') }}';
                             }
                         },
                         success: function (response) {
@@ -5120,7 +5122,7 @@
                     },
                     complete: function(e, xhr, settings){
                         if(e.status === 500){
-                            window.location.href = '{{ path('clinic_error_500') }}';
+                            //window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response) {
@@ -5556,7 +5558,10 @@
 
                 e.preventDefault();
 
-                if($('.existing-address').length == 0) {
+                let data = new FormData(this);
+                let address_id = data.get('address');
+
+                if(address_id == null) {
 
                     let is_valid = true;
                     let clinic_name = $('#address_clinic_name').val();
@@ -6277,7 +6282,7 @@
                     complete: function(e, xhr, settings){
                         if(e.status === 500)
                         {
-                           window.location.href = '{{ path('clinic_error_500') }}';
+                           //window.location.href = '{{ path('clinic_error_500') }}';
                         }
                     },
                     success: function (response)

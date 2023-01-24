@@ -1590,8 +1590,22 @@ class ProductsController extends AbstractController
             'results' => $results,
             'url' => '/clinics/manage-inventory/',
         ])->getContent();
-        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByClinicList($clinic->getId());
         $species = $this->em->getRepository(ProductsSpecies::class)->findByClinic($clinic->getId());
+        $manufacturers = [];
+
+        // Prepare manufacturers array
+        foreach($products[1] as $product)
+        {
+            $manufacturer = $this->encryptor->decrypt($product->getProduct()
+                ->getProductManufacturers()->first()->getManufacturers()->getName());
+            $manufacturerId = $product->getProduct()
+                ->getProductManufacturers()->first()->getManufacturers()->getId();
+
+            if(!in_array($manufacturer, $manufacturers))
+            {
+                $manufacturers[$manufacturerId] = $manufacturer;
+            }
+        }
 
         $response = '
         <div class="row">
@@ -1746,8 +1760,8 @@ class ProductsController extends AbstractController
                             foreach($manufacturers as $manufacturer)
                             {
                                 $response .= '
-                                <option value="'. $manufacturer->getManufacturers()->getId() .'">
-                                    '. $this->encryptor->decrypt($manufacturer->getManufacturers()->getName()) .'
+                                <option value="'. $manufacturerId .'">
+                                    '. $manufacturer .'
                                 </option>';
                             }
 

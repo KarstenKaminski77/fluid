@@ -167,7 +167,7 @@ class CommunicationMethodsController extends AbstractController
                                 <div class="modal-body">
                                     <div class="row mb-3">
                                         <div class="col-12 col-sm-6" id="col_communication_method">
-                                            <label>Method</label>xxxx
+                                            <label>Method</label>
                                             ' . $select . '
                                             <div class="hidden_msg" id="error_communication_method">
                                                 Required Field
