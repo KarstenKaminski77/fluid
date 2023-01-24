@@ -1070,6 +1070,12 @@ a.page-link {
     border-color: #e6e6e6;
 }
 
+.alert-warning {
+    color: #664d03 !important;
+    background: #fff3cd !important;
+    border-color: #ffecb5 !important;
+}
+
 .chat-send, .chat-send:hover {
     background: #fff;
 }

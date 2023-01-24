@@ -97,7 +97,7 @@ class AvailabilityTrackerController extends AbstractController
 
                     } else {
 
-                        $notification = $method->getSendTo();
+                        $notification = $this->encryptor->decrypt($method->getSendTo());
                     }
 
                     $html .= '
@@ -111,7 +111,7 @@ class AvailabilityTrackerController extends AbstractController
                             autocomplete="off"
                         >
                         <label class="btn btn-sm btn-outline-primary w-100 text-truncate" for="method_'. $i .'">
-                            '. $this->encryptor->decrypt($notification) .'
+                            '. $notification .'
                         </label>
                     </div>';
 
