@@ -19,7 +19,7 @@ class AddressesController extends AbstractController
     private $em;
     private $pageManager;
     private $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pageManager, Encryptor $encryptor)
     {
@@ -55,6 +55,7 @@ class AddressesController extends AbstractController
                     data-bs-toggle="modal" 
                     data-bs-target="#modal_address"
                     id="address_new"
+                    data-action="click->clinics--addresses#onClickAddressNew"
                 >
                     <i class="fa-regular fa-square-plus fa-fw"></i>
                     <span class="ms-1">Create New</span>
@@ -147,7 +148,7 @@ class AddressesController extends AbstractController
                                     data-address-id="' . $address->getId() . '" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modal_address"
-                                    data-action="click->retail#getAddressEditModal"
+                                    data-action="click->clinics--addresses#onClickAddressUpdate"
                                 >
                                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                 </a>
@@ -156,7 +157,7 @@ class AddressesController extends AbstractController
                                     class="delete-icon float-none float-sm-end open-delete-address-modal" 
                                     data-bs-toggle="modal" data-address-id="' . $address->getId() . '" 
                                     data-bs-target="#modal_address_delete"
-                                    data-action="click->retail#getAddressDeleteModal"
+                                    data-action="click->clinics--addresses#onClickDeleteIcon"
                                 >
                                     <i class="fa-solid fa-trash-can"></i>
                                 </a>';
@@ -168,7 +169,7 @@ class AddressesController extends AbstractController
                             href="#" 
                             class="address_default_billing float-start float-sm-none" 
                             data-billing-address-id="' . $address->getId() . '"
-                            data-action="click->retail#defaultBillingAddress"
+                            data-action="click->clinics--addresses#onClickDefaultBillingAddress"
                         >
                             <i class="fa-solid fa-star float-end ' . $classBilling . '"></i>
                         </a>';
@@ -181,7 +182,7 @@ class AddressesController extends AbstractController
                         <a 
                             href="#" class="address_default float-start float-sm-none" 
                             data-address-id="' . $address->getId() . '"
-                            data-action="click->retail#defaultShippingAddress"
+                            data-action="click->clinics--addresses#onClickDefaultShipping"
                         >
                             <i class="fa-solid fa-star float-end ' . $class . '"></i>
                         </a>';
@@ -201,7 +202,12 @@ class AddressesController extends AbstractController
                 <div class="modal fade" id="modal_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-xl">
                         <div class="modal-content">
-                            <form name="form_addresses" id="form_addresses" method="post" data-action="submit->retail#onAddressSubmit">
+                            <form 
+                                name="form_addresses" 
+                                id="form_addresses" 
+                                method="post" 
+                                data-action="submit->clinics--addresses#onSubmitAddressForm"
+                            >
                                 ' . $this->getAddressModal($module)->getContent() . '
                             </form>
                         </div>
@@ -229,7 +235,7 @@ class AddressesController extends AbstractController
                                 <button 
                                     type="button" 
                                     class="btn btn-danger btn-sm" id="delete_address"
-                                    data-action="click->retail#deleteAddress"
+                                    data-action="click->clinics--addresses#onClickDelete"
                                 >DELETE</button>
                             </div>
                         </div>
@@ -494,6 +500,7 @@ class AddressesController extends AbstractController
                         id="address_mobile" 
                         class="form-control" 
                         value=""
+                        data-action="keyup->clinics--addresses#onKeyUpMobile"
                     >
                     <input
                         type="hidden"
@@ -527,7 +534,7 @@ class AddressesController extends AbstractController
                         role="button" 
                         class="text-primary float-end d-sm-block" 
                         id="btn_map"
-                        data-action="click->retail#btnMap"
+                        data-action="click->clinics--addresses#onclickBtnMap"
                     >
                         <img src="/images/google-maps.png" class="google-map-icon">
                         Find on Map
@@ -591,7 +598,7 @@ class AddressesController extends AbstractController
         $clinic = $this->getUser()->getClinic();
         $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinic->getId());
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->getPagination($request->request->get('page-id'), $results);
         $html = $this->getAddresses($results, 'clinic');
 
         $response = [
@@ -727,11 +734,11 @@ class AddressesController extends AbstractController
     public function clinicDefaultAddress(Request $request): Response
     {
         $addressId = $request->request->get('id');
-        $clinicId = $this->get('security.token_storage')->getToken()->getUser()->getClinic()->getId();
+        $clinicId = $this->getUser()->getClinic()->getId();
         $this->em->getRepository(Clinics::class)->getClinicDefaultAddresses($clinicId, $addressId);
         $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinicId);
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->getPagination($request->request->get('page-id'), $results);
         $addresses = $this->getAddresses($results);
 
         $flash = '<b><i class="fas fa-check-circle"></i> Default address successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -800,7 +807,7 @@ class AddressesController extends AbstractController
 
         $addresses = $this->em->getRepository(Addresses::class)->getAddresses($this->getUser()->getClinic()->getId());
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->getPagination($request->request->get('page-id'), $results);
 
         $html = $this->getAddresses($results, 'retail');
 
@@ -831,7 +838,7 @@ class AddressesController extends AbstractController
 
             $pagination .= '
             <!-- Pagination -->
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col-12">';
 
             if ($lastPage > 1) {
@@ -857,7 +864,13 @@ class AddressesController extends AbstractController
 
                 $pagination .= '
                 <li class="page-item ' . $disabled . '">
-                    <a class="address-pagination" aria-disabled="' . $dataDisabled . '" data-page-id="' . $currentPage - 1 . '" href="' . $previousPage . '">
+                    <a 
+                        class="address-pagination" 
+                        aria-disabled="' . $dataDisabled . '" 
+                        data-page-id="' . $currentPage - 1 . '" 
+                        href="' . $previousPage . '"
+                        data-action="click->clinics--addresses#onClickPagination"
+                    >
                         <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                     </a>
                 </li>';
@@ -882,7 +895,12 @@ class AddressesController extends AbstractController
 
                     $pagination .= '
                     <li class="page-item ' . $active . '">
-                        <a class="address-pagination" data-page-id="' . $i . '" href="' . $url . '">' . $i . '</a>
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="' . $i . '" 
+                            href="' . $url . '"
+                            data-action="click->clinics--addresses#onClickPagination"
+                        >' . $i . '</a>
                     </li>';
                 }
 
@@ -897,7 +915,13 @@ class AddressesController extends AbstractController
 
                 $pagination .= '
                 <li class="page-item ' . $disabled . '">
-                    <a class="address-pagination" aria-disabled="' . $dataDisabled . '" data-page-id="' . $currentPage + 1 . '" href="' . $url . '">
+                    <a 
+                        class="address-pagination"  
+                        aria-disabled="' . $dataDisabled . '" 
+                        data-page-id="' . $currentPage + 1 . '" 
+                        href="' . $url . '"
+                        data-action="click->clinics--addresses#onClickPagination"
+                    >
                         <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>';

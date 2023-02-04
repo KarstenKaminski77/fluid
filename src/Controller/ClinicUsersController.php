@@ -25,7 +25,7 @@ class ClinicUsersController extends AbstractController
     private $page_manager;
     private $mailer;
     private $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 1;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $page_manager, MailerInterface $mailer, Encryptor $encryptor)
     {
@@ -69,7 +69,7 @@ class ClinicUsersController extends AbstractController
         $clinic = $this->getUser()->getClinic();
         $clinic_users = $this->em->getRepository(ClinicUsers::class)->findClinicUsers($clinic->getId());
         $results = $this->page_manager->paginate($clinic_users[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->getPagination($request->request->get('page-id'), $results);
         $user_permissions = $this->em->getRepository(UserPermissions::class)->findBy([
             'isClinic' => 1
         ]);
@@ -94,6 +94,7 @@ class ClinicUsersController extends AbstractController
                     data-bs-toggle="modal" 
                     data-bs-target="#modal_user" 
                     id="user_new"
+                    data-action="click->clinics--users#onClickNewUser"
                 >
                     <i class="fa-regular fa-square-plus fa-fw"></i> 
                     <span class="ms-1">Add Colleague</span>
@@ -162,6 +163,7 @@ class ClinicUsersController extends AbstractController
                        data-bs-toggle="modal" 
                        data-bs-target="#modal_user" 
                        data-user-id="'. $user->getId() .'"
+                       data-action="click->clinics--users#onClickEditUser"
                    >
                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
                    </a>';
@@ -169,8 +171,15 @@ class ClinicUsersController extends AbstractController
                    if($user->getIsPrimary() != 1) {
 
                        $html .= '
-                       <a href="" class="delete-icon float-start float-sm-end open-delete-user-modal" data-bs-toggle="modal"
-                          data-value="' . $user->getId() . '" data-bs-target="#modal_user_delete" data-user-id="' . $user->getId() . '">
+                       <a 
+                            href="" 
+                            class="delete-icon float-start float-sm-end open-delete-user-modal" 
+                            data-bs-toggle="modal"
+                            data-value="' . $user->getId() . '" 
+                            data-bs-target="#modal_user_delete" 
+                            data-user-id="' . $user->getId() . '"
+                            data-action="click->clinics--users#onClickDeleteModal"
+                        >
                            <i class="fa-solid fa-trash-can"></i>
                        </a>';
                    }
@@ -183,10 +192,16 @@ class ClinicUsersController extends AbstractController
         $html .= '
 
             <!-- Modal Manage Users -->
-            <div class="modal fade" id="modal_user" tabindex="-1" aria-labelledby="modal_user" aria-hidden="true">
+            <div 
+                class="modal fade" 
+                id="modal_user" 
+                tabindex="-1" 
+                aria-labelledby="modal_user" 
+                aria-hidden="true"
+            >
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
-                        <form name="form_users" id="form_users" method="post">
+                        <form name="form_users" id="form_users" method="post" data-action="submit->clinics--users#onSubmitUserForm">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="user_modal_label"></h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -248,14 +263,17 @@ class ClinicUsersController extends AbstractController
 
                                     <!-- Telephone Number -->
                                     <div class="col-12 col-sm-6">
-                                        <label>Telepgone</label>
-                                        <input 
-                                            type="text" 
-                                            id="user_mobile" 
-                                            placeholder="(123) 456-7890*"
-                                            class="form-control"
-                                            value=""
-                                        >
+                                        <label>Telephone</label>
+                                        <span id="telephone_container">
+                                            <input 
+                                                type="text" 
+                                                id="user_mobile" 
+                                                placeholder="(123) 456-7890*"
+                                                class="form-control"
+                                                value=""
+                                                data-action="change->clinics--users#onChangeMobile"
+                                            >
+                                        </span>
                                         <input 
                                             type="hidden" 
                                             name="clinic_users_form[telephone]" 
@@ -342,7 +360,11 @@ class ClinicUsersController extends AbstractController
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary w-sm-100" data-bs-dismiss="modal">CANCEL</button>
-                                <button type="submit" class="btn btn-primary w-sm-100" id="create_user">SAVE</button>
+                                <button 
+                                    type="submit" 
+                                    class="btn btn-primary w-sm-100" 
+                                    id="create_user"
+                                >SAVE</button>
                             </div>
                         </form>
                     </div>
@@ -366,7 +388,12 @@ class ClinicUsersController extends AbstractController
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
-                            <button type="submit" class="btn btn-danger btn-sm" id="delete_user">DELETE</button>
+                            <button 
+                                type="submit" 
+                                class="btn btn-danger btn-sm" 
+                                id="delete_user"
+                                data-action="click->clinics--users#onClickDelete"
+                            >DELETE</button>
                         </div>
                     </div>
                 </div>
@@ -397,13 +424,13 @@ class ClinicUsersController extends AbstractController
 
         $response = [
             'id' => $user->getId(),
-            'first_name' => $this->encryptor->decrypt($user->getFirstName() ?? $encryptedWhiteSpace),
-            'last_name' => $this->encryptor->decrypt($user->getLastName() ?? $encryptedWhiteSpace),
+            'firstName' => $this->encryptor->decrypt($user->getFirstName() ?? $encryptedWhiteSpace),
+            'lastName' => $this->encryptor->decrypt($user->getLastName() ?? $encryptedWhiteSpace),
             'email' => $this->encryptor->decrypt($user->getEmail()),
             'telephone' => $this->encryptor->decrypt($user->getTelephone() ?? $encryptedWhiteSpace),
             'position' => $this->encryptor->decrypt($user->getPosition() ?? $encryptedWhiteSpace),
-            'iso_code' => $this->encryptor->decrypt($user->getIsoCode() ?? $encryptedWhiteSpace),
-            'intl_code' => $this->encryptor->decrypt($user->getIntlCode() ?? $encryptedWhiteSpace),
+            'isoCode' => $this->encryptor->decrypt($user->getIsoCode() ?? $encryptedWhiteSpace),
+            'intlCode' => $this->encryptor->decrypt($user->getIntlCode() ?? $encryptedWhiteSpace),
             'permissions' => $permissions,
         ];
 
@@ -443,7 +470,14 @@ class ClinicUsersController extends AbstractController
         <div class="row" id="users">
             <div class="col-12 col-md-12 mb-3 mt-0">
                 <!-- Create New -->
-                <button type="button" class="btn btn-primary float-end w-sm-100" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_new">
+                <button 
+                    type="button" 
+                    class="btn btn-primary float-end w-sm-100" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#modal_user" 
+                    id="user_new"
+                    data-action="click->clinics--users#onClickNewUser"
+                >
                     <i class="fa-solid fa-circle-plus"></i> ADD COLLEAGUE
                 </button>
             </div>
@@ -503,8 +537,14 @@ class ClinicUsersController extends AbstractController
                        <a href="" class="float-end" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_update_'. $user->getId() .'">
                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
                        </a>
-                       <a href="" class="delete-icon float-end open-delete-user-modal" data-bs-toggle="modal"
-                          data-user-id="'. $user->getId() .'" data-bs-target="#modal_user_delete">
+                       <a 
+                          href="" 
+                          class="delete-icon float-end open-delete-user-modal" 
+                          data-bs-toggle="modal"
+                          data-user-id="'. $user->getId() .'" 
+                          data-bs-target="#modal_user_delete"
+                          data-action="click->clinics--users#onClickDeleteModal"
+                      >
                            <i class="fa-solid fa-trash-can"></i>
                        </a>
                    </div>
@@ -846,7 +886,7 @@ class ClinicUsersController extends AbstractController
         if($last_page > 1) {
 
             $previous_page_no = $current_page - 1;
-            $url = '/distributors/users';
+            $url = '/clinics/users';
             $previous_page = $url . $previous_page_no;
 
             $pagination .= '
@@ -871,6 +911,7 @@ class ClinicUsersController extends AbstractController
                     aria-disabled="'. $data_disabled .'" 
                     data-page-id="'. $current_page - 1 .'" 
                     href="'. $previous_page .'"
+                    data-action="click->clinics--users#onClickPagination"
                 >
                     <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                 </a>
@@ -891,6 +932,7 @@ class ClinicUsersController extends AbstractController
                         class="user-pagination" 
                         data-page-id="'. $i .'" 
                         href="'. $url .'"
+                        data-action="click->clinics--users#onClickPagination"
                     >'. $i .'</a>
                 </li>';
             }
@@ -911,6 +953,7 @@ class ClinicUsersController extends AbstractController
                     aria-disabled="'. $data_disabled .'" 
                     data-page-id="'. $current_page + 1 .'" 
                     href="'. $url .'"
+                    data-action="click->clinics--users#onClickPagination"
                 >
                     <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                 </a>

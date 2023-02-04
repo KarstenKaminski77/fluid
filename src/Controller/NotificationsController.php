@@ -60,7 +60,7 @@ class NotificationsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('clinics/delete-notification', name: 'delete_notifications')]
+    #[Route('/clinics/delete-notification', name: 'delete_notifications')]
     public function deleteNotifications(Request $request): Response
     {
         $notification = $this->em->getRepository(Notifications::class)->find($request->request->get('notification-id'));

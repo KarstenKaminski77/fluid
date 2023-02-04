@@ -38,10 +38,10 @@ class ChatMessagesController extends AbstractController
     {
         $data = $request->request;
         $message = (string) $data->get('message');
-        $orderId = (int) $data->get('order_id');
+        $orderId = (int) $data->get('order-id');
         $isClinic = $data->get('clinic');
         $isDistributor = $data->get('distributor');
-        $distributorId = $data->get('distributor_id');
+        $distributorId = $data->get('distributor-id');
         $order = $this->em->getRepository(Orders::class)->find($orderId);
         $distributorRepo = $this->em->getRepository(Distributors::class)->find($distributorId);
         $clinicRepo = $this->em->getRepository(Clinics::class)->find($order->getClinic()->getId());
@@ -147,10 +147,10 @@ class ChatMessagesController extends AbstractController
     {
         $data = $request->request;
         $message = (string) $data->get('message');
-        $orderId = (int) $data->get('order_id');
+        $orderId = (int) $data->get('order-id');
         $isClinic = $data->get('clinic');
         $isDistributor = $data->get('distributor');
-        $distributorId = $data->get('distributor_id');
+        $distributorId = $data->get('distributor-id');
         $order = $this->em->getRepository(Orders::class)->find($orderId);
         $distributorRepo = $this->em->getRepository(Distributors::class)->find($distributorId);
         $clinicRepo = $this->em->getRepository(Clinics::class)->find($order->getClinic()->getId());
@@ -275,11 +275,11 @@ class ChatMessagesController extends AbstractController
     public function sendIsTypingMessageAction(Request $request): Response
     {
         $data = $request->request;
-        $orderId = $data->get('order_id');
-        $distributorId = $data->get('distributor_id');
-        $isClinic = $data->get('is_clinic');
-        $isDistributor = $data->get('is_distributor');
-        $isTyping = $data->get('is_typing');
+        $orderId = $data->get('order-id');
+        $distributorId = $data->get('distributor-id');
+        $isClinic = $data->get('is-clinic');
+        $isDistributor = $data->get('is-distributor');
+        $isTyping = $data->get('is-typing');
 
         $chatParticipants = $this->em->getRepository(ChatParticipants::class)->findOneBy([
             'orders' => $orderId,
@@ -316,9 +316,9 @@ class ChatMessagesController extends AbstractController
     {
         $clinic = $request->get('clinic');
         $distributor = $request->get('distributor');
-        $distributorId = $request->get('distributor_id');
-        $orderId = $request->get('order_id');
-        $totalMessages = $request->get('total_messages');
+        $distributorId = $request->get('distributor-id');
+        $orderId = $request->get('order-id');
+        $totalMessages = $request->get('total-messages');
         $isTyping = 0;
         $dateSent = '';
         $chatMessages = $this->em->getRepository(ChatMessages::class)->findBy([

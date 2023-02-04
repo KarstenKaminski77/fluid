@@ -521,6 +521,7 @@ label {
 
 .active {
     color: #54565a !important;
+    border: none !important;
 }
 
 .info[aria-expanded=true] {
@@ -616,7 +617,6 @@ label {
     flex-flow: nowrap;
     padding: 18px 0px;
     border-top: 1px solid rgb(226, 231, 235);
-    border-bottom: 1px solid rgb(226, 231, 235);
 }
 
 .modal_border_b {

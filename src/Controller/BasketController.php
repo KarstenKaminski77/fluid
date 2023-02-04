@@ -441,7 +441,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/restore-all-items', name: 'restore_all_items')]
     public function restoreAllItemsAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
         $clinicProducts = $this->em->getRepository(ClinicProducts::class)->findBy([
             'clinic' => $this->getUser()->getClinic()
@@ -488,7 +488,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i></b> All saved items moved to basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId
+            'basketId' => $basketId
         ];
 
         return new JsonResponse($response);
@@ -504,15 +504,13 @@ class BasketController extends AbstractController
         $this->em->remove($item);
         $this->em->flush();
 
-        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
-            'clinic' => $clinic,
-            'name' => 'Fluid Commerce',
-            'status' => 'active'
+        $items = $this->em->getRepository(ClinicProducts::class)->findBy([
+            'clinic' => $this->getUser()->getClinic()->getId(),
         ]);
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i> '. $product .'</b> removed.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basketId' => $basket->getId(),
+            'count' => count($items),
         ];
 
         return new JsonResponse($response);
@@ -679,11 +677,11 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/update-saved-baskets', name: 'update_saved_baskets')]
     public function updateSavedBasketsAction(Request $request): Response
     {
-        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket_id'));
+        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket-id'));
         $firstName = $this->getUser()->getFirstName();
         $lastName = $this->getUser()->getLastName();
 
-        $basket->setName($request->request->get('basket_name'));
+        $basket->setName($request->request->get('basket-name'));
         $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($basket);
@@ -746,7 +744,12 @@ class BasketController extends AbstractController
                         ' . $basket->getBasketItems()->count() . '
                     </div>
                     <div class="col-3 pt-3 pb-3">
-                        <a href="" class="basket-edit" data-basket-id="' . $basket->getId() . '">
+                        <a 
+                            href="" 
+                            class="basket-edit" 
+                            data-basket-id="' . $basket->getId() . '" 
+                            data-action="click->basket--basket#onClickEditBasket"
+                        >
                             <i class="fa-solid fa-pencil float-end me-0 me-sm-3"></i>
                         </a>
                         <a href="" class="basket-delete" data-basket-id="' . $basket->getId() . '">
@@ -847,12 +850,9 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/delete-saved-basket', name: 'delete_saved_basket')]
     public function deleteBasketAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
-        $baskets= $this->em->getRepository(Baskets::class)->findBy([
-            'clinic' => $this->getUser()->getClinic()->getId()
-        ]);
 
         if(count($basketItems) > 0){
 
@@ -891,7 +891,7 @@ class BasketController extends AbstractController
         $countClinic = $clinicTotals[0]['item_count'] ?? 0;
 
         // Permissions
-        $permissions = json_decode($request->request->get('permissions'), true);
+        $permissions = json_decode(trim($request->request->get('permissions'), '&quot;'), true);
 
         $basketPermission = true;
         $disabled = '';
@@ -916,7 +916,7 @@ class BasketController extends AbstractController
         $response .= '
         <div class="row">
             <div class="col-12 half-border">
-                <div class="row border-xy">
+                <div class="row border-xy bg-white">
                     <!-- Left Column -->
                     <div class="col-12 col-md-2 col-100" id="basket_left_col">
                         <div class="row border-bottom text-center py-3">
@@ -984,7 +984,12 @@ class BasketController extends AbstractController
                         $response .= '
                         <div class="row border-bottom">
                             <div class="col-12 h-100">
-                                <'. $individualBasket .' href="#" class="saved_baskets_link" data-basket-id="'. $basketId .'">
+                                <'. $individualBasket .' 
+                                    href="#" 
+                                    class="saved_baskets_link" 
+                                    data-basket-id="'. $basketId .'"
+                                    data-action="basket--basket#onClickSavedBaskets"
+                                >
                                     <div class="row align-items-center">
                                         <div class="d-block d-md-none d-lg-block col-4 pt-3 pb-3 saved-baskets text-truncate '. $textDisabled .'">
                                             <i class="fa-regular fa-basket-shopping"></i>
@@ -1008,7 +1013,7 @@ class BasketController extends AbstractController
                             <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
 
                             $response .= '
-                            <a href="#" id="print_basket">
+                            <a href="#" id="print_basket" data-action="click->basket--basket#onClickPrintBasket">
                                 <i class="fa-regular fa-print me-5 me-md-2"></i>
                                 <span class=" d-none d-md-inline-block pe-4">Print</span>
                             </a>';
@@ -1035,8 +1040,14 @@ class BasketController extends AbstractController
                             }
 
                             $response .= '
-                            <a href="#" id="return_to_search" data-basket-id="">
-                                <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Back To Search</span>
+                            <a 
+                                href="#" 
+                                id="return_to_search" 
+                                data-basket-id=""
+                                data-action="click->basket--basket#onClickBackToSearch"
+                            >
+                                <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                                <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
                             </a>
                         </div>
                     </div>';
@@ -1051,7 +1062,12 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" class="save-all-items" data-basket-id="' . $basketId . '">
+                        <a 
+                            href="#" 
+                            class="save-all-items" 
+                            data-basket-id="' . $basketId . '"
+                            data-action="click->basket--basket#onClickSaveAllItems"
+                        >
                             <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
                         </a>';
@@ -1068,7 +1084,7 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '">
+                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '" data-action="click->basket--basket#onClickClearBasket">
                             <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
                         </a>';
@@ -1083,7 +1099,11 @@ class BasketController extends AbstractController
                     }
 
                     $response .= '
-                    <a href="#" class="refresh-basket" data-basket-id="'. $basketId .'">
+                    <a 
+                        href="#" class="refresh-basket" 
+                        data-basket-id="'. $basketId .'"
+                        data-action="click->basket--basket#onClickRefreshBasket"
+                    >
                         <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
                         <span class=" d-none d-md-inline-block pe-4">Refresh Basket</span>
                     </a>';
@@ -1200,12 +1220,11 @@ class BasketController extends AbstractController
                                     <div class="col-4">
                                         <input
                                             type="number"
-                                            list="qty_list_' . $product->getId() . '"
                                             data-basket-item-id="' . $item->getId() . '"
                                             name="qty"
                                             class="form-control form-control-sm basket-qty"
                                             value="' . $item->getQty() . '"
-                                            ng-value="' . $item->getQty() . '"
+                                            data-action="change->basket--basket#onChangeQty"
                                             '. $disabled .'
                                         >
                                         <div class="hidden_msg" id="stock_count_error_'. $item->getId() .'"></div>
@@ -1234,7 +1253,12 @@ class BasketController extends AbstractController
                                         $response .= '
                                         <!-- Remove Item -->
                                         <span class="badge bg-danger float-end badge-danger-filled-sm">
-                                            <a href="#" class="remove-item text-white" data-item-id="' . $item->getId() . '">Remove</a>
+                                            <a 
+                                                href="#" 
+                                                class="remove-item text-white" 
+                                                data-item-id="' . $item->getId() . '"
+                                                data-action="click->basket--basket#onClickRemoveItem"
+                                            >Remove</a>
                                         </span>
 
                                         <!-- Save Item -->
@@ -1246,6 +1270,7 @@ class BasketController extends AbstractController
                                                 data-product-id="' . $product->getId() . '"
                                                 data-distributor-id="' . $item->getDistributor()->getId() . '"
                                                 data-item-id="' . $item->getId() . '"
+                                                data-action="click->basket--basket#onClickSaveItem"
                                             >
                                                 Save Item For later
                                             </a>
@@ -1333,6 +1358,7 @@ class BasketController extends AbstractController
                                 class="btn btn-primary w-100 '. $checkoutBtnDisabled .'"
                                 id="btn_checkout"
                                 data-basket-id="'. $basketId .'"
+                                data-action="click->orders--clinics#onClickBtnProceed"
                                 '. $checkoutDisabled .'
                             >
                                 PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
@@ -1387,6 +1413,7 @@ class BasketController extends AbstractController
                                 class="btn btn-primary btn-sm w-sm-100 float-end restore-all"
                                 id="restore_all"
                                 data-basket-id="'. $basketId .'"
+                                data-action="click->basket--basket#onClickRestoreAllItems"
                             >
                                 Move All To Basket
                             </a>';
@@ -1446,6 +1473,7 @@ class BasketController extends AbstractController
                                             data-basket-id="'. $basketId .'" data-product-id="'. $product->getId() .'"
                                             data-distributor-id="'. $item->getDistributor()->getId() .'"
                                             data-item-id="'. $item->getId() .'"
+                                            data-action="click->basket--basket#onClickRestoreItem"
                                         >
                                             Move To Basket
                                         </a>
@@ -1456,6 +1484,7 @@ class BasketController extends AbstractController
                                             href="#" class="text-white remove-saved-item"
                                             data-basket-id=""
                                             data-item-id="'. $item->getId() .'"
+                                            data-action="click->basket--basket#onClickRemoveSavedItem"
                                         >
                                             Remove
                                         </a>
@@ -1495,7 +1524,12 @@ class BasketController extends AbstractController
         <div class="modal fade" id="modal_save_basket" tabindex="-1" aria-labelledby="save_basket_label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form name="form_save_basket" id="form_save_basket" method="post">
+                    <form 
+                        name="form_save_basket" 
+                        id="form_save_basket" 
+                        method="post"
+                        data-action="submit->basket--basket#onSubmitSaveBasket"
+                    >
                         <input type="hidden" name="basket_id" value="'. $basketId .'">
                         <div class="modal-header basket-modal-header">
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1623,8 +1657,13 @@ class BasketController extends AbstractController
                     <a href="#" id="saved_baskets_link" data-basket-id="'. $basketId .'">
                         <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-3">Saved Baskets</span>
                     </a>
-                    <a href="#" id="return_to_search">
-                        <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-3">Back To Search</span>
+                    <a 
+                        href="#" 
+                        id="return_to_search"
+                        data-action="click->basket--basket#onClickBackToSearch"
+                    >
+                        <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                        <span class=" d-none d-md-inline-block pe-3">Back To Search</span>
                     </a>
                 </div>
             </div>';
