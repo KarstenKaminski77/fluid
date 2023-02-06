@@ -17,7 +17,7 @@ class NotificationsController extends AbstractController
         $this->em = $entityManager;
     }
 
-    #[Route('clinics/get-notification', name: 'get_notifications')]
+    #[Route('/clinics/get-notification', name: 'get_notifications')]
     public function getNotifications(): Response
     {
         $response = '';

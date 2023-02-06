@@ -138,7 +138,7 @@ export default class extends Controller
         $('#user_position').val('');
         $('#form_users input[type="checkbox"]').attr('checked', false);
         $('#telephone_container').empty();
-        $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="" data-action="change->clinics--users#onChangeMobile" autocomplete="off">')
+        $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="" data-action="change->clinics--users#onChangeMobile" autocomplete="off">');
 
         let isoCode = $('#user_iso_code').val() ? $('#user_iso_code').val() : 'za';
         this.initIntlTel(isoCode);

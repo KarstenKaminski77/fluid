@@ -508,7 +508,12 @@ class ProductsController extends AbstractController
                                             <i class="fa-regular fa-clipboard-list-check"></i> <span class="d-none d-sm-inline">Lists</span>
                                         </button>
                                         <!-- Tracking -->
-                                        <button class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_track" type="button" data-product-id="'. $product->getId() .'">
+                                        <button 
+                                            class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_track" 
+                                            type="button" 
+                                            data-product-id="'. $product->getId() .'"
+                                            data-action="click->products--tracking#onClickBtnTrack"
+                                        >
                                             <i class="fa-regular fa-eye"></i> <span class="d-none d-sm-inline">Track</span>
                                         </button>
                                         <!-- Notes -->

@@ -952,7 +952,12 @@ class BasketController extends AbstractController
                             $response .= '
                             <div class="row">
                                 <div class="col-12 border-bottom '. $active .'">
-                                    <a href="#" data-basket-id="'. $individualBasket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                                    <a 
+                                        href="#" 
+                                        data-basket-id="'. $individualBasket->getId() .'" 
+                                        class=" pt-3 pb-3 d-block basket-link"
+                                        data-action="click->basket--basket#onClickBasketLink"
+                                    >
                                         <div class="row">
                                             <div class="col-10 text-truncate pe-0">
                                                 <span class="align-baseline">'. $individualBasket->getName() .'</span>

@@ -140,6 +140,7 @@ class CommunicationMethodsController extends AbstractController
                             data-mobile-no="' . $mobile_no . '"
                             data-bs-toggle="modal" 
                             data-bs-target="#modal_communication_methods"
+                            data-action="click->clinics--communication-methods#onClickEditCommunicationMethod"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -148,6 +149,7 @@ class CommunicationMethodsController extends AbstractController
                             class="delete-icon float-start float-sm-end method-delete" 
                             data-bs-toggle="modal" data-clinic-communication-method-id="' . $method->getId() . '" 
                             data-bs-target="#modal_method_delete"
+                            data-action="click->clinics--communication-methods#onClickDeleteIcon"
                         >
                             <i class="fa-solid fa-trash-can"></i>
                         </a>
@@ -163,7 +165,12 @@ class CommunicationMethodsController extends AbstractController
                 <div class="modal fade" id="modal_communication_methods" tabindex="-1" aria-labelledby="communication_methods_modal_label" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
-                            <form name="form_communication_methods" id="form_communication_methods" method="post">
+                            <form 
+                                name="form_communication_methods" 
+                                id="form_communication_methods" 
+                                method="post"
+                                data-action="submit->clinics--communication-methods#onSubmitCommunicationMethodForm"
+                            >
                                 <input type="hidden" value="0" name="clinic_communication_methods_form[clinic_communication_method_id]" id="communication_method_id">
                                 <input type="hidden" value="0" name="clinic_communication_methods_form[mobile]" id="mobile_no">
                                 <div class="modal-header">
@@ -189,6 +196,7 @@ class CommunicationMethodsController extends AbstractController
                                                 name="clinic_communication_methods_form[sendTo]" 
                                                 id="send_to"
                                                 class="form-control"
+                                                data-action="keyup->clinics--communication-methods#onChangeSendTo"
                                             >
                                             </span>
                                             <div class="hidden_msg" id="error_send_to">
@@ -233,7 +241,9 @@ class CommunicationMethodsController extends AbstractController
                                 <button 
                                     type="button" 
                                     class="btn btn-danger btn-sm communication-method-delete" 
-                                    id="delete_method">DELETE</button>
+                                    id="delete_method"
+                                    data-action="click->clinics--communication-methods#onClickDelete"
+                                >DELETE</button>
                             </div>
                         </div>
                     </div>
@@ -252,7 +262,12 @@ class CommunicationMethodsController extends AbstractController
             <div class="modal fade" id="modal_communication_methods" tabindex="-1" aria-labelledby="communication_methods_modal_label" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
-                        <form name="form_communication_methods" id="form_communication_methods" method="post">
+                        <form 
+                            name="form_communication_methods" 
+                            id="form_communication_methods" 
+                            method="post"
+                            data-action="submit->clinics--communication-methods#onSubmitCommunicationMethodForm"
+                        >
                             <input type="hidden" value="0" name="clinic_communication_methods_form[clinic_communication_method_id]" id="communication_method_id">
                             <input type="hidden" value="0" name="clinic_communication_methods_form[mobile]" id="mobile_no">
                             <div class="modal-header">
@@ -278,6 +293,7 @@ class CommunicationMethodsController extends AbstractController
                                             name="clinic_communication_methods_form[sendTo]" 
                                             id="send_to"
                                             class="form-control"
+                                            data-action="keyup->clinics--communication-methods#onChangeSendTo"
                                         >
                                         </span>
                                         <div class="hidden_msg" id="error_send_to">
@@ -354,7 +370,6 @@ class CommunicationMethodsController extends AbstractController
     #[Route('/clinics/get-method', name: 'get_communication_method')]
     public function getMethodAction(Request $request): Response
     {
-
         $method = $this->em->getRepository(ClinicCommunicationMethods::class)->find($request->request->get('id'));
 
         // If mobile remove intl dialing code
@@ -376,6 +391,7 @@ class CommunicationMethodsController extends AbstractController
             'method' => $method->getCommunicationMethod()->getMethod(),
             'send_to' => $send_to,
             'iso_code' => $this->encryptor->decrypt($method->getIsoCode()),
+            'intl_code' => $this->encryptor->decrypt($method->getIntlCode()),
         ];
 
         return new JsonResponse($response);

@@ -19,7 +19,7 @@ class AddressesController extends AbstractController
     private $em;
     private $pageManager;
     private $encryptor;
-    const ITEMS_PER_PAGE = 2;
+    const ITEMS_PER_PAGE = 10;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pageManager, Encryptor $encryptor)
     {

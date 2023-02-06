@@ -25,7 +25,7 @@ class ClinicUsersController extends AbstractController
     private $page_manager;
     private $mailer;
     private $encryptor;
-    const ITEMS_PER_PAGE = 1;
+    const ITEMS_PER_PAGE = 10;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $page_manager, MailerInterface $mailer, Encryptor $encryptor)
     {
