@@ -10,6 +10,53 @@ export default class extends Controller {
         {
             this.getAccountSettings();
         }
+
+        $(document).on('click', '#flash', function ()
+        {
+            $('#flash').addClass('hidden');
+        });
+
+        $(document).on('click', 'a', function (e)
+        {
+            let clickedElement = e.currentTarget;
+            let name = $(clickedElement).attr('name');
+
+            if(name != 'notifications'){
+
+                $('#notifications_panel').hide();
+            }
+
+        });
+
+        $(document).mouseup(function()
+        {
+            let container = $('#megamenu');
+
+            // if the target of the click isn't the container nor a descendant of the container
+            let displayValue = $('#megamenu').get(0).style.display;
+
+            if(displayValue == 'block')
+            {
+                container.slideUp(700);
+
+            }
+        });
+
+        $(document).click(function (event)
+        {
+            /// If *navbar-collapse* is not among targets of event
+            if (!$(event.target).is('.navbar-collapse *'))
+            {
+                /// Collapse every *navbar-collapse*
+                $('.navbar-collapse').collapse('hide');
+            }
+        });
+
+        // Toggle Navbar
+        $(document).on('click', '#btn_navbar_toggle', function ()
+        {
+            $('#main_nav').toggle(700);
+        });
     }
 
     getAccountSettings()
@@ -39,7 +86,7 @@ export default class extends Controller {
             },
             success: function (response)
             {
-                $('#clinic_container').empty().append(response).show();
+                $('#clinic_container').empty().append(response).removeClass('col-container');
                 window.scrollTo(0,0);
                 //clearInterval(get_messages);
                 self.isLoading(false);
@@ -74,6 +121,27 @@ export default class extends Controller {
                 input.addEventListener('keyup', handleChange);
             }
         });
+    }
+
+    onClickAccountToggle(e)
+    {
+        e.preventDefault();
+        this.isLoading(false);
+
+        let container = $('#account_menu');
+
+        // if the target of the click isn't the container nor a descendant of the container
+        let displayValue = $('#account_menu').get(0).style.display;
+
+        if(displayValue == 'block')
+        {
+            container.hide(700);
+        }
+
+        else
+        {
+            container.show(700);
+        }
     }
 
     onClickAccountSettingsLink(e)
@@ -594,6 +662,25 @@ export default class extends Controller {
         }
     }
 
+    onClickSpecies(e)
+    {
+        let clickedElement = e.currentTarget;
+        let checkbox = $(clickedElement);
+
+        if(checkbox.is(':checked'))
+        {
+            checkbox.attr('checked', true);
+            $(clickedElement).next('.custom-control-label').find('.species-icon')
+                .removeClass('fa-light').addClass('fa-solid');
+        }
+        else
+        {
+            checkbox.attr('checked', false);
+            $(clickedElement).next('.custom-control-label').find('.fa-solid')
+                .removeClass('fa-solid').addClass('fa-light');
+        }
+    }
+
     iniTinyMce()
     {
         tinymce.init({
@@ -641,10 +728,5 @@ export default class extends Controller {
             $("div.spanner").removeClass("show");
             $("div.overlay").removeClass("show");
         }
-    }
-
-    hidePaginator()
-    {
-        $('#paginator').empty().hide();
     }
 }

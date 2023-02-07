@@ -752,7 +752,12 @@ class BasketController extends AbstractController
                         >
                             <i class="fa-solid fa-pencil float-end me-0 me-sm-3"></i>
                         </a>
-                        <a href="" class="basket-delete" data-basket-id="' . $basket->getId() . '">
+                        <a 
+                            href="" 
+                            class="basket-delete" 
+                            data-basket-id="' . $basket->getId() . '"
+                            data-action="click->basket--basket#onClickDeleteBasket"
+                        >
                             <i class="fa-solid fa-trash-can text-danger float-end me-4 me-sm-4"></i>
                         </a>
                     </div>

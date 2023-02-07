@@ -70,13 +70,13 @@ export default class extends Controller
                 $('#address_modal_label').empty().append('Select an Existing Address');
                 $('.modal-header').empty()
                     .append('<h5 class="modal-title" id="address_modal_label">Use an Existing Address</h5>')
-                    .append('<span class="badge bg-success ms-3 toggle_address" role="button">Create A New Address</span>')
+                    .append('<span class="badge bg-success ms-3 toggle_address" role="button" data-action="click->clinics--addresses#onClickToggle">Create A New Address</span>')
                     .append('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
                 $('.modal-body-address-new').hide();
                 $('.modal-body-address-existing').append(response.existing_shipping_addresses).show();
                 $('#modal_header_address').empty()
                     .append('<h5 class="modal-title" id="address_modal_label">Use an Existing Address</h5>')
-                    .append('<span class="badge bg-success ms-3 toggle_address" role="button">Create A New Address</span>')
+                    .append('<span class="badge bg-success ms-3 toggle_address" role="button" data-action="click->clinics--addresses#onClickToggle">Create A New Address</span>')
                     .append('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
                 $('#btn_checkout').hide();
                 self.isLoading(false);
@@ -181,7 +181,7 @@ export default class extends Controller
                 self.isLoading(false);
                 self.getFlash(response.flash);
                 $('#inventory_container').hide();
-                $('#basket_container').empty().append(response.orders.html).show();
+                $('#clinic_container').empty().append(response.orders.html).show();
                 $('#paginator').empty().append(response.orders.pagination).show();
                 $('#btn_basket').attr('data-basket-id', response.basket_id);
                 window.scrollTo(0, 0);
@@ -316,7 +316,6 @@ export default class extends Controller
         let clinicId = $(clickedElement).data('clinic-id');
 
         window.history.pushState(null, "Fluid", '/clinics/order/'+ orderId +'/'+ distributorId);
-        hidePaginator();
         this.getOrderDetails(orderId, distributorId, clinicId);
     }
 
@@ -383,7 +382,7 @@ export default class extends Controller
             success: function (response)
             {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().removeClass('col-container').append(response.orders.html).show();
+                $('#clinic_container').empty().removeClass('col-container').append(response.orders.html).show();
                 clearInterval(self.messages);
                 self.isLoading(false);
                 window.history.pushState(null, "Fluid", '/clinics/orders/'+ response.clinicId);
@@ -417,7 +416,7 @@ export default class extends Controller
             },
             success: function (response)
             {
-                $('#basket_container').empty().append(response);
+                $('#clinic_container').empty().append(response);
                 self.isLoading(false);
             },
             complete: function(e, xhr, settings)
@@ -459,7 +458,7 @@ export default class extends Controller
             success: function (response)
             {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.orders);
+                $('#clinic_container').empty().append(response.orders);
                 self.popOver();
                 self.isLoading(false);
             },
@@ -500,10 +499,10 @@ export default class extends Controller
             {
                 self.isLoading(true);
             },
-            success: function (response) {
-
+            success: function (response)
+            {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.orders);
+                $('#clinic_container').empty().append(response.orders);
                 self.popOver();
                 self.isLoading(false);
             },
@@ -552,7 +551,7 @@ export default class extends Controller
             success: function (response)
             {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.orders);
+                $('#clinic_container').empty().append(response.orders);
                 self.isLoading(false);
             }
         });
@@ -685,7 +684,7 @@ export default class extends Controller
                 success: function (response)
                 {
                     self.getFlash(response.flash);
-                    $('#basket_container').empty().append(response.orders);
+                    $('#clinic_container').empty().append(response.orders);
                     $('#form_reject_item').modal('toggle').modal('hide');
                     $('.modal-backdrop').removeClass('modal-backdrop');
                     $('.fade').removeClass('fade');
@@ -760,7 +759,7 @@ export default class extends Controller
         modal += '<button type="submit" data-order-id="'+ order_id +'" data-distributor-id="'+ distributor_id +'" class="btn btn-danger btn-sm" id="btn_close_order">CLOSE ORDER</button>';
         modal += '</div> </div> </div> </div>';
 
-        $('#basket_container').append(modal);
+        $('#clinic_container').append(modal);
         $('#modal_close_order').modal('toggle').addClass('show');
     }
 
@@ -879,15 +878,13 @@ export default class extends Controller
             },
             success: function (response)
             {
-
-            $('#basket_container').empty().append(response);
-            $('#inventory_container').hide();
-            $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
-            self.getChat(orderId, distributorId, clinicId);
-            $('#chat_pulse').hide();
-            self.popOver();
-            $('#paginator').hide();
-        }
+                $('#clinic_container').empty().append(response);
+                $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
+                self.getChat(orderId, distributorId, clinicId);
+                $('#chat_pulse').hide();
+                self.popOver();
+                $('#paginator').hide();
+            }
         });
     }
 
@@ -996,11 +993,6 @@ export default class extends Controller
         var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
             return new bootstrap.Popover(popoverTriggerEl)
         })
-    }
-
-    hidePaginator()
-    {
-        $('#paginator').empty().hide();
     }
 
     getFlash(flash)

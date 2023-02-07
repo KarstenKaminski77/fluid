@@ -127,6 +127,7 @@ class ChatMessagesController extends AbstractController
                         data-notification-id="'. $notification->getId() .'"
                         data-order-id="'. $orderId .'"
                         data-distributor-id="'. $distributorId .'"
+                        data-action="click->clinics--notifications#onClickDeleteNotification"
                     >
                         <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
                     </a>

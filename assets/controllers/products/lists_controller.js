@@ -309,9 +309,7 @@ export default class extends Controller {
                 $('.modal-backdrop').removeClass('modal-backdrop');
                 $('#modal_user_delete').addClass('fade');
                 self.getFlash(response.flash);
-                $('#inventory').hide();
-                $('#inventory_container').hide();
-                $('#basket_container').empty().addClass('col-container').append(response.response).show();
+                $('#clinic_container').empty().addClass('col-container').append(response.response).show();
             }
         });
     }
@@ -542,9 +540,7 @@ export default class extends Controller {
             },
             success: function (response)
             {
-                $('#inventory').hide();
-                $('#inventory_container').hide();
-                $('#basket_container').empty().addClass('col-container').removeClass('border-xy').append(response.response).show();
+                $('#clinic_container').empty().addClass('col-container').removeClass('border-xy').append(response.response).show();
                 window.scrollTo(0,0);
                 window.history.pushState(null, "Fluid", '/clinics/inventory/lists');
             },
@@ -581,9 +577,7 @@ export default class extends Controller {
             },
             success: function (response)
             {
-                $('#inventory').hide();
-                $('#inventory_container').hide();
-                $('#basket_container').empty().append(response.html).show();
+                $('#clinic_container').empty().append(response.html).show();
                 self.isLoading(false);
 
                 self.popOver();
@@ -609,8 +603,6 @@ export default class extends Controller {
     {
         let self = this;
 
-        self.hidePaginator();
-
         $.ajax({
             async: "true",
             url: "/clinics/get/basket",
@@ -633,19 +625,16 @@ export default class extends Controller {
             },
             success: function (response)
             {
-                $('#back_btn').hide();
-                $('#inventory_container').hide();
-                $('#basket_container').empty().append(response).fadeIn(500);
+                $('#clinic_container').empty().append(response).addClass('col-container').fadeIn(500);
                 window.scrollTo(0,0);
                 $('#return_to_search').attr('data-basket-id', $('#btn_basket').attr('data-basket-id'))
-                $("#basket_container").addClass('col-container');
                 $('#saved_items_container').hide();
                 self.isLoading(false);
                 //clearInterval(get_messages);
 
                 if($(window).width() < 992)
                 {
-                    $('#basket_container').css({ overflow:"hidden" });
+                    $('#clinic_container').css({ overflow:"hidden" });
                 }
 
                 if(redirect)
@@ -686,7 +675,7 @@ export default class extends Controller {
                 success: function (response)
                 {
                     $('#modal_list_distributors').remove();
-                    $('#basket_container').append(response);
+                    $('#clinic_container').append(response);
                     $('#modal_list_distributors').modal('toggle');
                     $('body').css('overflow', '');
                 }
@@ -695,11 +684,6 @@ export default class extends Controller {
             $("#search_inventory_field").val(name);
             $("#suggestion_field").hide();
         }
-    }
-
-    hidePaginator()
-    {
-        $('#paginator').empty().hide();
     }
 
     getFlash(flash)

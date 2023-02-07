@@ -203,7 +203,7 @@ export default class extends Controller {
                 success: function (response)
                 {
                     $('#modal_list_distributors').remove();
-                    $('#inventory_container').append(response);
+                    $('#clinic_container').append(response);
                     $('#modal_list_distributors').modal('toggle');
                     $('#save_list_distributor').attr('data-retail','true');
                     $('body').css('overflow', '');

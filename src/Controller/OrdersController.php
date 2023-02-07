@@ -42,7 +42,7 @@ class OrdersController extends AbstractController
     private $pageManager;
     private $requestStack;
     private $encryptor;
-    const ITEMS_PER_PAGE = 1;
+    const ITEMS_PER_PAGE = 10;
 
     public function __construct(
         EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor ,
@@ -353,6 +353,7 @@ class OrdersController extends AbstractController
                                 data-bs-toggle="modal"
                                 data-bs-target="#modal_shipping_address"
                                 id="link_shipping_address_modal"
+                                data-action="click->clinics--addresses#onClickShippingModal"
                             >
                                 Change Address
                             </a>
@@ -389,6 +390,7 @@ class OrdersController extends AbstractController
                                 data-bs-toggle="modal" 
                                 data-bs-target="#modal_billing_address"
                                 id="link_billing_address_modal"
+                                data-action="click->clinics--addresses#onClickBillingModal"
                             >
                                 Change Address
                             </a>
@@ -443,6 +445,7 @@ class OrdersController extends AbstractController
                         name="form_addresses_shipping_checkout" 
                         id="form_addresses_shipping_checkout" 
                         method="post"
+                        data-action="submit->clinics--addresses#onSubmitCheckoutShipping"
                     >
                         <input type="hidden" value="'. $order->getId() .'" name="checkout">
                         <div id="shipping_address_modal"></div>
@@ -455,7 +458,12 @@ class OrdersController extends AbstractController
         <div class="modal fade" id="modal_billing_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
-                    <form name="form_addresses_billing_checkout" id="form_addresses_billing_checkout" method="post">
+                    <form 
+                        name="form_addresses_billing_checkout" 
+                        id="form_addresses_billing_checkout" 
+                        method="post"
+                        data-action="submit->clinics--addresses#onSubmitCheckoutBilling"
+                    >
                         <input type="hidden" value="'. $order->getId() .'" name="checkout">
                         <div id="billing_address_modal"></div>
                     </form>
@@ -4227,6 +4235,7 @@ class OrdersController extends AbstractController
                         data-notification-id="'. $notification->getId() .'"
                         data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
+                        data-action="click->clinics--notifications#onClickDeleteNotification"
                     >
                         <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
                     </a>

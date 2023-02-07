@@ -2,6 +2,15 @@ import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller
 {
+    categoryArray;
+    searchArray;
+    selectedDistributorArray = [];
+    distributorArray = [];
+    selectedManufacturerArray = [];
+    manufacturersArray = [];
+    favourite = false;
+    inStock = false;
+
     connect(e)
     {
         let uri = window.location.pathname;
@@ -12,10 +21,49 @@ export default class extends Controller
 
         if(isSearch != null)
         {
-            console.log($.session.get('search-results'))
             $('#clinic_container').empty().append($.session.get('search-results'));
             $('#search_field').val($.session.get('search_key'));
         }
+
+        // Filter Dropdowns
+        if($(window).width() < 769)
+        {
+            $('#dd_categories').hide();
+            $('#dd_filters').hide();
+            $('#dd_manufacturers_1').hide();
+            $('#dd_manufacturers_2').hide();
+            $('#dd_distributors').hide();
+
+        }
+
+        $(document).on('click', '#btn_categories', function (e)
+        {
+            e.preventDefault();
+
+            $('#dd_categories').toggle(700,'linear');
+        });
+
+        $(document).on('click', '#btn_filters', function (e)
+        {
+            e.preventDefault();
+
+            $('#dd_filters').toggle(700,'linear');
+        });
+
+        $(document).on('click', '#btn_manufacturers', function (e)
+        {
+            e.preventDefault();
+
+            $('#dd_manufacturers_1').toggle(700,'linear');
+            $('#dd_manufacturers_2').toggle(700,'linear');
+        });
+
+        $(document).on('click', '#btn_distributors', function (e)
+        {
+            e.preventDefault();
+
+            $('#dd_distributors').toggle(700,'linear');
+        });
     }
 
     onClickSearch(e)
@@ -54,7 +102,7 @@ export default class extends Controller
                 success: function (response)
                 {
                     $('#modal_list_distributors').remove();
-                    $('#inventory_container').append(response);
+                    $('#clinic_container').append(response);
                     $('#modal_list_distributors').modal('toggle');
                     $('#save_list_distributor').attr('data-favourite','true');
                     $('body').css('overflow', '');
@@ -148,6 +196,298 @@ export default class extends Controller
         this.getSearchResults(pageNo, clickedElement);
     }
 
+    onClickFilterBtn()
+    {
+        let container = $('#megamenu');
+
+        // if the target of the click isn't the container nor a descendant of the container
+        let displayValue = $('#megamenu').get(0).style.display;
+
+        if(displayValue == 'block')
+        {
+            container.slideUp(700);
+        }
+        else
+        {
+            container.slideDown(700);
+        }
+    }
+
+    onClickFilterCategory(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let categoryId = $(clickedElement).attr('data-category-id');
+        let level = $(clickedElement).attr('data-level');
+        this.categoryArray = [];
+
+        this.categoryArray.push({'level':level, 'categoryId': categoryId});
+
+        this.getSearchArray();
+        this.getSearchResults(1, '', false, 0, this.searchArray, '');
+        this.resetFilterBtn();
+    }
+
+    onClickFilterDistributor(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let distributorId = $(clickedElement).attr('data-distributor-id');
+        let checkbox = $(clickedElement).find('input:first-child');
+
+        if(checkbox.is(':checked'))
+        {
+            checkbox.attr('checked', false);
+            this.selectedDistributorArray = $.grep(this.selectedDistributorArray, function(value)
+            {
+                return value != distributorId;
+            });
+        }
+        else
+        {
+            checkbox.attr('checked', true);
+            this.selectedDistributorArray.push(distributorId)
+        }
+
+        this.getSearchArray();
+        this.getSearchResults(1, '', false, 0, this.searchArray, '');
+        this.resetFilterBtn();
+    }
+
+    onClickFilterManufacturer(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let manufacturerId = $(clickedElement).attr('data-manufacturer-id');
+        let checkbox = $(clickedElement).find('input:first-child');
+
+        if(checkbox.is(':checked'))
+        {
+            checkbox.attr('checked', false);
+            this.selectedManufacturerArray = $.grep(this.selectedManufacturerArray, function(value)
+            {
+                return value != manufacturerId;
+            });
+        }
+        else
+        {
+            checkbox.attr('checked', true);
+            this.selectedManufacturerArray.push(manufacturerId)
+        }
+
+        this.getSearchArray();
+        this.getSearchResults(1, '', false, 0, this.searchArray, '');
+        this.resetFilterBtn();
+    }
+
+    onClickFilterFavourite(e)
+    {
+        e.preventDefault();
+
+        let selectedElement = e.currentTarget;
+        let checkbox = $(selectedElement).find('input');
+
+        if(checkbox.is(':checked'))
+        {
+            checkbox.prop('checked', false);
+            this.favourite = false;
+        }
+        else
+        {
+            checkbox.prop('checked', true);
+            this.favourite = true;
+        }
+
+        this.getSearchArray();
+        this.getSearchResults(1, '', false, 0, this.searchArray, '');
+        this.resetFilterBtn();
+    }
+
+    onClickFilterInStock(e)
+    {
+        e.preventDefault();
+
+        let checkbox = $(e.currentTarget).find('input');
+
+        if(checkbox.is(':checked'))
+        {
+            checkbox.prop('checked', false);
+            this.inStock = false;
+        }
+        else
+        {
+            checkbox.prop('checked', true);
+            this.inStock = true;
+        }
+
+        this.getSearchArray();
+        this.getSearchResults(1, '', false, 0, this.searchArray, '');
+        this.resetFilterBtn();
+    }
+
+    onClickResetFilters(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let pageNo = 1;
+        let keyword = $('#search_field').val();
+
+        $.ajax({
+            async: "true",
+            url: "/clinics/search-inventory",
+            type: 'POST',
+            data: {
+                'keyword': keyword,
+                'page-no': pageNo
+            },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            complete: function(e)
+            {
+                if(e.status === 500)
+                {
+                    window.location.href = '/clinics/error';
+                }
+            },
+            success: function (response)
+            {
+                if(window.location.pathname == '/clinics/inventory')
+                {
+                    $('#filter_reset_btn').remove();
+                    $('#search_field').val(keyword);
+                    $('#clinic_container').empty().append(response.html);
+                    $('#dd_categories').empty().append(response.categoryList);
+                    $('#dd_distributors').empty().append(response.distributorsList);
+                    $('#dd_manufacturers').empty().append(response.manufacturersList);
+                    $('#filter_favourite').prop('checked', false);
+                    $('#filter_in_stock').prop('checked', false);
+                    $('#filter_reset_btn').remove();
+                    self.isLoading(false);
+                    self.searchArray = [];
+                    self.categoryArray = [];
+                    self.selectedDistributorArray = [];
+                    self.selectedManufacturerArray = [];
+                    self.favourite = false;
+                    self.inStock = false;
+                    document.title = 'Fluid';
+                    window.history.pushState({
+                        "html": response.html,
+                        "pageTitle": 'Fluid'
+                    }, "", '/clinics/inventory');
+                    $.session.set('search_key', keyword);
+
+                    $(response.productIds).each(function (index, value)
+                    {
+                        let productId = value;
+
+                        $.ajax({
+                            async: "true",
+                            url: "/clinics/product/get-distributors",
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {
+                                'product-id': productId,
+                            },
+                            complete: function (e)
+                            {
+                                if (e.status === 500)
+                                {
+                                    //window.location.href = '/clinics/error';
+                                }
+
+                                $.session.set('search-results', $('#clinic_container').html());
+                            },
+                            success: function (response)
+                            {
+                                $('#search_result_distributors_'+ productId).empty().append(response.html);
+                                $('.from_'+ productId).empty().append(response.from);
+                                $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
+                                popOver();
+                            }
+                        });
+                    });
+                }
+            }
+        });
+    }
+
+    onClickCloseFilter()
+    {
+        $('#megamenu').slideUp(700);
+    }
+
+    getSearchArray()
+    {
+        this.searchArray = [];
+
+        this.searchArray.push({
+            category: this.categoryArray,
+            selectedDistributors: this.selectedDistributorArray,
+            distributors: this.distributorArray,
+            selectedManufacturers: this.selectedManufacturerArray,
+            manufacturers: this.manufacturerArray,
+            favourite: this.favourite,
+            clinicId: $.session.get('clinic-id'),
+            inStock: this.inStock,
+        });
+
+        return this.searchArray;
+    }
+
+    resetFilterBtn()
+    {
+        let btnReset = '<div class="col-12" id="filter_reset_btn" data-action="click->products--search#onClickResetFilters"><button type="button" class="btn bg-secondary btn-sm w-100 border-top">';
+        btnReset += '<i class="fa-solid fa-rotate me-1" role="button"></i>Reset Filters</button></div>';
+
+        $('#filter_reset_btn').remove();
+        $('#filter_megamenu').append(btnReset);
+    }
+
+    onClickClinicConnect(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let distributorId = $(clickedElement).data('distributor-id');
+        let clinicId = $(clickedElement).data('clinic-id');
+        let productId = $(clickedElement).data('product-id');
+
+        $.ajax({
+            async: "true",
+            url: "/clinic/request-connection",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'distributor-id':distributorId,
+                'clinic-id': clinicId
+            },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            complete: function(e)
+            {
+                if(e.status === 500)
+                {
+                    window.location.href = '/clinics/error';
+                }
+            },
+            success: function (response)
+            {
+                $('#modal_add_to_basket_'+ productId +'_'+ distributorId).modal('toggle');
+                self.getFlash(response);
+                self.isLoading(false);
+            }
+        });
+    }
+
     getSearchResults(pageId, object, shippingList = false, listId = 0, searchArray = [], elementId = '')
     {
         let keyword = $.session.get('search_key') ? $.session.get('search_key') : 'canine';
@@ -218,7 +558,7 @@ export default class extends Controller
                 }
             },
             success: function (response)
-            { console.log(response)
+            {
                 $('#clinic_container').empty().append(response.html).show();
                 window.scrollTo(0,0);
                 $('.has-megamenu').show(700);
@@ -266,7 +606,8 @@ export default class extends Controller
                 // Category Levels
                 if(response.level == 3)
                 {
-                    let categoryId = $.map(categoryArray, function(cat) {
+                    let categoryId = $.map(categoryArray, function(cat)
+                    {
                         return cat.categoryId[0];
                     });
 
@@ -288,7 +629,7 @@ export default class extends Controller
                 if(elementId == 'search_btn')
                 {
                     // Manufacrurer Filter List
-                    const manufacturerArray = [];
+                    self.manufacturerArray = [];
 
                     $('.manufacturer-checkbox').each(function ()
                     {
@@ -296,7 +637,7 @@ export default class extends Controller
                         let manufacturerId = $(this).val();
                         let itemCount = $(this).next().text().trim().substring(1,2);
 
-                        manufacturerArray.push({
+                        self.manufacturerArray.push({
                             'id': manufacturerId,
                             'name': manufacturer,
                             'count': itemCount,
@@ -304,7 +645,7 @@ export default class extends Controller
                     });
 
                     // Distributor Filter List
-                    const distributorArray = [];
+                    self.distributorArray = [];
 
                     $('.distributor-checkbox').each(function ()
                     {
@@ -312,7 +653,7 @@ export default class extends Controller
                         let distributorId = $(this).val();
                         let itemCount = $(this).next().text().trim().substring(1,2);
 
-                        distributorArray.push({
+                        self.distributorArray.push({
                             'id': distributorId,
                             'name': distributor,
                             'count': itemCount,

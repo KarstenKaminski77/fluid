@@ -1,7 +1,7 @@
 <header>
     <nav
         class="navbar navbar-expand-lg navbar-light bg-white position-fixed top-0 start-0 end-0 nav-z-index border-bottom"
-        data-controller="products--search clinics--account-settings clinics--users clinics--addresses orders--clinics clinics--inventory clinics--communication-methods"
+        data-controller="products--search clinics--account-settings clinics--users clinics--addresses orders--clinics clinics--inventory clinics--communication-methods products--lists clinics--analytics clinics--notifications"
     >
         <div class="container-fluid" data-controller="lists--lists basket--basket">
             <button class="navbar-toggler" id="btn_navbar_toggle">
@@ -30,9 +30,19 @@
                                 </div>
                             </li>
                             <li class="nav-item dropdown has-megamenu pt-2 pb-1 pt-sm-0 pb-sm-0 hidden">
-                                <a class="nav-link filter-dropdown-toggle" href="#">Filters</a>
+                                <a
+                                    class="nav-link filter-dropdown-toggle"
+                                    href="#"
+                                    data-action="click->products--search#onClickFilterBtn"
+                                >
+                                    Filters
+                                </a>
                                 <div class="dropdown-menu megamenu mega-menu pb-0 pt-sm-3 mt-3 px-0" role="menu" id="megamenu">
-                                <span class="position-absolute close-filter" style="right: 10px; top:10px">
+                                <span
+                                    class="position-absolute close-filter"
+                                    style="right: 10px; top:10px"
+                                    data-action="click->products--search#onClickCloseFilter"
+                                >
                                     <i class="fa-solid fa-xmark"></i>
                                 </span>
                                     <div class="row" id="filter_megamenu">
@@ -67,7 +77,10 @@
                                                             <h6 class="title d-inline">Filters</h6>
                                                         </a>
                                                         <ul class="border-0 px-0 list-unstyled" id="dd_filters">
-                                                            <li class="pb-2 pb-md-0 favourite-select">
+                                                            <li
+                                                                class="pb-2 pb-md-0 favourite-select"
+                                                                data-action="click->products--search#onClickFilterFavourite"
+                                                            >
                                                                 <input
                                                                     class="form-check-input me-2"
                                                                     name="filter[]"
@@ -81,7 +94,10 @@
                                                                     id="favourite_label"
                                                                 >Favourite Items</label>
                                                             </li>
-                                                            <li class="pt-2 pb-2 pt-md-0 pt-md-0 in-stock-select">
+                                                            <li
+                                                                class="pt-2 pb-2 pt-md-0 pt-md-0 in-stock-select"
+                                                                data-action="click->products--search#onClickFilterInStock"
+                                                            >
                                                                 <input
                                                                     class="form-check-input me-2"
                                                                     name="filter[]"
@@ -148,7 +164,12 @@
                             </a>
                         </li>
                         <li class="nav-item position-relative pt-1 pb-1 pt-sm-0 pb-sm-0">
-                            <a class="nav-link btn-notifications text-truncate" name="notifications" href="#">
+                            <a
+                                class="nav-link btn-notifications text-truncate"
+                                name="notifications"
+                                href="#"
+                                data-action="click->clinics--notifications#onClickNotificationsBtn"
+                            >
                                 <i class="fa-light fa-bell pe-2 fa-width" id="notifications_icon"></i>
                                 <span class="">Notifications</span>
                             </a>
@@ -216,7 +237,13 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-0 pb-1 pb-md-0">
-                                    <{{ openingTag}} href="#" class="dropdown-item analytics_link {{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
+                                    <{{ openingTag}}
+                                        href="#"
+                                        class="dropdown-item analytics_link {{ class }}"
+                                        data-clinic-id="{{ clinic_id }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--analytics#onClickAnalyticsLink"
+                                    >
                                     <i class="fa-light fa-chart-pie pe-2 fa-width"></i>
                                     Analytics
                                 </{{ closingTag }}>

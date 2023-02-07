@@ -680,7 +680,6 @@ export default class extends Controller {
     onClickDistributorBasketLink(e)
     {
         e.preventDefault();
-        hidePaginator();
         $('.btn-basket-panel-active').removeClass('btn-basket-panel-active');
         $('.btn_item_facts').addClass('btn-basket-panel-active');
 
@@ -784,8 +783,6 @@ export default class extends Controller {
     {
         let self = this;
 
-        self.hidePaginator();
-
         $.ajax({
             async: "true",
             url: "/clinics/get/basket",
@@ -866,11 +863,6 @@ export default class extends Controller {
             $("div.spanner").removeClass("show");
             $("div.overlay").removeClass("show");
         }
-    }
-
-    hidePaginator(){
-
-        $('#paginator').empty().hide();
     }
 
     getSavedBaskets(redirect)

@@ -896,7 +896,12 @@ class ClinicsController extends AbstractController
                             <!-- '. $specie->getName() .' -->
                             <div class="col-6 col-sm-4 col-md-2 text-center">
                                 <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                                    <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="custom-control-input species-checkbox" 
+                                        id="species_'. strtolower($specie->getName()) .'"
+                                        data-action="click->clinics--account-settings#onSubmitShippingPolicy"
+                                    >
                                     <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
                                         <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
                                     </label>

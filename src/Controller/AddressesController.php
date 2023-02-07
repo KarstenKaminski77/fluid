@@ -385,7 +385,7 @@ class AddressesController extends AbstractController
                         id="address_mobile" 
                         class="form-control" 
                         value=""
-                        data-action="keyup->retail-checkout#onKeyUpMobileNo"
+                        data-action="keyup->clinics--addresses#onKeyUpMobile"
                     >
                     <input
                         type="hidden"
@@ -415,7 +415,12 @@ class AddressesController extends AbstractController
                     <label class="info">
                         Address
                     </label>
-                    <span role="button" class="text-primary float-end d-sm-block" id="btn_map_checkout_'. strtolower($deliveryType) .'">
+                    <span 
+                        role="button" 
+                        class="text-primary float-end d-sm-block" 
+                        id="btn_map_checkout_'. strtolower($deliveryType) .'"
+                        data-action="click->clinics--addresses#onClickCheckout'. $deliveryType .'Map"
+                    >
                         <img src="/images/google-maps.png" class="google-map-icon">
                         Find on Map
                     </span>

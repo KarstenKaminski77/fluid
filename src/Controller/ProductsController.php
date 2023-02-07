@@ -132,7 +132,7 @@ class ProductsController extends AbstractController
 
     #[Route('/clinics/search-inventory', name: 'search_inventory')]
     public function getSearchInventoryAction(Request $request, int $page_no = 1): Response
-    {
+    {   //dd($request);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $clinic = $this->getUser()->getClinic();
         $html = '';
@@ -1500,6 +1500,7 @@ class ProductsController extends AbstractController
                                 data-clinic-id="' . $this->getUser()->getClinic()->getId() . '"
                                 data-distributor-id="' . $distributor->getDistributor()->getId() . '"
                                 data-product-id="' . $productId . '"
+                                data-action="click->products--search#onClickClinicConnect"
                             >
                                 CONNECT WITH ' . strtoupper($this->encryptor->decrypt($distributor->getDistributor()->getDistributorName())) . '
                             </buttton>
@@ -2545,6 +2546,7 @@ class ProductsController extends AbstractController
                     class="pt-0 pb-2 pt-md-0 pb-md-0 category-select"
                     data-category-id="' . $catId . '"
                     data-level="' . $level . '"
+                    data-action="click->products--search#onClickFilterCategory"
                 >
                     <label class="ms-1" for="cat_' . $catId . '" role="button">
                         (' . $counter[$category->getId()] . ') ' . $category->getName() . '
@@ -2595,6 +2597,7 @@ class ProductsController extends AbstractController
                 <li
                     class="'. $class .' pb-2 pt-md-0 pb-md-0 distributor-select"
                     data-distributor-id="'. $value .'"
+                    data-action="click->products--search#onClickFilterDistributor"
                 >
                     <input
                         class="form-check-input me-2 distributor-checkbox"
@@ -2644,6 +2647,7 @@ class ProductsController extends AbstractController
                 <li
                     class="' . $class . ' pb-2 pt-md-0 pb-md-0 distributor-select"
                     data-distributor-id="' . $distributor['id'] . '"
+                    data-action="click->products--search#onClickFilterDistributor"
                 >
                     <input
                         class="form-check-input me-2 distributor-checkbox"
@@ -2652,6 +2656,7 @@ class ProductsController extends AbstractController
                         value="' . $distributor['id'] . '"
                         id="dist_' . $distributor['id'] . '"
                         ' . $checked . '
+                        
                     >
                     <label
                         class="ms-1"
@@ -2705,6 +2710,7 @@ class ProductsController extends AbstractController
                 <li
                     class="'. $class .' pb-2 pt-md-0 pb-md-0 manufacturer-select"
                     data-manufacturer-id="'. $value .'"
+                    data-action="click->products--search#onClickFilterManufacturer"
                 >
                     <input
                         class="form-check-input me-2 manufacturer-checkbox"
@@ -2763,6 +2769,7 @@ class ProductsController extends AbstractController
                     <li
                         class="' . $class . ' pb-2 pt-md-0 pb-md-0 manufacturer-select"
                         data-manufacturer-id="' . $manufacturer['id'] . '"
+                        data-action="click->products--search#onClickFilterManufacturer"
                     >
                         <input
                             class="form-check-input me-2 manufacturer-checkbox"
