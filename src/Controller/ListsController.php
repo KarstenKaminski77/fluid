@@ -101,14 +101,26 @@ class ListsController extends AbstractController
                     if($isSelected) {
 
                         $icon = '
-                        <'. $tag .' href="" class="'. $classRemove .'" data-id="' . $productId . '" data-value="' . $itemId . '">
+                        <'. $tag .' 
+                            href="" 
+                            class="'. $classRemove .'" 
+                            data-id="' . $productId . '" 
+                            data-value="' . $itemId . '"
+                            data-action="products--lists#onClickRemoveItem"
+                        >
                             <i class="fa-solid fa-circle-check pe-2 list-icon list-icon-checked"></i>
                         </'. $tag .'>';
 
                     } else {
 
                         $icon = '
-                        <'. $tag .' href="" class="'. $classAdd .'" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
+                        <'. $tag .' 
+                            href="" 
+                            class="'. $classAdd .'" 
+                            data-id="'. $productId .'" 
+                            data-value="'. $lists[$i]->getId() .'"
+                            data-action="products--lists#onClickAddItem"
+                        >
                             <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
                         </'. $tag .'>';
                     }
@@ -118,7 +130,13 @@ class ListsController extends AbstractController
                     $itemCount = false;
 
                     $icon = '
-                    <'. $tag .' href="" class="'. $classAdd .'" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
+                    <'. $tag .' 
+                        href="" 
+                        class="'. $classAdd .'" 
+                        data-id="'. $productId .'" 
+                        data-value="'. $lists[$i]->getId() .'"
+                        data-action="products--lists#onClickAddItem"
+                    >
                         <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
                     </'. $tag .'>';
                 }
@@ -164,7 +182,7 @@ class ListsController extends AbstractController
     public function manageListsAction(Request $request): Response
     {
         $clinic = $this->getUser()->getClinic();
-        $listId = $request->request->get('list_id') ?? 0;
+        $listId = $request->request->get('list-id') ?? 0;
         $i =  0;
 
         // user permissions
@@ -191,6 +209,8 @@ class ListsController extends AbstractController
                     $this->em->remove($item);
                     $this->em->flush();
                 }
+
+
             }
 
             // Delete List
@@ -244,6 +264,7 @@ class ListsController extends AbstractController
                         data-list-id="'. $list->getId() .'"
                         data-bs-toggle="modal" 
                         data-bs-target="#modal_list_delete"
+                        data-action="click->products--lists#onClickDeleteIcon"
                     >
                         <i class="fa-solid fa-trash-can"></i>
                     </'. $tag .'>';
@@ -274,9 +295,10 @@ class ListsController extends AbstractController
                     <div class="col-5 col-sm-3 col-md-2">
                         <'. $tag .' 
                             href="#" 
-                            class="view-list float-end text view-list '. $class .'"
+                            class="view-list float-end text '. $class .'"
                             data-list-id="'. $list->getId() .'"
                             data-keyword-string="'. $request->request->get('keyword') .'"
+                            data-action="click->products--search#onClickSearch"
                         >
                             <i class="fa-solid fa-eye"></i>
                         </'. $tag .'>
@@ -284,6 +306,7 @@ class ListsController extends AbstractController
                             href=""
                             class="float-end me-3 '. $classEdit .' '. $class .'"
                             data-list-id="'. $list->getId() .'"
+                            data-action="products--lists#onClickEditList"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
                         </'. $tag .'>
@@ -312,7 +335,12 @@ class ListsController extends AbstractController
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
-                            <button type="button" class="btn btn-danger btn-sm" id="delete_list">DELETE</button>
+                            <button 
+                                type="button" 
+                                class="btn btn-danger btn-sm" 
+                                id="delete_list"
+                                data-action="click->products--lists#onClickConfirmDelete"
+                            >DELETE</button>
                         </div>
                     </div>
                 </div>
@@ -339,6 +367,7 @@ class ListsController extends AbstractController
         $distributorId = (int) $data->get('distributor-id');
         $listType = $data->get('list-type');
         $listName = $data->get('list-name');
+        $unitPrice = $data->get('unit-price');
         $products = $this->em->getRepository(Products::class)->find($productId);
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId ?? 0);
         $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
@@ -388,7 +417,7 @@ class ListsController extends AbstractController
             $listItem->setItemId($distributorProduct->getItemId());
             $listItem->setName($products->getName());
             $listItem->setQty(1);
-            $listItem->setUnitPrice($data->get('unit-price') ?? 0.00);
+            $listItem->setUnitPrice($unitPrice);
 
             $this->em->persist($listItem);
             $this->em->flush();
@@ -480,7 +509,8 @@ class ListsController extends AbstractController
                 $products = $this->em->getRepository(ListItems::class)->findByListId($listId);
                 $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
 
-                if(count($results) > 0) {
+                if(count($results) > 0)
+                {
                     foreach ($results as $result)
                     {
                         $retailLists .= '
@@ -544,6 +574,7 @@ class ListsController extends AbstractController
                                     data-clinic-product-id="' . $result->getProduct()->getId() . '" 
                                     data-distributor-id="' . $result->getDistributor()->getId() . '"
                                     data-list-id="' . $result->getList()->getId() . '"
+                                    data-action="click->clinics--inventory#onClickDelete"
                                 >
                                         <i class="fa-solid fa-trash-can"></i>
                                     </a>
@@ -594,14 +625,26 @@ class ListsController extends AbstractController
 
                 if($isSelected)
                 {
-                    $icon = '<a href="" class="list_remove_item" data-id="' . $productId . '" data-value="' . $itemId . '">
+                    $icon = '<a 
+                                href="" 
+                                class="list_remove_item" 
+                                data-id="' . $productId . '" 
+                                data-value="' . $itemId . '"
+                                data-action="click->products--lists#onClickRemoveItem"
+                            >
                             <i class="fa-solid fa-circle-check pe-2 list-icon list-icon-checked"></i>
                         </a>';
 
                 }
                 else
                 {
-                    $icon = '<a href="" class="list_add_item" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
+                    $icon = '<a 
+                                href="" 
+                                class="list_add_item" 
+                                data-id="'. $productId .'" 
+                                data-value="'. $lists[$i]->getId() .'"
+                                data-action="click->products--lists#onClickAddItem"
+                            >
                             <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
                         </a>';
                 }
@@ -628,62 +671,35 @@ class ListsController extends AbstractController
     public function clinicsDeleteListItemAction(Request $request): Response
     {
         $data = $request->request;
-        $productId = (int) $data->get('product_id');
-        $listId = (int) $data->get('list_id');
-        $clinic = $this->get('security.token_storage')->getToken()->getUser()->getClinic();
-        $listItem = $this->em->getRepository(ListItems::class)->find($listId);
+        $itemListId = (int) $data->get('list-id');
+        $productId = (int) $data->get('product-id');
+        $listItem = $this->em->getRepository(ListItems::class)->find($itemListId);
 
         $this->em->remove($listItem);
         $this->em->flush();
 
-        $lists = $this->em->getRepository(Lists::class)->getClinicLists($clinic->getId());
-
-        $response = '<h3 class="pb-3 pt-3">Order Lists</h3>';
-
-        for($i = 0; $i < count($lists); $i++){
-
-            if(count($lists[$i]->getListItems()) > 0) {
-
-                $itemCount = true;
-
-                $itemId = $lists[$i]->getListItems()[0]->getList()->getListItems()[0]->getId();
-                $isSelected = false;
-
-                for($c = 0; $c < count($lists[$i]->getListItems()); $c++){
-
-                    if($lists[$i]->getListItems()[$c]->getProduct()->getId() == $productId){
-
-                        $isSelected = true;
-                        break;
-                    }
-                }
-
-                if($isSelected) {
-
-                    $icon = '<a href="" class="list_remove_item" data-id="' . $productId . '" data-value="' . $itemId . '">
-                            <i class="fa-solid fa-circle-check pe-2 list-icon list-icon-checked"></i>
-                        </a>';
-
-                } else {
-
-                    $icon = '<a href="" class="list_add_item" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
-                            <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
-                        </a>';
-                }
-
-            } else {
-
-                $itemCount = false;
-
-                $icon = '<a href="" class="list_add_item" data-id="'. $productId .'" data-value="'. $lists[$i]->getId() .'">
-                            <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
-                        </a>';
-            }
-
-            $response .= $this->getListRow($icon, $lists[$i]->getName(), $lists[$i]->getId(), $itemCount);
-        }
-
-        $response .= $this->listCreateNew($productId);
+        $response = '
+        <div class="col-8 col-sm-10 ps-1 d-flex flex-column">
+            <table style="height: 30px;">
+                <tbody>
+                    <tr>
+                        <td class="align-middle" width="50px">
+                            <a 
+                                href="" class="list_add_item" 
+                                data-id="'. $productId .'" 
+                                data-value="'. $listItem->getList()->getId() .'"
+                                data-action="click->products--lists#onClickAddItem"
+                            >
+                                <i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>
+                            </a>
+                        </td>
+                        <td class="align-middle info">
+                            '. $listItem->getDistributorProduct()->getProduct()->getName() .'
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>';
 
         return new JsonResponse($response);
     }
@@ -777,6 +793,7 @@ class ListsController extends AbstractController
                             id="save_list_distributor"
                             data-id="'. $request->request->get('product-id') .'"
                             data-value="'. $request->request->get('list-id') .'"
+                            data-action="click->products--lists#onClickSelectDistributor"
                         >SAVE</button>
                     </div>
                 </div>
@@ -789,17 +806,34 @@ class ListsController extends AbstractController
     #[Route('/clinics/inventory/list/update-qty', name: 'inventory_list_update_qty')]
     public function clinicsListUpdateQtyAction(Request $request): Response
     {
-        $listItem = $this->em->getRepository(ListItems::class)->find($request->request->get('list_item_id'));
-        $response['list_id'] = 0;
+        $listItem = $this->em->getRepository(ListItems::class)->find($request->request->get('list-item-id'));
+        $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
+        $response['listId'] = 0;
+        $qty = $request->request->get('qty');
+        $listId = $listItem->getList()->getId();
+        $total = 0;
 
-        if($listItem != null){
-
-            $listItem->setQty($request->request->get('qty'));
+        if($listItem != null)
+        {
+            $listItem->setQty($qty);
 
             $this->em->persist($listItem);
             $this->em->flush();
 
-            $response['list_id'] = $listItem->getList()->getId();
+            $listItems = $this->em->getRepository(ListItems::class)->findBy([
+                'list' => $listId
+            ]);
+
+            foreach($listItems as $item)
+            {
+                $total += $item->getQty() * $item->getUnitPrice();
+            }
+
+            $response['listId'] = $listItem->getList()->getId();
+            $response['price'] = [
+                'unitTotal' => $currency .' '. number_format($listItem->getUnitPrice() * $qty,2),
+                'total' => $currency .' '. number_format($total,2),
+            ];
         }
 
         $response['flash'] = '
@@ -854,7 +888,18 @@ class ListsController extends AbstractController
 
         if(count($list) > 0) {
 
-            $response = $this->getEditList($list, $col, $listHasItems, $moveToBasket, $permissions);
+            $listItems = $this->em->getRepository(ListItems::class)->findBy([
+                'list' => $listId,
+            ]);
+            $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
+            $response = 0.00;
+
+            foreach($listItems as $item)
+            {
+                $response += $item->getQty() * $item->getUnitPrice();
+            }
+
+            $response = $currency .' '. number_format($response,2);
 
         } else {
 
@@ -876,9 +921,9 @@ class ListsController extends AbstractController
     public function clinicsListAddToBasketAction(Request $request): Response
     {
         $data = $request->request;
-        $listId = $data->get('list_id');
-        $clinicId = $data->get('clinic_id');
-        $clearBasket = $data->get('clear_basket');
+        $listId = $data->get('list-id');
+        $clinicId = $data->get('clinic-id');
+        $clearBasket = $data->get('clear-basket');
         $basketTotal = 0;
 
         $list = $this->em->getRepository(Lists::class)->getIndividualList($listId);
@@ -890,10 +935,10 @@ class ListsController extends AbstractController
         ]);
 
         // Clear Basket
-        if($clearBasket == 1){
-
-            foreach($basket->getBasketItems() as $item){
-
+        if($clearBasket == 1)
+        {
+            foreach($basket->getBasketItems() as $item)
+            {
                 $basketItem = $this->em->getRepository(BasketItems::class)->find($item->getId());
                 $this->em->remove($basketItem);
             }
@@ -901,9 +946,23 @@ class ListsController extends AbstractController
             $this->em->flush();
         }
 
-        foreach($list[0]->getListItems() as $item){
+        foreach($list[0]->getListItems() as $item)
+        {
+            $basketItem = $this->em->getRepository(BasketItems::class)->findOneBy([
+                'product' => $item->getProduct()->getId(),
+                'distributor' => $item->getDistributor()->getId(),
+            ]);
 
-            $basketItem = new BasketItems();
+            if($basketItem == null)
+            {
+                $basketItem = new BasketItems();
+                $qty = $item->getQty();
+            }
+            else
+            {
+                $qty = $item->getQty() + $basketItem->getQty();
+            }
+
             $product = $this->em->getRepository(Products::class)->find($item->getProduct());
             $distributor = $this->em->getRepository(Distributors::class)->find($item->getDistributor());
             $total = $item->getQty() * $item->getDistributorProduct()->getUnitPrice();
@@ -913,7 +972,7 @@ class ListsController extends AbstractController
             $basketItem->setProduct($product);
             $basketItem->setDistributor($distributor);
             $basketItem->setName($item->getName());
-            $basketItem->setQty($item->getQty());
+            $basketItem->setQty($qty);
             $basketItem->setUnitPrice($product->getUnitPrice());
             $basketItem->setTotal($total);
             $basketItem->setItemId($item->getItemId());
@@ -1264,11 +1323,15 @@ class ListsController extends AbstractController
 
             $link = '
             <a 
-                href="" data-keyword-string="'. $keyword .'" class="float-end view-list" data-list-id="'. $listId .'">View List</a>';
+                href="" data-keyword-string="'. $keyword .'" 
+                class="float-end view-list" 
+                data-list-id="'. $listId .'"
+                data-action="click->products--search#onClickSearch"
+            >View List</a>';
 
         } else {
 
-            $link = '<span class="float-end view-list disabled">View List</span>';
+            $link = '<span class="float-end view-list disabled" data-action="click->products--search#onClickSearch">View List</span>';
         }
 
         return '
@@ -1297,7 +1360,12 @@ class ListsController extends AbstractController
         return '
             <div class="row mt-4">
                 <div class="col-12 col-sm-9">
-                    <form name="form_list" id="form_list" method="post">
+                    <form 
+                        name="form_list" 
+                        id="form_list" 
+                        method="post"
+                        data-action="submit->products--lists#onSubmitNewList"
+                    >
                         <input type="hidden" name="product-id" value="'. $productId .'">
                         <input type="hidden" name="list-id" value="0">
                         <input type="hidden" name="list-type" value="custom">
@@ -1318,7 +1386,12 @@ class ListsController extends AbstractController
                     </form>
                 </div>
                 <div class="col-12 col-sm-3">
-                    <a href="" data-keyword-string="'. $keyword .'" class="btn btn-secondary float-end w-100 w-sm-100 manage-lists">
+                    <a 
+                        href="" data-keyword-string="'. $keyword .'" 
+                        class="btn btn-secondary float-end w-100 w-sm-100 
+                        manage-lists"
+                        data-action="click->products--lists#onClickViewManageLists"
+                    >
                         VIEW AND MANAGE YOUR LISTS 
                     </a>
                 </div>
@@ -1384,6 +1457,7 @@ class ListsController extends AbstractController
                                 autocomplete="off" 
                                 data-list-id="'. $list[0]->getId() .'"
                                 '. $disabled .'
+                                data-action="keyup->products--lists#onKeyUpInventorySearch "
                             />
                             <div id="suggestion_field" style="display: none"></div>
                         </div>
@@ -1449,7 +1523,7 @@ class ListsController extends AbstractController
                             }
 
                             $html .= '
-                            <div class="row">
+                            <div class="row item-row">
                                 <div class="col-12 pt-3 pb-3 bg-light border-right">
                                     <!-- Product Name and Qty -->
                                     <div class="row">
@@ -1483,8 +1557,8 @@ class ListsController extends AbstractController
                                                         name="qty" 
                                                         class="form-control form-control-sm shopping-list-qty" 
                                                         value="'. $item->getQty() .'" 
-                                                        ng-value="1"
                                                         '. $disabled .'
+                                                        data-action="click->products--lists#onChangeQty"
                                                     >
                                                     <div class="hidden_msg" id="error_qty_'. $item->getId() .'"></div>
                                                 </div>
@@ -1548,6 +1622,7 @@ class ListsController extends AbstractController
                                                         href="#" 
                                                         class="remove-list-item text-white" 
                                                         data-item-id="'. $item->getId() .'"
+                                                        data-action="click->products--lists#onClickManageListRemoveItem"
                                                     >Remove</a>
                                                 </span>';
 
@@ -1591,7 +1666,7 @@ class ListsController extends AbstractController
                                 <div class="row">
                                     <div class="col-12 text-truncate ps-0 ps-sm-2">
                                         <span class="info">Subtotal:</span>
-                                        <h5 class="d-inline-block text-primary float-end">' . $currency .' '. number_format($total, 2) . '</h5>
+                                        <h5 class="d-inline-block text-primary float-end" id="sub_total">' . $currency .' '. number_format($total, 2) . '</h5>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -1675,6 +1750,7 @@ class ListsController extends AbstractController
                                 data-basket-clear="1"
                                 data-list-id="'. $list[0]->getId() .'"
                                 data-clinic-id="'. $this->getUser()->getClinic()->getId() .'"
+                                data-action="click->products--lists#onClickAddToBasket"
                             >CLEAR AND ADD</button>
                             <button 
                                 class="btn btn-danger btn-sm list-add-basket" 
@@ -1682,6 +1758,7 @@ class ListsController extends AbstractController
                                 data-basket-clear="0"
                                 data-list-id="'. $list[0]->getId() .'"
                                 data-clinic-id="'. $this->getUser()->getClinic()->getId() .'"
+                                data-action="click->products--lists#onClickAddToBasket"
                             >ADD</button>
                         </div>
                     </div>

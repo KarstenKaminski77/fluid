@@ -534,37 +534,67 @@ class ClinicsController extends AbstractController
             
             <!-- Tabs -->
             <div class="col-12 nav nav-tabs">
-                <div class="nav-item" role="button" id="company_information_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="company_information_tab"
+                    data-action="click->clinics--account-settings#onClickTabCompanyInformation"
+                >
                     <span class="nav-link text-primary active">
                         <i class="fa-regular fa-circle-info fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Company Information</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="about_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="about_tab"
+                    data-action="click->clinics--account-settings#onClickTabAbout"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-circle-question fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">About</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="operating_hours_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="operating_hours_tab"
+                    data-action="click->clinics--account-settings#onClickTabOperatingHours"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-clock fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Operating Hours</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="refund_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="refund_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabRefundPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-rotate-left fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Refund Policy</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="sales_tax_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="sales_tax_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabSalesTaxPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-scale-unbalanced fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Sales Tax Policy</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="shipping_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="shipping_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabShippingPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-truck-ramp-box fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Shipping Policy</span>
@@ -866,7 +896,12 @@ class ClinicsController extends AbstractController
                             <!-- '. $specie->getName() .' -->
                             <div class="col-6 col-sm-4 col-md-2 text-center">
                                 <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                                    <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="custom-control-input species-checkbox" 
+                                        id="species_'. strtolower($specie->getName()) .'"
+                                        data-action="click->clinics--account-settings#onSubmitShippingPolicy"
+                                    >
                                     <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
                                         <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
                                     </label>
@@ -887,7 +922,12 @@ class ClinicsController extends AbstractController
             
             <!-- About -->
             <div class="col-12 hidden" id="about_panel">
-                <form name="form_about" id="form_about" method="post">
+                <form 
+                    name="form_about" 
+                    id="form_about" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitFormAbout"
+                >
                     <input type="hidden" name="method" value="setAbout">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -912,7 +952,12 @@ class ClinicsController extends AbstractController
             
             <!-- Operating Hours -->
             <div class="col-12 hidden" id="operating_hours_panel">
-                <form name="form_operating_hours" id="form_operating_hours" method="post">
+                <form 
+                    name="form_operating_hours" 
+                    id="form_operating_hours" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitOperatingHours"
+                >
                     <input type="hidden" name="method" value="setOperatingHours">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -937,7 +982,12 @@ class ClinicsController extends AbstractController
             
             <!-- Refund Policy -->
             <div class="col-12 hidden" id="refund_policy_panel">
-                <form name="form_refund_policy" id="form_refund_policy" method="post">
+                <form 
+                    name="form_refund_policy" 
+                    id="form_refund_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitRefundPolicy"
+                >
                     <input type="hidden" name="method" value="setRefundPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -962,7 +1012,12 @@ class ClinicsController extends AbstractController
             
             <!-- Sales Tax Policy -->
             <div class="col-12 hidden" id="sales_tax_policy_panel">
-                <form name="form_sales_tax_policy" id="form_sales_tax_policy" method="post">
+                <form 
+                    name="form_sales_tax_policy" 
+                    id="form_sales_tax_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitSalesTaxPolicy"
+                    >
                     <input type="hidden" name="method" value="setSalesTaxPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -987,7 +1042,12 @@ class ClinicsController extends AbstractController
             
             <!-- Shipping Policy -->
             <div class="col-12 hidden" id="shipping_policy_panel">
-                <form name="form_shipping_policy" id="form_shipping_policy" method="post">
+                <form 
+                    name="form_shipping_policy" 
+                    id="form_shipping_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitShippingPolicy"
+                >
                     <input type="hidden" name="method" value="setShippingPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">

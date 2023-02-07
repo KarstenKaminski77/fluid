@@ -43,7 +43,7 @@ use Vich\UploaderBundle\Handler\DownloadHandler;
 
 class ProductsController extends AbstractController
 {
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
     private $pageManager;
     private $em;
     private $requestStack;
@@ -124,7 +124,7 @@ class ProductsController extends AbstractController
             'clinicOrderList' => $clinicOrderList,
             'clinic_id' => $clinic->getId(),
             'charts' => $charts,
-            'permissions' => $permissions,
+            'permissions' => json_encode($permissions),
             'distributorProducts' => $distributorProducts,
             'clinic' => $clinic,
         ]);
@@ -132,7 +132,7 @@ class ProductsController extends AbstractController
 
     #[Route('/clinics/search-inventory', name: 'search_inventory')]
     public function getSearchInventoryAction(Request $request, int $page_no = 1): Response
-    {
+    {   //dd($request);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $clinic = $this->getUser()->getClinic();
         $html = '';
@@ -403,7 +403,7 @@ class ProductsController extends AbstractController
                         <div class="row prd-container">
                             <div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>
                             <!-- Product main container -->
-                            <div class="col-12 col-sm-9 ps-3 text-center text-sm-start bg-white border-sm-xy">
+                            <div class="col-12 col-sm-9 ps-3 text-center text-sm-start bg-white border-sm-xy prd-container">
                                 <div class="row">
                                     <!-- Thumbnail -->
                                     <div class="col-12 col-sm-2 pt-3 text-center position-relative">
@@ -412,6 +412,7 @@ class ProductsController extends AbstractController
                                                 href="#"
                                                 class="open-carousel"
                                                 data-product-id="' . $product->getId() . '"
+                                                data-action="click->products--search#onClickOpenCarousel"
                                             >
                                                 <img 
                                                     src="/images/products/'. $firstImage .'" 
@@ -429,6 +430,7 @@ class ProductsController extends AbstractController
                                             data-favourite="'. $dataFavourite .'"
                                             id="favourite_'. $product->getId() .'"
                                             '. $dataDistributor .'
+                                            data-action="click->products--search#onClickFavourite"
                                         >
                                             <i class="fa-solid fa-heart"></i>
                                         </a>
@@ -440,6 +442,7 @@ class ProductsController extends AbstractController
                                             data-retail="'. $dataRetail .'"
                                             id="retail_'. $product->getId() .'"
                                             '. $dataDistributorRetail .'
+                                            data-action="click->clinics--inventory#onClickAddToRetailList"
                                         >
                                             <i class="fa-solid fa-circle-dollar"></i>
                                         </a>
@@ -487,15 +490,30 @@ class ProductsController extends AbstractController
                                     <!-- Collapsable panel buttons -->
                                     <div class="col-12 search-panels-header">
                                         <!-- Description -->
-                                        <button class="btn btn-sm btn-white info ps-0 pe-4 pe-sm-0 me-0 me-sm-3 btn_details" type="button" data-product-id="'. $product->getId() .'">
+                                        <button 
+                                            class="btn btn-sm btn-white info ps-0 pe-4 pe-sm-0 me-0 me-sm-3 btn_details" 
+                                            type="button" 
+                                            data-product-id="'. $product->getId() .'"
+                                            data-action="click->products--details#onClickBtnDetails"
+                                        >
                                             <i class="fa-regular fa-circle-question"></i> <span class="d-none d-sm-inline">Details</span>
                                         </button>
                                         <!-- Order Lists -->
-                                        <button class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_lists" type="button" data-product-id="'. $product->getId() .'">
+                                        <button 
+                                            class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_lists" 
+                                            type="button" 
+                                            data-product-id="'. $product->getId() .'"
+                                            data-action="click->products--lists#onClickListsPanelBtn"
+                                        >
                                             <i class="fa-regular fa-clipboard-list-check"></i> <span class="d-none d-sm-inline">Lists</span>
                                         </button>
                                         <!-- Tracking -->
-                                        <button class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_track" type="button" data-product-id="'. $product->getId() .'">
+                                        <button 
+                                            class="btn btn-sm btn-white info pe-4 pe-sm-0 me-0 me-sm-3 btn_track" 
+                                            type="button" 
+                                            data-product-id="'. $product->getId() .'"
+                                            data-action="click->products--tracking#onClickBtnTrack"
+                                        >
                                             <i class="fa-regular fa-eye"></i> <span class="d-none d-sm-inline">Track</span>
                                         </button>
                                         <!-- Notes -->
@@ -504,15 +522,17 @@ class ProductsController extends AbstractController
                                             type="button" 
                                             data-product-id="'. $product->getId() .'"
                                             id="btn_note_'. $product->getId() .'"
+                                            data-action="click->products--notes#onClickBtnNotes"
                                         >
                                             <i class="fa-regular fa-pencil"></i> <span class="d-none d-sm-inline">Notes</span>
                                             '. $noteCount .'
                                         </button>
                                         <!-- Reviews -->
                                         <button 
-                                            class="btn btn-sm btn-white info pe-4 pe-sm-0 btn_reviews position-relative" 
+                                            class="btn btn-sm btn-white info pe-4 pe-sm-0 btn_reviews border-0 position-relative" 
                                             type="button" 
                                             data-product-id="'. $product->getId() .'"
+                                            data-action="click->products--reviews#onClickBtnReviews"
                                         >
                                             <i class="fa-regular fa-star"></i> <span class="d-none d-sm-inline">Reviews</span>
                                             '. $reviewCount .'
@@ -549,13 +569,13 @@ class ProductsController extends AbstractController
                                 <div class="col-12 search-panels-container" id="search_panels_container_'. $product->getId() .'" style="display:none;">
             
                                     <!-- Description -->
-                                    <div class="hidden" id="details_'. $product->getId() .'">
+                                    <div class="hidden panel-details" id="details_'. $product->getId() .'">
                                         <h5 class="pb-3 pt-3">Item Description</h5>
                                         '. $product->getDescription() .'
                                     </div>
             
                                     <!-- Order Lists -->
-                                    <div class="collapse panel_lists" id="lists_'. $product->getId() .'">
+                                    <div class="collapse panel-lists" id="lists_'. $product->getId() .'">
                                         <h5 class="pb-3 pt-3">Order Lists</h5>
                                         <p id="lists_no_data_'. $product->getId() .'">
                                             You do not currently have any Order Lists on Fluid
@@ -569,7 +589,7 @@ class ProductsController extends AbstractController
                                     </div>
             
                                     <!-- Track -->
-                                    <div class="collapse" id="track_'. $product->getId() .'">
+                                    <div class="collapse panel-tracking" id="track_'. $product->getId() .'">
                                         <h5 class="pb-3 pt-3">Availability Tracker</h5>
                                         <p>
                                         Create custom alerts when a backordered item comes back in stock. Set a notification 
@@ -582,12 +602,12 @@ class ProductsController extends AbstractController
                                     </div>
             
                                     <!-- Notes -->
-                                    <div class="collapse" id="notes_'. $product->getId() .'">
+                                    <div class="collapse panel-notes" id="notes_'. $product->getId() .'">
                                         <h3 class="pb-3 pt-3">Item Notes</h3>
                                     </div>
             
                                     <!-- Reviews -->
-                                    <div class="collapse review_panel" id="reviews_'. $product->getId() .'">
+                                    <div class="collapse panel-reviews" id="reviews_'. $product->getId() .'">
                                         <h3 class="pb-3 pt-3">Reviews</h3>
                                         <h5>No reviews yet!</h5>
                                         <p id="reviews_no_data">Reviews help thousands of veterinary purchasers know about your experience
@@ -613,6 +633,7 @@ class ProductsController extends AbstractController
                                 class="flash-close carousel-close"
                                 role="button"
                                 data-carousel-id="'. $product->getId() .'"
+                                data-action="click->products--search#onClickCarouselClose"
                             >
                                 <i class="fa-solid fa-xmark"></i>
                             </span>
@@ -635,7 +656,12 @@ class ProductsController extends AbstractController
                         <div class="modal-header basket-modal-header">
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form name="form_review" id="form_review" method="post">
+                        <form 
+                            name="form_review" 
+                            id="form_review" 
+                            method="post"
+                            data-action="submit->products--reviews#onSubmitReview"
+                        >
                             <input type="hidden" name="review_product_id" id="review_product_id" value="0">
                             <input type="hidden" name="rating" id="rating" value="0">
                             <div class="modal-body">
@@ -679,24 +705,64 @@ class ProductsController extends AbstractController
                                         RATE THIS ITEM
                                         <div id="review_rating" class="mb-3 mt-2">
                                             <div style="position: relative; display: inline-block">
-                                                <i class="star star-under fa fa-star star-lg" id="star-under-1"></i>
-                                                <i class="star star-over fa fa-star star-lg" id="star-over-1"></i>
+                                                <i 
+                                                    class="star star-under fa fa-star star-lg" 
+                                                    id="star-under-1"
+                                                    data-action="click->products--reviews#onClickStarUnder1"
+                                                ></i>
+                                                <i 
+                                                    class="star star-over fa fa-star star-lg" 
+                                                    id="star-over-1"
+                                                    data-action="click->products--reviews#onClickStarOver1"
+                                                ></i>
                                             </div>
                                             <div style="position: relative; display: inline-block">
-                                                <i class="star star-under fa fa-star star-lg" id="star-under-2"></i>
-                                                <i class="star star-over fa fa-star star-lg" id="star-over-2"></i>
+                                                <i 
+                                                    class="star star-under fa fa-star star-lg" 
+                                                    id="star-under-2"
+                                                    data-action="click->products--reviews#onClickStarUnder2"
+                                                ></i>
+                                                <i 
+                                                    class="star star-over fa fa-star star-lg" 
+                                                    id="star-over-2"
+                                                    data-action="click->products--reviews#onClickStarOver2"
+                                                ></i>
                                             </div>
                                             <div style="position: relative; display: inline-block">
-                                                <i class="star star-under fa fa-star star-lg" id="star-under-3"></i>
-                                                <i class="star star-over fa fa-star star-lg" id="star-over-3"></i>
+                                                <i 
+                                                    class="star star-under fa fa-star star-lg" 
+                                                    id="star-under-3"
+                                                    data-action="click->products--reviews#onClickStarUnder3"
+                                                ></i>
+                                                <i 
+                                                    class="star star-over fa fa-star star-lg" 
+                                                    id="star-over-3"
+                                                    data-action="click->products--reviews#onClickStarOver3"
+                                                ></i>
                                             </div>
                                             <div style="position: relative; display: inline-block">
-                                                <i class="star star-under fa fa-star star-lg" id="star-under-4"></i>
-                                                <i class="star star-over fa fa-star star-lg" id="star-over-4"></i>
+                                                <i 
+                                                    class="star star-under fa fa-star star-lg" 
+                                                    id="star-under-4"
+                                                    data-action="click->products--reviews#onClickStarUnder4"
+                                                ></i>
+                                                <i 
+                                                    class="star star-over fa fa-star star-lg" 
+                                                    id="star-over-4"
+                                                    data-action="click->products--reviews#onClickStarOver4"
+                                                ></i>
                                             </div>
                                             <div style="position: relative; display: inline-block">
-                                                <i class="star star-under fa fa-star star-lg" id="star-under-5"></i>
-                                                <i class="star star-over fa fa-star star-lg" id="star-over-5"></i>
+                                                <i 
+                                                    class="star star-under fa fa-star star-lg" 
+                                                    id="star-under-5"
+                                                    data-action="click->products--reviews#onClickStarUnder5"
+                                                ></i>
+                                                <i 
+                                                    class="star star-over fa fa-star star-lg" 
+                                                    id="star-over-5"
+                                                    data-action="click->products--reviews#onClickStarOver5"
+                                                ></i>
                                             </div>
                                             <div class="hidden_msg" id="error_rating">
                                                 Please click to rate this item
@@ -734,8 +800,8 @@ class ProductsController extends AbstractController
             if($lastPage > 1) {
 
                 $previousPageNo = $currentPage - 1;
-                $url = '/clinics/inventory/';
-                $previousPage = $url . $previousPageNo;
+                $url = '/clinics/inventory';
+                $previousPage = $url;
 
                 $html .= '
                 <nav class="custom-pagination">
@@ -754,7 +820,13 @@ class ProductsController extends AbstractController
 
                 $html .= '
                 <li class="page-item '. $disabled .'">
-                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage - 1 .'" href="'. $previousPage .'">
+                    <a 
+                        class="page-link" '. $listId .' 
+                        aria-disabled="'. $dataDisabled .'" 
+                        data-page-id="'. $currentPage - 1 .'" 
+                        href="'. $previousPage .'"
+                        data-action="click->products--search#onClickPagination"
+                    >
                         <span aria-hidden="true">&laquo;</span> Previous
                     </a>
                 </li>';
@@ -770,7 +842,12 @@ class ProductsController extends AbstractController
 
                     $html .= '
                     <li class="page-item '. $active .'">
-                        <a class="page-link" '. $listId .' data-page-id="'. $i .'" href="'. $url . $i .'">'. $i .'</a>
+                        <a 
+                            class="page-link" '. $listId .' 
+                            data-page-id="'. $i .'" 
+                            href="'. $url .'"
+                            data-action="click->products--search#onClickPagination"
+                        >'. $i .'</a>
                     </li>';
                 }
 
@@ -785,7 +862,13 @@ class ProductsController extends AbstractController
 
                 $html .= '
                 <li class="page-item '. $disabled .'">
-                    <a class="page-link" '. $listId .' aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
+                    <a 
+                        class="page-link" '. $listId .' 
+                        aria-disabled="'. $dataDisabled .'" 
+                        data-page-id="'. $currentPage + 1 .'" 
+                        href="'. $url  .'"
+                        data-action="click->products--search#onClickPagination"
+                    >
                         Next <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>';
@@ -940,16 +1023,16 @@ class ProductsController extends AbstractController
         $products = $this->em->getRepository(Products::class)->findBySearch($request->get('keyword'));
         $select = '<ul id="product_list">';
 
-        foreach($products as $product){
-
+        foreach($products as $product)
+        {
             $id = $product->getId();
             $name = $product->getName();
-            $listId = $request->request->get('list_id');
+            $listId = $request->request->get('list-id');
             $dosage = '';
             $size = '';
 
-            if(!empty($product->getDosage())) {
-
+            if(!empty($product->getDosage()))
+            {
                 $unit = '';
 
                 if(!empty($product->getUnit())) {
@@ -960,13 +1043,19 @@ class ProductsController extends AbstractController
                 $dosage = ' | '. $product->getDosage() . $unit;
             }
 
-            if(!empty($product->getSize())) {
-
+            if(!empty($product->getSize()))
+            {
                 $size = ' | '. $product->getSize();
             }
 
             $select .= '
-            <li data-product-id="'. $id .'" data-list-id="'. $listId .'" data-retail="false" class="list-item">
+            <li 
+                data-product-id="'. $id .'" 
+                data-list-id="'. $listId .'" 
+                data-retail="false" 
+                class="list-item"
+                data-action="click->products--lists#onClickSearchListItem"
+            >
                 '. $name . $dosage . $size .'
             </li>';
         }
@@ -1163,7 +1252,8 @@ class ProductsController extends AbstractController
                         data-bs-placement="top"
                         data-bs-html="true"
                         data-bs-content="'. $trackingCopy .'"
-                        data-bs-original-title="">
+                        data-bs-original-title=""
+                    >
                         <i class="fa-regular mh-30 stock-icon ' . $stockIcon . '"></i>
                     </div>
                     <div class="col-4 text-end">
@@ -1187,7 +1277,12 @@ class ProductsController extends AbstractController
                 ) {
 
                     $response['html'] .= '
-                    <form name="form_add_to_basket" id="form_add_to_basket_' . $productId . '_' . $distributorId . '" method="post">
+                    <form 
+                        name="form_add_to_basket" 
+                        id="form_add_to_basket_' . $productId . '_' . $distributorId . '" 
+                        method="post"
+                        data-action="submit->basket--basket#onSubmitAddtoBasket"
+                    >
                         <input type="hidden" name="product_id" value="' . $product->getId() . '">
                         <input type="hidden" name="distributor_id" value="' . $distributorId . '">
                         <input type="hidden" name="price" value="' . number_format($unitPrice, 2) . '">
@@ -1265,13 +1360,25 @@ class ProductsController extends AbstractController
                         <div class="modal-footer d-block">
                             <div class="row">
                                 <div class="col-12 col-sm-6 text-start" style="padding-bottom: 0.75rem">
-                                    <a href="" class="me-4 d-inline-block btn_item_facts">
+                                    <a 
+                                        href="" 
+                                        class="me-4 d-inline-block btn_item_facts"
+                                        data-action="click->basket--basket#onClickBtnItemFacts"
+                                    >
                                         Item Facts
                                     </a>
-                                    <a href="" class="me-4 d-inline-block btn_shipping">
+                                    <a 
+                                        href="" 
+                                        class="me-4 d-inline-block btn_shipping"
+                                        data-action="click->basket--basket#onClickBtnShipping"
+                                    >
                                         Shipping
                                     </a>
-                                    <a href="" class="d-inline-block btn_taxes">
+                                    <a 
+                                        href="" 
+                                        class="d-inline-block btn_taxes"
+                                        data-action="click->basket--basket#onClickBtnTaxes"
+                                    >
                                         Taxes
                                     </a>
                                 </div>
@@ -1280,7 +1387,8 @@ class ProductsController extends AbstractController
                                 </div>
 
                                 <!-- Panel Item Facts -->
-                                <div class="col-12 modal_availability" id="panel_item_facts_' . $productId . '_' . $distributorId . '">
+                                <div class="col-12 modal_availability panel-item-facts" 
+                                >
                                     <div class="row mt-sm-4">
                                         <div class="col-12 col-sm-5">
                                             <div class="row">
@@ -1356,12 +1464,12 @@ class ProductsController extends AbstractController
                                 </div>
 
                                 <!-- Panel shipping -->
-                                <div class="col-12" id="panel_shipping_' . $productId . '_' . $distributorId . '">
+                                <div class="col-12 modal_availability panel-shipping hidden">
                                     '. $shippingPolicy .'
                                 </div>
 
                                 <!-- Panel Taxes -->
-                                <div class="col-12 modal_availability border-bottom-0" id="panel_taxes_' . $productId . '_' . $distributorId . '">
+                                <div class="col-12 modal_availability border-bottom-0 panel-taxes hidden">
                                     '. $taxPolicy .'
                                 </div>
                             </div>
@@ -1392,6 +1500,7 @@ class ProductsController extends AbstractController
                                 data-clinic-id="' . $this->getUser()->getClinic()->getId() . '"
                                 data-distributor-id="' . $distributor->getDistributor()->getId() . '"
                                 data-product-id="' . $productId . '"
+                                data-action="click->products--search#onClickClinicConnect"
                             >
                                 CONNECT WITH ' . strtoupper($this->encryptor->decrypt($distributor->getDistributor()->getDistributorName())) . '
                             </buttton>
@@ -1579,19 +1688,30 @@ class ProductsController extends AbstractController
     public function clinicGetInventoryAction(Request $request): Response
     {
         $clinic = $this->getUser()->getClinic();
+        $pageId = $request->request->get('page-id') ?? 1;
         $list = $this->em->getRepository(Lists::class)->findOneBy([
             'clinic' => $clinic->getId(),
             'listType' => 'retail',
         ]);
         $products = $this->em->getRepository(ListItems::class)->findByListId($list->getId());
         $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $paginator = $this->forward('App\Controller\AdminDashBordController::getPagination', [
-            'pageId' => 1,
-            'results' => $results,
-            'url' => '/clinics/manage-inventory/',
-        ])->getContent();
-        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByClinicList($clinic->getId());
+        $pagination = $this->getPagination($pageId, $results, "clinics/manage-inventory");
         $species = $this->em->getRepository(ProductsSpecies::class)->findByClinic($clinic->getId());
+        $manufacturers = [];
+
+        // Prepare manufacturers array
+        foreach($products[1] as $product)
+        {
+            $manufacturer = $this->encryptor->decrypt($product->getProduct()
+                ->getProductManufacturers()->first()->getManufacturers()->getName());
+            $manufacturerId = $product->getProduct()
+                ->getProductManufacturers()->first()->getManufacturers()->getId();
+
+            if(!in_array($manufacturer, $manufacturers))
+            {
+                $manufacturers[$manufacturerId] = $manufacturer;
+            }
+        }
 
         $response = '
         <div class="row">
@@ -1601,11 +1721,21 @@ class ProductsController extends AbstractController
         </div>
         <div class="row " id="import_products_row">
             <div class="col-12 w-100">
-                <a role="button" id="btn_search_inventory" class="float-end text-primary">
+                <a 
+                    role="button" 
+                    id="btn_search_inventory" 
+                    class="float-end text-primary"
+                    data-action="click->clinics--inventory#onClickSearchInventory"
+                >
                     <i class="fa-regular fa-magnifying-glass-plus me-2 mb-3"></i>
                     Search Inventory
                 </a>
-                <a role="button" id="filter_reset" class="float-end text-primary me-4 hidden">
+                <a 
+                    role="button" 
+                    id="filter_reset" 
+                    class="float-end text-primary me-4 hidden"
+                    data-action="click->clinics--inventory#onClickResetFilter"
+                >
                     <i class="fa-regular fa-rotate-right me-2 mb-3"></i>
                     Reset Filters
                 </a>
@@ -1616,9 +1746,21 @@ class ProductsController extends AbstractController
                 <div class="row" id="search_row">
                     <div class="col-12 pt-2 pb-2 bg-light border-left border-right border-top" id="inventory_search_container">
                         <div class="input-group">
-                            <input type="text" id="search_inventory_field" class="form-control" placeholder="Search Inventory" autocomplete="off" />
+                            <input 
+                                type="text" 
+                                id="search_inventory_field" 
+                                class="form-control" 
+                                placeholder="Search Inventory" 
+                                autocomplete="off" 
+                                data-action="keyup->clinics--inventory#onKeyUpSearchField"
+                            />
                             <span class="input-group-text">
-                                <a href="/clinics/manage-inventory" class="text-primary" id="inventory_clear">
+                                <a 
+                                    href="/clinics/manage-inventory" 
+                                    class="text-primary" 
+                                    id="inventory_clear"
+                                    data-action="click->clinics--inventory#onClickResetSearch"
+                                >
                                     <i class="fa-solid fa-rotate-right"></i>
                                 </a>
                             </span>
@@ -1674,7 +1816,12 @@ class ProductsController extends AbstractController
                             <label>
                                 Distributor
                             </label>
-                            <select class="form-control" name="distributor-id" id="distributor_id">
+                            <select 
+                                class="form-control" 
+                                name="distributor-id" 
+                                id="distributor_id"
+                                data-action="change->clinics--inventory#onChangeDistributorSelect"
+                            >
                                 <option value="">Select a Distributor</option>
                             </select>
                             <div class="hidden_msg" id="error_distributor_id">
@@ -1725,6 +1872,7 @@ class ProductsController extends AbstractController
                                 type="submit" 
                                 class="btn btn-primary w-100" 
                                 data-list-id="'. $list->getId() .'"
+                                data-action="click->clinics--inventory#onClickSaveInventory"
                             >
                                 <i class="fa-light fa-floppy-disk me-2"></i>
                                 SAVE
@@ -1738,7 +1886,12 @@ class ProductsController extends AbstractController
             <div class="col-12 bg-light border-top border-left border-right">
                 <div class="row">
                     <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
-                        <select class="form-control" name="manufacturer-id" id="manufacturer_id">
+                        <select 
+                            class="form-control" 
+                            name="manufacturer-id" 
+                            id="manufacturer_id"
+                            data-action="change->clinics--inventory#onChangeFilterSelect"
+                        >
                             <option value="0">
                                 Select a Manufacturer
                             </option>';
@@ -1746,8 +1899,8 @@ class ProductsController extends AbstractController
                             foreach($manufacturers as $manufacturer)
                             {
                                 $response .= '
-                                <option value="'. $manufacturer->getManufacturers()->getId() .'">
-                                    '. $this->encryptor->decrypt($manufacturer->getManufacturers()->getName()) .'
+                                <option value="'. $manufacturerId .'">
+                                    '. $manufacturer .'
                                 </option>';
                             }
 
@@ -1755,7 +1908,12 @@ class ProductsController extends AbstractController
                         </select>
                     </div>
                     <div class="col-12 col-md-3 py-3">
-                        <select class="form-control" name="species-id" id="species_id">
+                        <select 
+                            class="form-control" 
+                            name="species-id" 
+                            id="species_id"
+                            data-action="change->clinics--inventory#onChangeFilterSelect"
+                        >
                             <option value="0">
                                 Select a Species
                             </option>';
@@ -1861,6 +2019,7 @@ class ProductsController extends AbstractController
                                 class="float-end edit-product" 
                                 data-product-name="'. $result->getProduct()->getName() .'" 
                                 data-product-id="'. $result->getId() .'"
+                                data-action="click->clinics--inventory#onClickEditIcon"
                             >
                                 <i class="fa-solid fa-pen-to-square edit-icon"></i>
                             </a>
@@ -1871,9 +2030,10 @@ class ProductsController extends AbstractController
                                 data-clinic-product-id="'. $result->getProduct()->getId() .'" 
                                 data-distributor-id="'. $result->getDistributor()->getId() .'" 
                                 data-list-id="'. $result->getList()->getId() .'"
+                                data-action="click->clinics--inventory#onClickDelete"
                             >
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </a>
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
                         </div>
                     </div>';
                 }
@@ -1889,6 +2049,7 @@ class ProductsController extends AbstractController
             }
 
             $response .= '
+            <div class="mt-3" id="paginator">'. $pagination .'</div>
             </div>
         </div>';
 
@@ -1930,7 +2091,10 @@ class ProductsController extends AbstractController
                     $size = ' | '. $product->getProduct()->getSize();
                 }
 
-                $select .= "<li onClick=\"selectProductListItem('$id', '$name');\" class='search-item'>$name$dosage$size</li>";
+                $select .= "
+                <li onClick=\"selectProductListItem('$id', '$name');\" class='search-item' data-action='click->clinics--inventory#onClickSearchItem'>
+                    $name$dosage$size
+                </li>";
             }
 
             $select .= '</ul>';
@@ -2019,6 +2183,148 @@ class ProductsController extends AbstractController
         }
 
         return new JsonResponse($response);
+    }
+
+    public function getPagination($pageId, $results, $url): string
+    {
+        $currentPage = $pageId;
+        $lastPage = $this->pageManager->lastPage($results);
+        $pagination = '';
+
+        if(count($results) > 0)
+        {
+            $pagination .= '
+            <!-- Pagination -->
+            <div class="row">
+                <div class="col-12">';
+
+            if ($lastPage > 1)
+            {
+                $previousPageNo = $currentPage - 1;
+                $previousPage = $url . $previousPageNo;
+
+                $pagination .= '
+                <nav class="custom-pagination">
+                    <ul class="pagination justify-content-center">
+                ';
+
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
+
+                // Previous Link
+                if ($currentPage > 1)
+                {
+                    $disabled = '';
+                    $dataDisabled = 'false';
+                }
+
+                $pagination .= '
+                <li class="page-item ' . $disabled . '">
+                    <a 
+                        class="address-pagination" 
+                        href="' . $previousPage . '"
+                        data-page-id="'. $previousPageNo .'"
+                        data-action="click->clinics--inventory#onClickPagination"
+                    >
+                        <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
+                    </a>
+                </li>';
+
+                $is_active = false;
+                $c = 0;
+                $i = $currentPage;
+                $pageCount = $currentPage + 9;
+
+                // First 10 pages
+                // If page count is less than 10
+                if($currentPage < 10 && $lastPage < 10)
+                {
+                    $i = 1;
+                    $pageCount = $lastPage;
+                }
+
+                // If page count is greater than 10
+                if($currentPage < 10 && $lastPage > 10)
+                {
+                    $i = 1;
+                    $pageCount = 10;
+                }
+
+                // Last 10 pages
+                if($currentPage > 10 && $currentPage > $lastPage - 10)
+                {
+                    $i = $currentPage - 10;
+                    $pageCount = $currentPage;
+                }
+
+                for ($i; $i <= $pageCount; $i++)
+                {
+                    $active = '';
+                    $c++;
+
+                    if ($i == (int)$currentPage)
+                    {
+                        $active = 'active';
+                        $is_active = true;
+                    }
+
+                    // Go to previous page if all records for a page have been deleted
+                    if(!$is_active && $i == count($results))
+                    {
+                        $active = 'active';
+                    }
+
+                    $pagination .= '
+                    <li class="page-item ' . $active . '">
+                        <a 
+                            class="address-pagination" 
+                            href="' . $url . '"
+                            data-page-id="'. $i .'"
+                            data-action="click->clinics--inventory#onClickPagination"
+                        >' . $i . '</a>
+                    </li>';
+
+                    if($i == $lastPage)
+                    {
+                        break;
+                    }
+                }
+
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
+
+                if ($currentPage < $lastPage)
+                {
+                    $disabled = '';
+                    $dataDisabled = 'false';
+                }
+
+                $pagination .= '
+                <li class="page-item ' . $disabled . '">
+                    <a 
+                        class="address-pagination" 
+                        aria-disabled="' . $dataDisabled . '" 
+                        href="' . $url . $currentPage + 1 . '"
+                        data-page-id="'. $currentPage + 1 .'"
+                        data-action="click->clinics--inventory#onClickPagination"
+                    >
+                        <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>';
+
+                if(count($results) < $currentPage)
+                {
+                    $currentPage = count($results);
+                }
+
+                $pagination .= '
+                        </ul>
+                    </nav>
+                </div>';
+            }
+        }
+
+        return $pagination;
     }
 
     public function zohoRetrieveItem($distributorId, $itemId): Response
@@ -2240,6 +2546,7 @@ class ProductsController extends AbstractController
                     class="pt-0 pb-2 pt-md-0 pb-md-0 category-select"
                     data-category-id="' . $catId . '"
                     data-level="' . $level . '"
+                    data-action="click->products--search#onClickFilterCategory"
                 >
                     <label class="ms-1" for="cat_' . $catId . '" role="button">
                         (' . $counter[$category->getId()] . ') ' . $category->getName() . '
@@ -2290,6 +2597,7 @@ class ProductsController extends AbstractController
                 <li
                     class="'. $class .' pb-2 pt-md-0 pb-md-0 distributor-select"
                     data-distributor-id="'. $value .'"
+                    data-action="click->products--search#onClickFilterDistributor"
                 >
                     <input
                         class="form-check-input me-2 distributor-checkbox"
@@ -2339,6 +2647,7 @@ class ProductsController extends AbstractController
                 <li
                     class="' . $class . ' pb-2 pt-md-0 pb-md-0 distributor-select"
                     data-distributor-id="' . $distributor['id'] . '"
+                    data-action="click->products--search#onClickFilterDistributor"
                 >
                     <input
                         class="form-check-input me-2 distributor-checkbox"
@@ -2347,6 +2656,7 @@ class ProductsController extends AbstractController
                         value="' . $distributor['id'] . '"
                         id="dist_' . $distributor['id'] . '"
                         ' . $checked . '
+                        
                     >
                     <label
                         class="ms-1"
@@ -2400,6 +2710,7 @@ class ProductsController extends AbstractController
                 <li
                     class="'. $class .' pb-2 pt-md-0 pb-md-0 manufacturer-select"
                     data-manufacturer-id="'. $value .'"
+                    data-action="click->products--search#onClickFilterManufacturer"
                 >
                     <input
                         class="form-check-input me-2 manufacturer-checkbox"
@@ -2458,6 +2769,7 @@ class ProductsController extends AbstractController
                     <li
                         class="' . $class . ' pb-2 pt-md-0 pb-md-0 manufacturer-select"
                         data-manufacturer-id="' . $manufacturer['id'] . '"
+                        data-action="click->products--search#onClickFilterManufacturer"
                     >
                         <input
                             class="form-check-input me-2 manufacturer-checkbox"

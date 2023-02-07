@@ -25,11 +25,6 @@ class Baskets
     private $clinic;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Distributors::class, inversedBy="baskets")
-     */
-    private $distributor;
-
-    /**
      * @ORM\Column(type="float", nullable=true)
      */
     private $total;
@@ -74,11 +69,6 @@ class Baskets
      */
     private $isDefault;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=RetailUsers::class, inversedBy="baskets")
-     */
-    private $retailUser;
-
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -102,18 +92,6 @@ class Baskets
     public function setClinic(?Clinics $clinic): self
     {
         $this->clinic = $clinic;
-
-        return $this;
-    }
-
-    public function getDistributor(): ?Distributors
-    {
-        return $this->distributor;
-    }
-
-    public function setDistributor(?Distributors $distributor): self
-    {
-        $this->distributor = $distributor;
 
         return $this;
     }
@@ -245,18 +223,6 @@ class Baskets
     public function setIsDefault(?int $isDefault): self
     {
         $this->isDefault = $isDefault;
-
-        return $this;
-    }
-
-    public function getRetailUser(): ?RetailUsers
-    {
-        return $this->retailUser;
-    }
-
-    public function setRetailUser(?RetailUsers $retailUser): self
-    {
-        $this->retailUser = $retailUser;
 
         return $this;
     }

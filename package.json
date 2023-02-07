@@ -2,7 +2,7 @@
     "devDependencies": {
         "@babel/core": "^7.17.0",
         "@babel/preset-env": "^7.16.0",
-        "@hotwired/stimulus": "^3.0.0",
+        "@hotwired/stimulus": "^3.2.1",
         "@symfony/stimulus-bridge": "^3.2.0",
         "@symfony/webpack-encore": "^4.0.0",
         "bootstrap": "^5.2.3",
@@ -27,6 +27,7 @@
         "@popperjs/core": "^2.11.6",
         "intl-tel-input": "^17.0.19",
         "jquery-scrollTo": "^0.2.2",
-        "slick-carousel": "^1.8.1"
+        "slick-carousel": "^1.8.1",
+        "stimulus-use": "^0.51.3"
     }
 }

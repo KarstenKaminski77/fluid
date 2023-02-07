@@ -85,11 +85,6 @@ class Distributors
     private $created;
 
     /**
-     * @ORM\OneToMany(targetEntity=Baskets::class, mappedBy="distributor")
-     */
-    private $baskets;
-
-    /**
      * @ORM\OneToMany(targetEntity=DistributorClinicPrices::class, mappedBy="distributor")
      */
     private $distributorClinicPrices;
@@ -278,7 +273,6 @@ class Distributors
         }
 
         $this->distributors = new ArrayCollection();
-        $this->baskets = new ArrayCollection();
         $this->distributorClinicPrices = new ArrayCollection();
         $this->distributorProducts = new ArrayCollection();
         $this->distributorUsers = new ArrayCollection();
@@ -454,36 +448,6 @@ class Distributors
     public function setCreated(\DateTimeInterface $created): self
     {
         $this->created = $created;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Baskets[]
-     */
-    public function getBaskets(): Collection
-    {
-        return $this->baskets;
-    }
-
-    public function addBasket(Baskets $basket): self
-    {
-        if (!$this->baskets->contains($basket)) {
-            $this->baskets[] = $basket;
-            $basket->setDistributor($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBasket(Baskets $basket): self
-    {
-        if ($this->baskets->removeElement($basket)) {
-            // set the owning side to null (unless already changed)
-            if ($basket->getDistributor() === $this) {
-                $basket->setDistributor(null);
-            }
-        }
 
         return $this;
     }
