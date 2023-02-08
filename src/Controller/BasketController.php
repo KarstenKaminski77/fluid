@@ -1407,7 +1407,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0" id="saved_items">
                 <div class="col-12 border-bottom border-top pt-3 pb-3 text-center text-sm-start">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">
@@ -1872,7 +1878,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0">
                 <div class="col-12 border-bottom border-top pt-3 pb-3">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">
