@@ -463,11 +463,11 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/get-company-information', name: 'get_company_information')]
+    #[Route('/clinics/get-company-information', name: 'get_clinic_company_information')]
     public function clinicsGetCompanyInformationAction(Request $request): Response
     {
         $species = $this->em->getRepository(Species::class)->findByNameAsc();
-        $permissions = json_decode($request->get('permissions'), true);
+        $permissions = json_decode($request->request->get('permissions'), true);
         $countries = $this->em->getRepository(Countries::class)->findBy([
             'isActive' => 1,
         ]);

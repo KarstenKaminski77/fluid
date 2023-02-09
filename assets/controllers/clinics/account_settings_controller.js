@@ -66,9 +66,7 @@ export default class extends Controller {
         $.ajax({
             async: "true",
             url: '/clinics/get-company-information',
-            type: 'GET',
-            cache: false,
-            timeout: 600000,
+            type: 'POST',
             dataType: 'json',
             data: {
                 permissions: $.session.get('permissions'),
