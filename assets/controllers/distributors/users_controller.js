@@ -15,14 +15,14 @@ export default class extends Controller
 
         if(isUsers != null) {
 
-            this.getUsers();
+            this.getUsers(1);
         }
     }
 
     onClickUsers(e)
     {
         e.preventDefault();
-        this.getUsers();
+        this.getUsers(1);
     }
 
     onClickEdit(e)
@@ -149,14 +149,17 @@ export default class extends Controller
         input.addEventListener('keyup', handleChange);
     }
 
-    getUsers()
+    getUsers(pageId)
     {
         let self = this;
 
         $.ajax({
             url: "/distributors/get/users-list",
-            type: 'GET',
+            type: 'POST',
             dataType: 'json',
+            data: {
+              'page-id': pageId,
+            },
             beforeSend: function ()
             {
                 self.isLoading(true);
@@ -302,6 +305,33 @@ export default class extends Controller
                 self.isLoading(false);
                 $('#modal_user_delete').modal('hide');
                 self.getUsers();
+            }
+        });
+    }
+
+    onClickPagintion(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let pageId = $(clickedElement).data('page-id');
+
+        $.ajax({
+            url: "/distributors/get/users-list",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'page-id': pageId,
+            },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            success: function (response)
+            {
+                $('#distributor_container').empty().append(response);
+                self.isLoading(false);
             }
         });
     }

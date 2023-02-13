@@ -15,6 +15,7 @@ window.bootstrap = bootstrap;
 import intlTelInput from  'intl-tel-input' ;
 import  'intl-tel-input/build/css/intlTelInput.css' ;
 window [ 'intlTelInput' ] = intlTelInput;
+import tinymce from "tinymce";
 import 'jquery-scrollTo';
 import 'popper.js';
 import '../public/js/geo_map';

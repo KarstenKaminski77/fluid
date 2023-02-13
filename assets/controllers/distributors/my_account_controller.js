@@ -7,6 +7,7 @@ export default class extends Controller
     input;
     permissions = JSON.parse($.session.get('permissions'));
     accessDenied = $('#access_denied');
+    tinyMce;
 
     connect()
     {
@@ -316,6 +317,36 @@ export default class extends Controller
                     }
                 }
             });
+        }
+    }
+
+    onChangeTradeLicenseFile()
+    {
+        let self = this;
+        let fp = $("#trade_license_file");
+        let lg = fp[0].files.length; // get length
+        let items = fp[0].files;
+        let errorTradeLicense = $('#error_trade_license_file');
+        let fileName = '';
+        let fileSize = '';
+        let fileType = '';
+
+        errorTradeLicense.hide().append('Required Field');
+
+        if (lg > 0)
+        {
+            for (let i = 0; i < lg; i++)
+            {
+                fileName = items[i].name; // get file name
+                fileSize = items[i].size; // get file size
+                fileType = items[i].type; // get file type
+            }
+        }
+
+        if(fileType != 'application/pdf')
+        {
+            fp.val('');
+            errorTradeLicense.empty().append('Please select a PDF document').show();
         }
     }
 
@@ -721,6 +752,11 @@ export default class extends Controller
             {
                 if ($.inArray(19, self.permissions) !== -1)
                 {
+                    console.log((self.tinyMce))
+                    if(typeof self.tinyMce !== 'undefined')
+                    {
+                        self.tinyMce.remove();
+                    }
                     $('#distributor_container').empty().append(response);
                     self.isLoading(false);
                     self.iniTinyMce();
@@ -787,7 +823,7 @@ export default class extends Controller
 
     iniTinyMce()
     {
-        tinymce.init({
+        this.tinyMce = tinymce.init({
             selector: '.tinymce-selector',
             plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             editimage_cors_hosts: ['picsum.photos'],

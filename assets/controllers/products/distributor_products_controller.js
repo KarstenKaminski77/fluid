@@ -3,6 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller
 {
     permissions = JSON.parse($.session.get('permissions'));
+    errorPage = '/distributors/error';
 
     connect()
     {
@@ -17,7 +18,8 @@ export default class extends Controller
 
         if(isInventory != null) {
 
-            this.getInventory();
+            this.getProductList();
+            window.history.pushState(null, "Fluid", '/distributors/inventory/list');
         }
     }
 
@@ -123,6 +125,97 @@ export default class extends Controller
         this.selectProduct(productId, productName);
     }
 
+    onClickAttach(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+
+        $('#search_field').val('');
+        this.getInventory();
+
+        $.ajax({
+            url: "/distributors/get/product",
+            type: 'POST',
+            dataType: 'json',
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            success: function (response)
+            { alert('xxx')
+                $('#distributor_container').empty().append(response);
+                $('#inventory_item').hide();
+                $('#inventory_btn').hide();
+                self.isLoading(false);
+            }
+        });
+
+        $('#inventory_item').hide();
+    }
+
+    onChangeTrackingId(e)
+    {
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let trackingId = $(clickedElement).val();
+
+        if(trackingId > 0)
+        {
+            $.ajax({
+                url: "/distributors/update-tracking-id",
+                type: 'POST',
+                data: {
+                    'tracking-id': trackingId,
+                },
+                dataType: 'json',
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                complete: function(e)
+                {
+                    if(e.status === 500)
+                    {
+                        window.location.href = self.errorPage;
+                    }
+                },
+                success: function (response)
+                {
+                    if(trackingId == 1)
+                    {
+                        $('#semi_tracked_row').hide(700);
+                        $('#unit_price').attr('disabled', true);
+                        $('#stock_count').attr('disabled', true);
+                        $('#zoho_container').hide(700);
+                        $('#import_products_row').show(700);
+
+                    }
+
+                    if(trackingId == 2)
+                    {
+                        $('#semi_tracked_row').show(700);
+                        $('#unit_price').attr('disabled', true);
+                        $('#stock_count').attr('disabled', true);
+                        $('#import_products_row').hide(700);
+                    }
+
+                    if(trackingId == 3)
+                    {
+                        $('#semi_tracked_row').hide(700);
+                        $('#unit_price').attr('disabled', false);
+                        $('#stock_count').attr('disabled', false);
+                        $('#zoho_container').hide(700);
+                        $('#import_products_row').hide(700);
+                    }
+
+                    self.getFlash(response);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
     getProductList(pageId = 1)
     {
         let self = this;
@@ -147,14 +240,77 @@ export default class extends Controller
         });
 
         $('.distributor-right-col').animate ({scrollTop:0}, 200);
-        window.history.pushState(null, "Fluid", '/distributors/inventory/list/1');
+        window.history.pushState(null, "Fluid", '/distributors/inventory/list');
+    }
+
+    onSubmitInventory(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let isValid = true;
+        let unitPrice = $('#unit_price').val();
+        let itemId = $('#item_id').val();
+        let errorUnitPrice = $('#error_unit_price');
+        let errorItemId = $('#error_item_id');
+        let trackingId = $('#tracking_id').val();
+
+        errorUnitPrice.hide();
+        errorItemId.hide();
+
+        if((unitPrice == '' || unitPrice == 'undefined') && trackingId > 1)
+        {
+            errorUnitPrice.show();
+            isValid = false;
+        }
+
+        if(itemId == '' || itemId == 'undefined')
+        {
+            errorItemId.show();
+            isValid = false;
+        }
+
+        if(isValid == true)
+        {
+            let data = new FormData($(clickedElement)[0]);
+
+            $.ajax({
+                url: "/distributors/inventory-update",
+                type: 'POST',
+                contentType: false,
+                processData: false,
+                cache: false,
+                timeout: 600000,
+                dataType: 'json',
+                data: data,
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                complete: function(e)
+                {
+                    if(e.status === 500)
+                    {
+                        window.location.href = self.errorPage;
+                    }
+                },
+                success: function (response)
+                {
+                    self.getFlash(response.flash);
+                    $('#unit_price').val(response.unitPrice);
+                    $('#stock_count').val(response.stockLevel);
+                    self.isLoading(false);
+                }
+            });
+        }
     }
 
     getInventory()
     {
         let self = this;
         let accessDenied = $('#access_denied');
-        let distributorContainer = $('#clinic_container');
+        let distributorContainer = $('#distributor_container');
 
         $.ajax({
             url: "/distributors/get/refresh-token",
@@ -236,6 +392,12 @@ export default class extends Controller
                     $('#taxExempt_0').attr('checked', false);
                     $('#taxExempt_1').attr('checked', false);
 
+                    if($('#tracking_id').val() == 1)
+                    {
+                        $('#unit_price').prop('disabled', true);
+                        $('#stock_count').prop('disabled', true);
+                    }
+
                     if(data.tax_exempt == 0)
                     {
                         $('#taxExempt_0').attr('checked', true);
@@ -264,6 +426,88 @@ export default class extends Controller
             {
                 $("#suggestion_field").show();
                 $("#suggestion_field").html(data);
+            }
+        });
+    }
+
+    onSubmitUploadCsv(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let file = $('#file').val();
+        let errorFile = $('#error_file');
+        let isValid = true;
+
+        errorFile.hide();
+
+        if(file == '' || file == 'undefined')
+        {
+            errorFile.show();
+            isValid = false;
+        }
+
+        if(isValid) {
+
+            let data = new FormData($(clickedElement)[0]);
+
+            $.ajax({
+                url: "/distributors/upload/inventory",
+                type: 'POST',
+                contentType: false,
+                processData: false,
+                cache: false,
+                timeout: 600000,
+                dataType: 'json',
+                data: data,
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                complete: function (e)
+                {
+                    if (e.status === 500)
+                    {
+                        window.location.href = self.errorPage;
+                    }
+                },
+                success: function (response)
+                {
+                    $('#modal_upload_file').modal('toggle');
+                    $('#file').val('');
+                    self.getFlash(response.flash, response.flashStyle);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onClickImportProducts(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+
+        $.ajax({
+            url: "/distributors/import-distributor-products",
+            type: 'POST',
+            dataType: 'json',
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            complete: function(e)
+            {
+                if(e.status === 500)
+                {
+                    window.location.href = self.errorPage;
+                }
+            },
+            success: function (response)
+            {
+                self.isLoading(false);
+                self.getFlash(response.flash);
             }
         });
     }

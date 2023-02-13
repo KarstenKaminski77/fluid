@@ -221,38 +221,38 @@ class DistributorProductsController extends AbstractController
         $totalItems = 0;
         $response = '';
 
-        if($api != null && $distributor->getTracking()->getId() != null) {
-
+        if($api != null && $distributor->getTracking()->getId() != null)
+        {
             $organizationId = $api->getOrganizationId();
             $refreshToken = $api->getRefreshTokens()->first()->getToken();
             $accessToken = $this->zohoGetAccessToken($refreshToken, $distributorId);
 
             $items = $this->zohoGetAllItems($organizationId, $accessToken, 1, []);
 
-            if (is_array($items) && count($items) > 0) {
-
-                foreach ($items as $item) {
-
+            if (is_array($items) && count($items) > 0)
+            {
+                foreach ($items as $item)
+                {
                     $itemName = $item['itemName'];
                     $itemId = $item['itemId'];
 
-                    if(!empty($itemId)){
-
+                    if(!empty($itemId))
+                    {
                         // Find Product ID
                         $product = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                             'itemId' => $itemId,
                         ]);
 
                         // Only import products with an existing parent
-                        if($product != null && $product->getProduct() != null) {
-
+                        if($product != null && $product->getProduct() != null)
+                        {
                             $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                                 'distributor' => $distributorId,
                                 'product' => $product->getProduct()->getId(),
                             ]);
 
-                            if($distributorProduct == null){
-
+                            if($distributorProduct == null)
+                            {
                                 $distributorProduct = new DistributorProducts();
                             }
 
@@ -525,7 +525,12 @@ class DistributorProductsController extends AbstractController
         }
 
         $html = '
-        <form name="form_inventory_item" id="form_inventory_item" method="post">
+        <form 
+            name="form_inventory_item" 
+            id="form_inventory_item" 
+            method="post"
+            data-action="submit->products--distributor-products#onSubmitInventory"
+        >
             <input type="hidden" id="product_id" name="distributor_products_form[product]" value="">
             <input type="hidden" id="distributor_id" name="distributor_products_form[distributor]" value="">
             <div class="row">
@@ -635,7 +640,12 @@ class DistributorProductsController extends AbstractController
     
                 <!-- Stock Tracking -->
                 <div class="col-12 col-sm-6 pt-2 pb-2 bg-light border-right border-top">
-                    <select class="form-control" name="tracking-id" id="tracking_id">
+                    <select 
+                        class="form-control" 
+                        name="tracking-id" 
+                        id="tracking_id"
+                        data-action="change->products--distributor-products#onChangeTrackingId"
+                    >
                         <option value="0">Select a Tracking Method</option>';
 
                         foreach($tracking as $track)
@@ -820,7 +830,13 @@ class DistributorProductsController extends AbstractController
         <div class="modal fade" id="modal_upload_file" tabindex="-1" aria-labelledby="modal_upload_file" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form name="upload-csv" id="upload_csv" enctype="multipart/form-data" method="post">
+                    <form 
+                        name="upload-csv" 
+                        id="upload_csv" 
+                        enctype="multipart/form-data" 
+                        method="post"
+                        data-action="submit->products--distributor-products#onSubmitUploadCsv"
+                    >
                         <div class="modal-body">
                             <div class="row my-2">
                                 <!-- File Upload -->

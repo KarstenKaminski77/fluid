@@ -27,7 +27,7 @@ class DistributorUsersController extends AbstractController
     private $plainPassword;
     private $encryptor;
 
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 1;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pagination, MailerInterface $mailer, Encryptor $encryptor)
     {
@@ -207,7 +207,7 @@ class DistributorUsersController extends AbstractController
         $distributorId = $this->get('security.token_storage')->getToken()->getUser()->getDistributor()->getId();
         $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $pageId = $request->request->get('page_id');
+        $pageId = $request->request->get('page-id');
         $html = '';
 
         foreach($userResults as $user){
@@ -297,7 +297,7 @@ class DistributorUsersController extends AbstractController
         $distributorId = $this->getUser()->getDistributor()->getId();
         $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $pageId = $request->request->get('page_id');
+        $pageId = $request->request->get('page-id');
         $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy([
             'isDistributor' => 1,
         ]);
@@ -855,6 +855,7 @@ class DistributorUsersController extends AbstractController
                     data-page-id="'. $currentPage - 1 .'" 
                     data-distributor-id="'. $distributorId .'"
                     href="'. $previousPage .'"
+                    data-action="click->distributors--users#onClickPagintion"
                 >
                     <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                 </a>
@@ -876,6 +877,7 @@ class DistributorUsersController extends AbstractController
                         data-page-id="'. $i .'" 
                         href="'. $url .'"
                         data-distributor-id="'. $distributorId .'"
+                        data-action="click->distributors--users#onClickPagintion"
                     >'. $i .'</a>
                 </li>';
             }
@@ -897,6 +899,7 @@ class DistributorUsersController extends AbstractController
                     data-page-id="'. $currentPage + 1 .'" 
                     href="'. $url .'"
                     data-distributor-id="'. $distributorId .'"
+                    data-action="click->distributors--users#onClickPagintion"
                 >
                     <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                 </a>

@@ -11,26 +11,22 @@ use App\Entity\Clinics;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
-use App\Entity\ListItems;
 use App\Entity\Notifications;
 use App\Entity\OrderItems;
 use App\Entity\Orders;
 use App\Entity\OrderStatus;
 use App\Entity\ProductImages;
 use App\Entity\Products;
-use App\Entity\RefreshTokens;
 use App\Entity\Status;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Snappy\Pdf;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
@@ -991,7 +987,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/order', name: 'distributor_get_order_details')]
     public function distributorOrderDetailAction(Request $request): Response
     {
-        $orderId = $request->request->get('order_id');
+        $orderId = $request->request->get('order-id');
         $distributor = $this->getUser()->getDistributor();
         $currency = $distributor->getAddressCountry()->getCurrency();
         $chatMessages = $this->em->getRepository(ChatMessages::class)->findBy([
@@ -1017,13 +1013,13 @@ class OrdersController extends AbstractController
         $isAuthorised = true;
         $disabled = '';
 
-        if(!in_array(5, json_decode($request->request->get('permissions')))){
+        if(!in_array(5, $request->request->get('permissions'))){
 
             $isAuthorised = false;
             $disabled = 'disabled';
         }
 
-        $response = '
+        $html = '
         <form name="form_distributor_orders" id="form_distributor_orders" class="row" method="post">
             <input type="hidden" name="order_id" value="'. $orders[0]->getOrders()->getId() .'">
             <div class="col-12">
@@ -1042,6 +1038,7 @@ class OrdersController extends AbstractController
                             href="#" 
                             class="orders_link"
                             data-distributor-id="'. $distributor->getId() .'"
+                            data-action="click->orders--distributors#onClickOrdersLink"
                         >
                             <i class="fa-solid fa-angles-left me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Back To Orders</span>
@@ -1060,7 +1057,7 @@ class OrdersController extends AbstractController
                         // Before the oder is shipped
                         if($orderStatusId->getStatus()->getId() > 4){
 
-                            $response .= '
+                            $html .= '
                             <span class="saved_baskets_link info p-0 opacity-50">
                                 <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                 <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1070,7 +1067,7 @@ class OrdersController extends AbstractController
 
                             if($isAuthorised){
 
-                                $response .= '
+                                $html .= '
                                 <button type="submit" class="saved_baskets_link btn btn-sm btn-light p-0 text-primary">
                                     <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                     <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1088,7 +1085,7 @@ class OrdersController extends AbstractController
 
                             } else {
 
-                                $response .= '
+                                $html .= '
                                 <span class="btn btn-sm btn-light p-0 text-primary text-disabled cursor-disabled">
                                     <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                     <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1104,7 +1101,7 @@ class OrdersController extends AbstractController
 
                         }
 
-                        $response .= '
+                        $html .= '
                     </div>
                 </div>
                 <!-- Products -->
@@ -1497,7 +1494,7 @@ class OrdersController extends AbstractController
                                 '. $order->getRejectReason();
                             }
 
-                                $response .= '
+                                $html .= '
                                 <!-- Product Name and Qty -->
                                 '. $prdId .'
                                 <div class="row overflow-hidden">
@@ -1596,18 +1593,18 @@ class OrdersController extends AbstractController
                                             ($order->getProduct()->getExpiryDateRequired() == 0)
                                         ) {
 
-                                            $response .=  $badgeConfirm;
+                                            $html .=  $badgeConfirm;
                                         }
 
-                                        $response .= $badgePending . $badgeCancelled . $clinicStatus . $badgeShipped .
+                                        $html .= $badgePending . $badgeCancelled . $clinicStatus . $badgeShipped .
                                         $badgeDeliveredPending . $badgeDeliveredCorrect . $badgeDeliveredIncorrect;
 
-                                        $response .= '
+                                        $html .= '
                                             </div>
                                         </div>';
                         }
 
-                    $response .= '    
+                    $html .= '    
                     </div>
                     <!-- Chat -->
                     <div class="col-12 col-md-3 col-cell p-0 border-bottom border-right">
@@ -1655,6 +1652,11 @@ class OrdersController extends AbstractController
             </div>
         </form>';
 
+        $response = [
+            'html' => $html,
+            'clinicId' => $orders[0]->getOrders()->getClinic()->getId(),
+        ];
+
         return new JsonResponse($response);
     }
 
@@ -1666,8 +1668,8 @@ class OrdersController extends AbstractController
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $orders = $this->em->getRepository(Orders::class)->findByDistributor(
             $distributor,
-            $data->get('clinic_id'),
-            $data->get('status_id'),
+            $data->get('clinic-id'),
+            $data->get('status-id'),
             $data->get('date')
         );
         $results = $this->pageManager->paginate($orders[0], $request, self::ITEMS_PER_PAGE);
@@ -1683,41 +1685,47 @@ class OrdersController extends AbstractController
             </div>';
 
         $clinicsSelect = '
-                 <select class="form-control me-2 clinic_select">';
+         <select 
+            class="form-control me-2 clinic_select"
+            data-action="change->orders--distributors#onChangeFilterClinic"
+        >';
 
         $clinicsSelect .= '
-                 <option value = "">Clinic</option>
+        <option value = "">Clinic</option>
                     ';
 
-        foreach ($clinics as $clinic){
-
+        foreach ($clinics as $clinic)
+        {
             $clinicsSelect .= '
-                    <option value = "'. $clinic->getOrders()->getClinic()->getId() .'">
-                        '. $this->encryptor->decrypt($clinic->getOrders()->getClinic()->getClinicName()) .'
-                     </option>';
+            <option value = "'. $clinic->getOrders()->getClinic()->getId() .'">
+                '. $this->encryptor->decrypt($clinic->getOrders()->getClinic()->getClinicName()) .'
+             </option>';
         };
 
         $clinicsSelect .= '
-                </select>';
+        </select>';
 
         $statusSelect = '
-                <select class="form-control me-2 ms-3 status_select">';
+        <select 
+            class="form-control me-2 ms-3 status_select"
+            data-action="click->orders--distributors#onChangeFilterStatus"
+        >';
 
         $statusSelect .= '
-                <option value = "">Status</option>
+        <option value = "">Status</option>
                     ';
 
-        foreach ($statuses as $status){
-
+        foreach ($statuses as $status)
+        {
             $statusSelect .= '
-                    <option value = "'. $status->getId() .'">
-                    '. $status->getStatus() .'
-                    </option>
-                        ';
+            <option value = "'. $status->getId() .'">
+            '. $status->getStatus() .'
+            </option>
+            ';
         };
 
         $statusSelect .= '
-                </select>';
+        </select>';
 
         $html .= '
         <!-- Actions Row -->
@@ -1739,12 +1747,14 @@ class OrdersController extends AbstractController
                 <button 
                     class="btn btn-primary ms-3 clinic_search"
                     data-distributor-id="'. $distributor->getId() .'"
+                    data-action="click->orders--distributors#onClickFilter"
                 >
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
                 <button 
                     class="btn btn-secondary ms-3 clinic_refresh"
                     data-distributor-id="'. $distributor->getId() .'"
+                    data-action="click->orders--distributors#onClickFilterReset"
                 >
                     <i class="fa-solid fa-rotate"></i>
                 </button>
@@ -1752,7 +1762,12 @@ class OrdersController extends AbstractController
             
             <div class="col-12 d-block d-sm-none">
                 <div class="row border-bottom" id="filter_row_toggle">
-                    <div role="button" class="col-12 text-danger pt-3 pb-3" id="filter_orders">
+                    <div 
+                        role="button" 
+                        class="col-12 text-danger pt-3 pb-3" 
+                        id="filter_orders"
+                        data-action="click->orders--distributors#onClickMobileToggleFilter"
+                    >
                         <i class="fa-solid fa-filter me-3"></i>Filter Orders
                     </div>
                 </div>
@@ -1796,8 +1811,8 @@ class OrdersController extends AbstractController
             </div>
         </div>';
 
-        if(count($orders[1]) > 0) {
-
+        if(count($orders[1]) > 0)
+        {
             $html .= '
             <!-- Orders -->
             <div class="row d-none d-xl-block">
@@ -1827,10 +1842,10 @@ class OrdersController extends AbstractController
         <div class="row">
             <div class="col-12 border-right bg-light col-cell border-left border-right border-bottom">';
 
-                if(count($orders[1]) > 0) {
-
-                    foreach ($results as $order) {
-
+                if(count($orders[1]) > 0)
+                {
+                    foreach ($results as $order)
+                    {
                         $html .= '
                         <!-- Orders -->
                         <div class="row border-bottom">
@@ -1861,15 +1876,16 @@ class OrdersController extends AbstractController
                                     data-order-id="' . $order->getId() . '"
                                     data-distributor-id="' . $distributor->getId() . '"
                                     data-clinic-id="' . $order->getClinic()->getId() . '"
+                                    data-action="orders--distributors#onClickOpenOrder"
                                 >
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
                             </div>
                         </div>';
                     }
-
-                } else {
-
+                }
+                else
+                {
                     $html .= '
                     <div class="row">
                         <div class="col-12 text-center mt-5 mb-5 pt-3 pb-3 text-center">
@@ -1885,7 +1901,7 @@ class OrdersController extends AbstractController
 
         // Pagination
         $pagination = $this->getPagination(
-            $request->request->get('page_id'), $results, '/distributors/orders/',
+            $request->request->get('page-id'), $results, '/distributors/orders/',
             $distributorId, 'distributor'
         );
 
@@ -1973,6 +1989,7 @@ class OrdersController extends AbstractController
                         data-order-id="' . $orderId . '"
                         data-distributor-id="' . $distributorId . '"
                         data-clinic-id="' . $orders[0]->getOrders()->getClinic()->getId() . '"
+                        data-action="click->orders--distributors#onClickOrdersLink"
                     >
                         <i class="fa-solid fa-angles-left me-5 me-md-2"></i>
                         <span class=" d-none d-md-inline-block pe-4">Back To Orders</span>
@@ -4373,7 +4390,7 @@ class OrdersController extends AbstractController
                     data-page-id="'. $currentPage - 1 .'" 
                     data-'. $type .'-id="'. $companyId .'"
                     href="'. $previousPage .'"
-                    data-action="click->orders--clinics#onClickPagination"
+                    data-action="click->orders--'. $type .'s#onClickPagination"
                 >
                     <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline-block">Previous</span>
                 </a>
@@ -4420,7 +4437,7 @@ class OrdersController extends AbstractController
                         data-page-id="'. $i .'" 
                         href="'. $url .'"
                         data-'. $type .'-id="'. $companyId .'"
-                        data-action="click->orders--clinics#onClickPagination"  
+                        data-action="click->orders--'. $type .'s#onClickPagination"  
                     >'. $i .'</a>
                 </li>';
 
@@ -4446,7 +4463,7 @@ class OrdersController extends AbstractController
                     data-page-id="'. $currentPage + 1 .'" 
                     href="'. $url . $currentPage + 1 .'"
                     data-'. $type .'-id="'. $companyId .'"
-                    data-action="click->orders--clinics#onClickPagination"
+                    data-action="click->orders--'. $type .'s#onClickPagination"
                 >
                     <span class="d-none d-sm-inline-block">Next</span> <span aria-hidden="true">&raquo;</span>
                 </a>

@@ -302,7 +302,7 @@ class DistributorsController extends AbstractController
     #[Route('/distributors/order/{order_id}', name: 'distributor_order')]
     #[Route('/distributors/orders/{distributor_id}', name: 'distributor_order_list')]
     #[Route('/distributors/customers/1', name: 'distributor_customer_list')]
-    #[Route('/distributors/inventory/list/1', name: 'distributor_inventory_list')]
+    #[Route('/distributors/inventory/list', name: 'distributor_inventory_list')]
     public function distributorDashboardAction(Request $request): Response
     {
         if($this->get('security.token_storage')->getToken() == null){
@@ -686,7 +686,14 @@ class DistributorsController extends AbstractController
                 $size = ' | '. $product->getSize();
             }
 
-            $select .= "<li onClick=\"selectProduct('$id', '$name');\" class='search-item'>$name$dosage$size</li>";
+            $select .= "
+            <li 
+                class=\"search-item\"
+                data-product-id=\"$id\"
+                data-product-name=\"$name\"
+                data-action='click->products--distributor-products#onclickEditIcon'
+            >$name$dosage$size</li>
+            ";
         }
 
         $select .= '</ul>';
@@ -1150,7 +1157,8 @@ class DistributorsController extends AbstractController
     #[Route('/distributors/update-tracking-id', name: 'update_tracking_id')]
     public function updateTrackingIdAction(Request $request): Response
     {
-        $distributor = $this->em->getRepository(Distributors::class)->find((int)$request->request->get('distributor-id'));
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $tracking = $this->em->getRepository(Tracking::class)->find((int)$request->request->get('tracking-id'));
 
         $distributor->setTracking($tracking);

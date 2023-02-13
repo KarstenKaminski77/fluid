@@ -28,6 +28,7 @@
         "intl-tel-input": "^17.0.19",
         "jquery-scrollTo": "^0.2.2",
         "slick-carousel": "^1.8.1",
-        "stimulus-use": "^0.51.3"
+        "stimulus-use": "^0.51.3",
+        "tinymce": "^6.3.1"
     }
 }

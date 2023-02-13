@@ -9,7 +9,7 @@
             <div class="col-2 col-sm-2 col-md-3 col-xl-2 px-sm-2 px-0 bg-light border-right distributor-left-col">
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100 text-truncate overflow-hidden">
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 mt-4" id="menu">
-                        <li class="nav-item py-3 w-100">
+                        <li class="nav-item py-3 w-100" data-controller="distributors--distributor-clinics">
                             {% if distributor.isApproved == 1 %}
                                 {% set tag = 'a' %}
                                 {% set id = 'customers_link' %}
@@ -19,7 +19,12 @@
                                 {% set id = '' %}
                                 {% set disabled = 'text-disabled' %}
                             {% endif %}
-                            <{{ tag }} href="#" class="align-middle px-0 text-primary nav-icon text-truncate {{ disabled }}" id="{{ id }}">
+                            <{{ tag }}
+                                href="#"
+                                class="align-middle px-0 text-primary nav-icon text-truncate {{ disabled }}"
+                                id="{{ id }}"
+                                data-action="distributors--distributor-clinics#onClickCustomersLink"
+                            >
                                 <i class="fa-regular fa-users fa-fw"></i>
                                 <span class="ms-1 d-none d-sm-inline">Customers</span>
                             </{{ tag }}>
@@ -167,13 +172,14 @@
                                 </li>
                             </ul>
                         </li>
-                        <li class="w-100">
+                        <li class="w-100" data-controller="orders--distributors">
                             {% if 5 in permissions and distributor.isApproved == 1 %}
                                 <a
-                                        href="#"
-                                        class="px-0 align-middle text-primary nav-icon mb-3 text-truncate"
-                                        data-distributor-id="{{ distributor.id }}"
-                                        id="orders_link"
+                                    href="#"
+                                    class="px-0 align-middle text-primary nav-icon mb-3 text-truncate"
+                                    data-distributor-id="{{ distributor.id }}"
+                                    id="orders_link"
+                                    data-action="click->orders--distributors#onClickOrdersLink"
                                 >
                                     <i class="fa-regular fa-file-invoice fa-fw"></i>
                                     <span class="ms-1 d-none d-sm-inline">Orders</span>
@@ -214,6 +220,7 @@
                                             href="#"
                                             class="align-middle text-primary nav-icon text-truncate"
                                             id="inventory_link"
+                                            data-action="click->products--distributor-products#onClickAttach"
                                         >
                                             <i class="fa-regular fa-square-plus fa-fw"></i>
                                             <span class="ms-1 d-none d-sm-inline">Attatch New</span>
@@ -246,18 +253,10 @@
                 <div
                     class="row"
                     id="distributor_container"
-                    data-controller="distributors--my-account distributors--users products--distributor-products"
+                    data-controller="distributors--my-account distributors--users products--distributor-products orders--distributors distributors--distributor-clinics"
                 >
                 </div>
                 {# End Account & Settings #}
-
-                {# Orders #}
-                <div id="order_container"></div>
-                {# End Orders #}
-
-                {# Customers #}
-                <div id="customer_container"></div>
-                {# End Customers #}
 
                 {# Access Denied #}
                 <div class="row hidden h-100 height-distributors" style="height: calc(100% - 56px)!important" id="access_denied">
@@ -352,15 +351,11 @@
             let sales_tax_policy = $('#sales_tax_policy');
             let shipping_policy = $('#shipping_policy');
             let inventory = $('#inventory');
-            let inventory_search = $('#inventory_search');
             let inventory_item = $('#inventory_item');
             let inventoryList = $('#inventory_list_container');
             let users = $('#users');
-            let inventory_clear = $('#inventory_clear');
-            let inventory_btn = $('#inventory_btn');
             let order_container = $('#order_container');
             let customerContainer = $('#customer_container');
-            let access_denied = $('#access_denied');
             let get_messages = '';
             let date = new Date();
             let date_time = date.getFullYear() +'-'+ (date.getMonth() + 1) +'-'+ date.getDate() +' '+ String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") +':'+ String(date.getSeconds()).padStart(2, '0');
@@ -377,141 +372,8 @@
 
             {# Get correct content on refresh #}
             let uri = '{{ app.request.requestUri }}';
-            let is_shipping_policy = uri.match('/distributors/shipping-policy');
-            let is_customers = uri.match('/distributors/customers');
-
-            {# Customers #}
-            if(is_customers != null) {
-
-                getCustomersList();
-            }
 
             {# Orders #}
-            {# Orders List #}
-            function getOrdersList(distributor_id, page_id, clinic_id = '', status_id = '', date = ''){
-
-                $.ajax({
-                    url: "{{ path('distributor_get_order_list') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        page_id: page_id,
-                        distributor_id: distributor_id,
-                        clinic_id: clinic_id,
-                        status_id: status_id,
-                        date: date,
-                    },
-                    beforeSend: function () {
-                        $("div.spanner").addClass("show");
-                        $("div.overlay").addClass("show");
-                    },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('distributor_error_500') }}';
-                        }
-                    },
-                    success: function (response) {
-                        $('#order_container').empty().append(response.html).append(response.pagination);
-                        account_settings.hide();
-                        about.hide();
-                        operating_hours.hide();
-                        refund_policy.hide();
-                        sales_tax_policy.hide();
-                        shipping_policy.hide();
-                        inventory.hide();
-                        inventoryList.hide();
-                        inventory_item.hide();
-                        users.hide();
-                        order_container.show();
-                        customerContainer.hide();
-                        $("div.spanner").removeClass("show");
-                        $("div.overlay").removeClass("show");
-                        $('#filter_row_toggle').removeClass('border-bottom');
-
-                        window.history.pushState(null, "Fluid", '/distributors/orders/'+ distributor_id);
-
-                        let selector = '#datepicker';
-
-                        if ($(window).width() < 769){
-
-                            selector = '#datepicker_mobile';
-                            $('.clinic_select').removeClass('me-2');
-                            $('.status_select').removeClass('me-2 ms-3');
-                        }
-
-                        if($('#filter_row').is( ":visible" )){
-
-                            $('#filter_row_toggle').removeClass('border-bottom');
-                            $('#filter_row_toggle').addClass('border-bottom');
-                        }
-
-                        const picker = new easepick.create({
-                            element: selector,
-                            css: [
-                                'https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css',
-                                '{{ asset('css/date_picker.min.css') }}',
-                            ],
-                            zIndex: 11,
-                            readonly: false,
-                            plugins: [
-                                "AmpPlugin",
-                                "RangePlugin",
-                            ]
-                        })
-                    }
-                });
-            }
-
-            $('#orders_link').click(function (e){
-
-                e.preventDefault();
-
-                account_settings.hide();
-                about.hide();
-                operating_hours.hide();
-                refund_policy.hide();
-                sales_tax_policy.hide();
-                shipping_policy.hide();
-                inventory.hide();
-                inventoryList.hide();
-                inventory_item.hide();
-                users.hide();
-                order_container.empty().show();
-                brand.empty().hide();
-
-                getOrdersList($(this).data('distributor-id'), 1);
-            });
-            $(document).on('click', '.orders_link', function (e){
-
-                e.preventDefault();
-
-                account_settings.hide();
-                about.hide();
-                operating_hours.hide();
-                refund_policy.hide();
-                sales_tax_policy.hide();
-                shipping_policy.hide();
-                inventory.hide();
-                inventoryList.hide();
-                inventory_item.hide();
-                users.hide();
-                order_container.empty().show();
-                brand.empty().hide();
-
-                getOrdersList($(this).data('distributor-id'), 1);
-            });
-            $(document).on('click','.order-link', function (e){
-
-                let distributor_id = window.location.pathname.split('/')[3];
-
-                e.preventDefault();
-                clearInterval(get_messages);
-                getOrdersList(distributor_id, $(this).data('page-id'));
-
-            });
-            $(document).on('change', '.clinic_select', function (){
-                $('.clinic_search').attr('data-clinic-id', $(this).val());
-            });
             setInterval(function(){
 
                 if($('#datepicker_mobile').val() != '' && $('#datepicker_mobile').val() != 'Date') {
@@ -524,54 +386,12 @@
                     $('.clinic_search').attr('data-date', $('#datepicker').val());
                 }
             } , 1000);
-            $(document).on('change', '.status_select', function (){
-                $('.clinic_search').attr('data-status-id', $(this).val());
-            });
-            $(document).on('click', '.clinic_refresh', function (){
-
-                $('.datepicker').val('');
-                $('.clinic_select').val('');
-                $('.status_select').val('');
-
-                let distributor_id = $(this).data('distributor-id');
-
-                getOrdersList(distributor_id, 1);
-            });
-            $(document).on('click', '.clinic_search', function (){
-                let distributor_id = $(this).data('distributor-id');
-                let date = $(this).data('date');
-                let clinic_id = $(this).data('clinic-id');
-                let status = $(this).data('status-id');
-
-                getOrdersList(distributor_id, 1, clinic_id, status, date);
-            });
-            $(document).on('click', '#filter_orders', function (){
-                $('#filter_row').toggle(700, 'linear');
-
-                setInterval(function(){
-
-                    if($('#filter_row').is( ":visible" )){
-
-                        $('#filter_row_toggle').addClass('border-bottom');
-
-                    } else {
-
-                        $('#filter_row_toggle').removeClass('border-bottom');
-                    }
-                } , 1000);
-            });
             {# Order Details #}
             let is_order_detail = uri.match('/distributors/order/[0-9]+');
-            let is_order_list = uri.match('/distributors/orders/[0-9]+');
 
             let orderid = '{{app.request.get('order_id')}}';
             let distributorid = '{{distributor.id}}';
             let clinicid = '{{clinic_id}}';
-
-            if(is_order_list != null && '{{ app.request.get('distributor_id') }}' > 0) {
-
-                getOrdersList('{{ app.request.get('distributor_id') }}', 1);
-            }
 
             if(is_order_detail != null && orderid > 0 && distributorid > 0 && clinicid > 0) {
 
@@ -597,17 +417,12 @@
                     type: 'POST',
                     data: {
                         order_id: order_id,
-                        permissions: '{{ permissions|json_encode }}',
+                        permissions: JSON.parse($.session.get('permissions')),
                     },
                     dataType: 'json',
                     beforeSend: function (){
 
                         isLoading(true);
-                    },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('distributor_error_500') }}';
-                        }
                     },
                     success: function (response) {
 
@@ -619,7 +434,7 @@
                         $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
                         popOver();
                         getChat(order_id, distributor_id, clinic_id)
-                        $('#chat_pulse').hide();
+                        //$('#chat_pulse').hide();
 
                         var maxWidth = Math.max.apply( null, $( '.badge' ).map( function () {
                             return $( this ).outerWidth( true );
@@ -635,15 +450,15 @@
 
                 e.preventDefault();
 
-                let order_id = $(this).data('order-id');
-                let clinic_id = $(this).data('clinic-id');
-                let distributor_id = $(this).data('distributor-id');
-
-                sessionStorage.setItem('order_id', order_id);
-                window.history.pushState(null, "Fluid", '/distributors/order/'+ order_id);
-
-                getOrderDetails(order_id, distributor_id, clinic_id);
-                checkLastModified(order_id);
+                // let order_id = $(this).data('order-id');
+                // let clinic_id = $(this).data('clinic-id');
+                // let distributor_id = $(this).data('distributor-id');
+                //
+                // sessionStorage.setItem('order_id', order_id);
+                // window.history.pushState(null, "Fluid", '/distributors/order/'+ order_id);
+                //
+                // getOrderDetails(order_id, distributor_id, clinic_id);
+                // checkLastModified(order_id);
             });
 
             function getLastModified(order_id){
@@ -1080,463 +895,6 @@
                 }, 1000);
             }
             {# End Orders #}
-
-            {# Users #}
-
-            {# Customers #}
-            function getCustomersList(){
-
-                $.ajax({
-                    url: "{{ path('zoho_customers') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    beforeSend: function () {
-                        $("div.spanner").addClass("show");
-                        $("div.overlay").addClass("show");
-                    },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('distributor_error_500') }}';
-                        }
-                    },
-                    success: function (response) {
-                        $('#customer_container').empty().append(response);
-                        $('.distributor-right-col').animate ({scrollTop:0}, 200);
-                        account_settings.hide();
-                        about.hide();
-                        operating_hours.hide();
-                        refund_policy.hide();
-                        sales_tax_policy.hide();
-                        shipping_policy.hide();
-                        inventory.hide();
-                        inventoryList.hide();
-                        inventory_item.hide();
-                        users.hide();
-                        order_container.hide();
-                        customerContainer.show();
-                        $("div.spanner").removeClass("show");
-                        $("div.overlay").removeClass("show");
-
-                        window.history.pushState(null, "Fluid", '/distributors/customers/1');
-                    }
-                });
-            }
-
-            $(document).on('change', '#trade_license_file', function() {
-
-                let fp = $("#trade_license_file");
-                let lg = fp[0].files.length; // get length
-                let items = fp[0].files;
-                let errorTradeLicense = $('#error_trade_license_file');
-                let fileName = '';
-                let fileSize = '';
-                let fileType = '';
-
-                errorTradeLicense.hide().append('Required Field');
-
-                if (lg > 0) {
-                    for (let i = 0; i < lg; i++) {
-                        fileName = items[i].name; // get file name
-                        fileSize = items[i].size; // get file size
-                        fileType = items[i].type; // get file type
-                    }
-                }
-
-                if(fileType != 'application/pdf')
-                {
-                    fp.val('');
-                    errorTradeLicense.empty().append('Please select a PDF document').show();
-                }
-            });
-            {# End Update Personal Information #}
-
-            {# Invenory / Distributor Products #}
-            let trackingId = '{{ distributor.tracking.id|default(0) }}';
-
-            if(trackingId == 1)
-            {
-                $('#unit_price').attr('disabled', true);
-                $('#stock_count').attr('disabled', true);
-            }
-            $('#form_inventory_item').submit(function(e){
-
-                e.preventDefault();
-
-                let isValid = true;
-                let unitPrice = $('#unit_price').val();
-                let itemId = $('#item_id').val();
-                let errorUnitPrice = $('#error_unit_price');
-                let errorItemId = $('#error_item_id');
-                let trackingId = $('#tracking_id').val();
-
-                errorUnitPrice.hide();
-                errorItemId.hide();
-
-                if((unitPrice == '' || unitPrice == 'undefined') && trackingId > 1){
-
-                    errorUnitPrice.show();
-                    isValid = false;
-                }
-
-                if(itemId == '' || itemId == 'undefined'){
-
-                    errorItemId.show();
-                    isValid = false;
-                }
-
-                if(isValid == true){
-
-                    let data = new FormData(this);
-
-                    $.ajax({
-                        url: "{{ path('distributor_inventory_update') }}",
-                        type: 'POST',
-                        contentType: false,
-                        processData: false,
-                        cache: false,
-                        timeout: 600000,
-                        dataType: 'json',
-                        data: data,
-                        beforeSend: function () {
-                            isLoading(true);
-                        },
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
-                                window.location.href = '{{ path('distributor_error_500') }}';
-                            }
-                        },
-                        success: function (response) {
-                            getFlash(response.flash);
-                            $('#unit_price').val(response.unitPrice);
-                            $('#stock_count').val(response.stockLevel);
-                            isLoading(false);
-                        }
-                    });
-                }
-            });
-            $(document).on('click', '#import_products', function(e){
-
-                e.preventDefault();
-
-                $.ajax({
-                    url: "{{ path('distributor_import_products') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    beforeSend: function (){
-                        isLoading(true);
-                    },
-                    complete: function(e, xhr, settings){
-                        if(e.status === 500){
-                            window.location.href = '{{ path('distributor_error_500') }}';
-                        }
-                    },
-                    success: function (response) {
-
-                        isLoading(false);
-                        getFlash(response.flash);
-                    }
-                });
-            });
-            {#$("#search_field").keyup(function(){#}
-
-            {#    $.ajax({#}
-            {#        type: "POST",#}
-            {#        url: "{{ path('distributor_inventory_search') }}",#}
-            {#        data:'keyword='+$(this).val(),#}
-            {#        success: function(data){#}
-            {#            $("#suggestion_field").show();#}
-            {#            $("#suggestion_field").html(data);#}
-            {#        }#}
-            {#    });#}
-            {#});#}
-            $(document).on('click', '.search-item', function () {
-
-                $('.clear-search').removeClass('hidden');
-                $('.search-div').removeClass('col-12').addClass('col-11');
-            });
-            $(document).on('submit', '#upload_csv', function (e) {
-
-                e.preventDefault();
-
-                let file = $('#file').val();
-                let errorFile = $('#error_file');
-                let isValid = true;
-
-                errorFile.hide();
-
-                if(file == '' || file == 'undefined'){
-
-                    errorFile.show();
-                    isValid = false;
-                }
-
-                if(isValid) {
-
-                    let data = new FormData(this);
-
-                    $.ajax({
-                        url: "{{ path('upload_inventory_csv') }}",
-                        type: 'POST',
-                        contentType: false,
-                        processData: false,
-                        cache: false,
-                        timeout: 600000,
-                        dataType: 'json',
-                        data: data,
-                        beforeSend: function () {
-                            isLoading(true);
-                        },
-                        complete: function (e) {
-                            if (e.status === 500) {
-                                window.location.href = '{{ path('distributor_error_500') }}';
-                            }
-                        },
-                        success: function (response) {
-
-                            $('#modal_upload_file').modal('toggle');
-                            $('#file').val('');
-                            getFlash(response.flash, response.flashStyle);
-                            isLoading(false);
-                        }
-                    });
-                }
-            });
-            $(document).on('change', '#tracking_id', function () {
-
-                let trackingId = $(this).val();
-
-                if(trackingId > 0){
-
-                    $.ajax({
-                        url: "{{ path('update_tracking_id') }}",
-                        type: 'POST',
-                        data: {
-                            'distributor-id': '{{ app.user.distributor.id|default(0) }}',
-                            'tracking-id': trackingId,
-                        },
-                        dataType: 'json',
-                        beforeSend: function () {
-                            isLoading(true);
-                        },
-                        complete: function(e, xhr, settings){
-                            if(e.status === 500){
-                                window.location.href = '{{ path('distributor_error_500') }}';
-                            }
-                        },
-                        success: function (response) {
-
-                            if(trackingId == 1)
-                            {
-                                $('#semi_tracked_row').hide(700);
-                                $('#unit_price').attr('disabled', true);
-                                $('#stock_count').attr('disabled', true);
-                                $('#zoho_container').hide(700);
-                                $('#import_products_row').show(700);
-
-                            }
-
-                            if(trackingId == 2)
-                            {
-                                $('#semi_tracked_row').show(700);
-                                $('#unit_price').attr('disabled', true);
-                                $('#stock_count').attr('disabled', true);
-                                $('#import_products_row').hide(700);
-                            }
-
-                            if(trackingId == 3)
-                            {
-                                $('#semi_tracked_row').hide(700);
-                                $('#unit_price').attr('disabled', false);
-                                $('#stock_count').attr('disabled', false);
-                                $('#zoho_container').hide(700);
-                                $('#import_products_row').hide(700);
-                            }
-
-                            getFlash(response);
-                            isLoading(false);
-                        }
-                    });
-                }
-            });
-            {# End Invenory / Distributor Products #}
-
-            {# Users #}
-            $('#users_link').click(function (e){
-
-                e.preventDefault();
-
-                account_settings.hide();
-                about.hide();
-                operating_hours.hide();
-                refund_policy.hide();
-                sales_tax_policy.hide();
-                shipping_policy.hide();
-                
-                
-                
-                inventory_item.hide();
-                users.show();
-                order_container.hide();
-                customerContainer.hide();
-            });
-            $(document).on('click', '.user-pagination', function (e){
-
-                e.preventDefault();
-                let page_id = $(this).data('page-id');
-
-                $.ajax({
-                    url: "{{ path('distributor_refresh_users') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        page_id: page_id
-                    },
-                    beforeSend: function (){
-                        $("div.spanner").addClass("show");
-                        $("div.overlay").addClass("show");
-                    },
-                    success: function (response) {
-                        $('#users_list').empty().append(response);
-                        $("div.spanner").removeClass("show");
-                        $("div.overlay").removeClass("show");
-                    }
-                });
-            });
-            {# End Users #}
-
-            {# Customers #}
-            $('#customers_link').click(function (e){
-
-                e.preventDefault();
-
-                account_settings.hide();
-                about.hide();
-                operating_hours.hide();
-                refund_policy.hide();
-                sales_tax_policy.hide();
-                shipping_policy.hide();
-                inventory_item.hide();
-                users.hide();
-                order_container.hide();
-                customerContainer.show();
-
-                getCustomersList();
-            });
-            $(document).on('click', '.customer-pagination', function (e){
-
-                e.preventDefault();
-                let page_id = $(this).data('page-id');
-
-                $.ajax({
-                    url: "{{ path('distributor_refresh_users') }}",
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        page_id: page_id
-                    },
-                    beforeSend: function (){
-                        $("div.spanner").addClass("show");
-                        $("div.overlay").addClass("show");
-                    },
-                    success: function (response) {
-                        $('#users_list').empty().append(response);
-                        $("div.spanner").removeClass("show");
-                        $("div.overlay").removeClass("show");
-                    }
-                });
-            });
-            $(document).on('click', '.modal-customer-connect', function (e) {
-
-                e.preventDefault();
-
-                let clinicId = $(this).attr('data-clinic-id');
-                let distributorId = $(this).attr('data-distributor-id');
-                let clinic = $(this).attr('data-clinic');
-                let customerId = $(this).attr('data-customer-id');
-
-                $('#btn_save_customer_connect').attr('data-clinic-id', clinicId);
-                $('#btn_save_customer_connect').attr('data-distributor-id', distributorId);
-                $('#btn_save_customer_connect').attr('data-clinic-name', clinic);
-                $('#connect_clinic_name').empty().append(clinic);
-                $('#customer_id').val(customerId);
-            });
-            $(document).on('click', '#btn_save_customer_connect', function (){
-
-                let customerId = $('#customer_id').val();
-                let clinicId = $(this).attr('data-clinic-id');
-                let distributorId = $(this).attr('data-distributor-id');
-                let errorCustomerId = $('#error_customer_id');
-                let isValid = true;
-
-                errorCustomerId.hide();
-
-                if(customerId == '' || customerId == 'undefined'){
-
-                    errorCustomerId.show();
-                    isValid = false;
-                }
-
-                if(isValid){
-
-                    $.ajax({
-                        url: "{{ path('distributors_activate_connection') }}",
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            'customer-id': customerId,
-                            'distributor-id': distributorId,
-                            'clinic-id': clinicId
-                        },
-                        beforeSend: function (){
-                            $("div.spanner").addClass("show");
-                            $("div.overlay").addClass("show");
-                        },
-                        success: function (response) {
-
-                            getFlash(response);
-                            isLoading(false);
-                            $('#modal_connect_customer').modal('toggle');
-                        }
-                    });
-                }
-            });
-            $(document).on('click', '.ignore-icon', function (e) {
-
-                e.preventDefault();
-
-                let clinicId = $(this).attr('data-clinic-id');
-                let distributorId = $(this).attr('data-distributor-id');
-                let link = $(this);
-
-                if((clinicId != '' || clinicId != 'undefined') && (distributorId != '' || distributorId != 'undefined')){
-
-                    $.ajax({
-                        url: "{{ path('distributors_ignore_connection') }}",
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            'distributor-id': distributorId,
-                            'clinic-id': clinicId
-                        },
-                        beforeSend: function (){
-                            $("div.spanner").addClass("show");
-                            $("div.overlay").addClass("show");
-                        },
-                        success: function (response) {
-
-                            link.find('.fa-bell-slash').replaceWith(response.icon);
-
-                            getFlash(response.flash);
-                            isLoading(false);
-                        }
-                    });
-
-                } else {
-
-                    alert('An error occurred');
-                }
-            });
-            {# End Customers #}
 
             {# Clear Search #}
             $(document).on('click', '#inventory_clear', function (e){
