@@ -50,6 +50,12 @@ export default class extends Controller
         let self = this;
         let clickedElement = e.currentTarget;
         let notificationId = $(clickedElement).data('notification-id');
+        let distributorId = $(clickedElement).data('distributor-id');
+        let clinicId = $(clickedElement).data('clinic-id');
+        let orderId = $(clickedElement).data('order-id');
+
+        let orders = this.application.getControllerForElementAndIdentifier(this.element,'orders--clinics');
+        orders.getOrderDetails(orderId, distributorId, clinicId);
 
         $.ajax({
             async: "true",
@@ -67,6 +73,8 @@ export default class extends Controller
                 self.getNotifications();
             }
         });
+
+        window.history.pushState(null, "Fluid", '/clinics/order/'+ orderId +'/'+ distributorId);
     }
 
     getNotifications()

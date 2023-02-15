@@ -61,10 +61,16 @@ export default class extends Controller {
         });
     }
 
-    onClickSearchItem()
+    onClickSearchItem(e)
     {
+        let clickedElement = e.currentTarget;
+        let productId = $(clickedElement).attr('data-product-id');
+        let productName = $(clickedElement).attr('data-product-name');
+
         $('.clear-search').removeClass('hidden');
         $('.search-div').removeClass('col-12').addClass('col-11');
+
+        this.selectProductListItem(productId, productName);
     }
 
     onChangeDistributorSelect(e)
@@ -165,6 +171,11 @@ export default class extends Controller {
 
         $('.form-control').val('');
         $('#product_id').val('');
+
+        $('#search_field').val('');
+        $('#product_name').empty().append('Manage Your Inventory');
+        $('#inventory_item').slideUp(700);
+        $('#inventory_btn').hide();
     }
 
     onClickEditIcon(e)

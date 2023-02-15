@@ -313,31 +313,8 @@ class DistributorsController extends AbstractController
         }
 
         $distributor = $this->getUser()->getDistributor();
-        $distributorId = $distributor->getId();
         $user = $this->getUser();
         $username = $distributor->getDistributorName();
-        $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
-        $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy(['isDistributor' => 1]);
-        $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $usersPagination = $this->getPagination(1, $userResults, $distributorId);
-        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,0,0);
-        $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
-        $distributorProductsPagination = $this->getPagination(1, $distributorProducts, $distributorId);
-        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
-        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
-        $form = $this->createRegisterForm();
-        $inventoryForm = $this->createDistributorInventoryForm();
-        $addressForm = $this->createDistributorAddressesForm();
-        $userForm = $this->createDistributorUserForm()->createView();
-        $traking = $this->em->getRepository(Tracking::class)->findAll();
-        $clinicId = '';
-        if($request->get('order_id') != null) {
-
-            $order = $this->em->getRepository(Orders::class)->find($request->get('order_id'));
-            $clinicId = $order->getClinic()->getId();
-        }
-        $orderList = false;
-        $orderDetail = false;
 
         $permissions = [];
 
@@ -346,35 +323,10 @@ class DistributorsController extends AbstractController
             $permissions[] = $permission->getPermission()->getId();
         }
 
-        if(substr($request->getPathInfo(),0,20) == '/distributors/orders'){
-
-            $orderList = true;
-        }
-
-        if(substr($request->getPathInfo(),0,20) == '/distributors/order/'){
-
-            $orderDetail = true;
-        }
-
         return $this->render('frontend/distributors/index.html.twig',[
             'distributor' => $distributor,
-            'users' => $userResults,
-            'form' => $form->createView(),
-            'inventory_form' => $inventoryForm->createView(),
-            'address_form' => $addressForm->createView(),
-            'user_form' => $userForm,
-            'order_list' => $orderList,
-            'order_detail' => $orderDetail,
-            'clinic_id' => $clinicId,
-            'users_pagination' => $usersPagination,
-            'username' => $username,
             'permissions' => json_encode($permissions),
-            'user_permissions' => $userPermissions,
-            'tracking' => $traking,
-            'distributorProducts' => $distributorProducts,
-            'distributorProductsPagination' => $distributorProductsPagination,
-            'manufacturers' => $manufacturers,
-            'species' => $species,
+            'username' => $username,
         ]);
     }
 

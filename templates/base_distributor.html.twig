@@ -22,11 +22,11 @@
         <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('images/icons/icon-152x152.png') }}" />
         <link rel="manifest" href="{{ asset('manifest.json') }}" />
 
-{#        <script type="module">#}
-{#            import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';#}
-{#            const el = document.createElement('pwa-update');#}
-{#            document.body.appendChild(el);#}
-{#        </script>#}
+        <script type="module">
+            import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
+            const el = document.createElement('pwa-update');
+            document.body.appendChild(el);
+        </script>
 
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
@@ -38,24 +38,12 @@
         {% block body %}{% endblock %}
 
         {% block javascripts %}
-{#            <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.umd.min.js"></script>#}
+            <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.umd.min.js"></script>
 
             <!-- jQuery -->
             {{ encore_entry_script_tags('app') }}
-{#            <script src="https://cdn.tiny.cloud/1/6htx2vgbw5hvtlc2k9wry1twsj0dro8a2u8fnvlupq7fovrz/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>#}
+            <script src="https://cdn.tiny.cloud/1/6htx2vgbw5hvtlc2k9wry1twsj0dro8a2u8fnvlupq7fovrz/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
             <script src="{{ asset('js/jquery.session.min.js') }}"></script>
-
-            <script>
-
-                $(document).ready(function () {
-
-                    // Toggle Navbar
-                    $(document).on('click', '#btn_navbar_toggle', function () {
-
-                        $('#main_nav').toggle(700);
-                    });
-                });
-            </script>
         {% endblock %}
     </body>
 </html>

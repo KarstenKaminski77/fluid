@@ -724,7 +724,7 @@ class OrdersController extends AbstractController
     }
 
     #[Route('/clinics/checkout/place/order', name: 'checkout_place_order')]
-    public function placeOrderAction(Request $request, MailerInterface $mailer): Response
+    public function clinicPlaceOrderAction(Request $request, MailerInterface $mailer): Response
     {
         $permissions = json_decode($request->request->get('permissions'), true);
         $resp = $this->accessDeniedAction($permissions, 3);
@@ -840,7 +840,7 @@ class OrdersController extends AbstractController
             $mailer->send($email);
 
             // Send In App Notification
-            $this->sendNotification(
+            $this->clinicSendNotification(
                 $orderItems[0]->getOrders(),$orderItems[0]->getDistributor(),
                 $orderItems[0]->getOrders()->getClinic(),'New Order',0, 0
             );
@@ -967,14 +967,14 @@ class OrdersController extends AbstractController
     public function distributorSendOrderNotificationAction(Request $request, MailerInterface $mailer): Response
     {
         $data = $request->request;
-        $orderId = $data->get('order_id');
-        $distributorId = $data->get('distributor_id');
-        $clinicId = $data->get('clinic_id');
+        $orderId = $data->get('order-id');
+        $distributorId = $data->get('distributor-id');
+        $clinicId = $data->get('clinic-id');
         $order = $this->em->getRepository(Orders::class)->find($orderId);
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
 
         // Clinic in app notification
-        $this->sendNotification($order, $distributor, $order->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $distributor, $order->getClinic(), 'Order Update');
 
         // Send Email Notification
         $this->sendOrderEmail($orderId, $distributorId, $clinicId, 'clinics');
@@ -984,7 +984,7 @@ class OrdersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/distributors/order', name: 'distributor_get_order_details')]
+    #[Route('/distributors/get-order', name: 'distributor_get_order_details')]
     public function distributorOrderDetailAction(Request $request): Response
     {
         $orderId = $request->request->get('order-id');
@@ -1020,7 +1020,12 @@ class OrdersController extends AbstractController
         }
 
         $html = '
-        <form name="form_distributor_orders" id="form_distributor_orders" class="row" method="post">
+        <form 
+            name="form_distributor_orders" 
+            id="form_distributor_orders" 
+            class="row" 
+            method="post" 
+            data-action="submit->orders--distributors#onSubmitOrderForm">
             <input type="hidden" name="order_id" value="'. $orders[0]->getOrders()->getId() .'">
             <div class="col-12">
                 <div class="row">
@@ -1049,6 +1054,7 @@ class OrdersController extends AbstractController
                             data-order-id="'. $orderId .'"
                             data-distributor-id="'. $distributor->getId() .'"
                             data-clinic-id="'. $orders[0]->getOrders()->getClinic()->getId() .'"
+                            data-action="orders--distributors#onClickOpenOrder"
                         >
                             <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Refresh Order</span>
@@ -1079,6 +1085,7 @@ class OrdersController extends AbstractController
                                     data-order-id="'. $orderId .'"
                                     data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
                                     data-clinic-id="'. $orders[0]->getOrders()->getClinic()->getId() .'"
+                                    data-action="click->distributors--notifications#onClickSendNotification"
                                 >
                                     <i class="fa-solid fa-paper-plane me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Send Notification</span>
                                 </a>';
@@ -1363,6 +1370,7 @@ class OrdersController extends AbstractController
                                                     class="badge float-end ms-2 border-1 badge-pending-outline-only btn_pending badge-pending-sm"
                                                     data-order-id="' . $orderId . '"
                                                     data-item-id="' . $order->getId() . '"
+                                                    data-action="click->orders--distributors#onClickBtnPending"
                                                 >Pending</a>';
 
                                                 $badgeConfirm = '
@@ -1400,6 +1408,7 @@ class OrdersController extends AbstractController
                                             class="badge float-end ms-2 text-success border-1 badge-success-outline-only badge-success-sm btn_confirm"
                                             data-order-id="' . $orderId . '"
                                             data-item-id="' . $order->getId() . '"
+                                            data-action="click->orders--distributors#onClickBtnConfirm"
                                         >Confirm</a>';
 
                                     } else {
@@ -1432,6 +1441,7 @@ class OrdersController extends AbstractController
                                     onfocus="(this.type=\'date\')" 
                                     id="date"
                                     value="' . $expiry . '"
+                                    data-action="change->orders--distributors#onChangeExpDate"
                                      ' . $disabled . '
                                 >';
                             } else {
@@ -1449,6 +1459,7 @@ class OrdersController extends AbstractController
                                 data-item-id="'. $order->getId() .'"
                                 value="'. number_format($order->getUnitPrice(),2) .'"
                                 class="form-control form-control-sm item-price '. $opacity .'"
+                                data-action="change->orders--distributors#onChangeItemPrice"
                                  '. $disabled .'
                             >';
                             $qty = '
@@ -1457,7 +1468,8 @@ class OrdersController extends AbstractController
                                 name="qty[]" 
                                 data-item-id="'. $order->getId() .'"
                                 class="form-control basket-qty form-control-sm text-center item-qty '. $opacity .'" 
-                                value="'. $order->getQuantity() .'" 
+                                value="'. $order->getQuantity() .'"
+                                data-action="change->orders--distributors#onChangeItemQty"
                                  '. $disabled .'
                             />';
 
@@ -1633,6 +1645,7 @@ class OrdersController extends AbstractController
                                             data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
                                             data-order-id="'. $orderId .'"
                                             data-clinic-id="0"
+                                            data-action="click->orders--distributors#onClickChatField blur->orders--distributors#onBlurChatField"
                                         />
                                         <button 
                                             type="button" 
@@ -1640,6 +1653,7 @@ class OrdersController extends AbstractController
                                             id="btn_chat_send"
                                             data-order-id="'. $orderId .'"
                                             data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
+                                            data-action="click->orders--distributors#onClickSendChat"
                                         >
                                             <i class="fa-solid fa-paper-plane me-0 me-md-2 text-primary"></i>
                                         </button>
@@ -1655,6 +1669,7 @@ class OrdersController extends AbstractController
         $response = [
             'html' => $html,
             'clinicId' => $orders[0]->getOrders()->getClinic()->getId(),
+            'distributorId' => $distributor->getId(),
         ];
 
         return new JsonResponse($response);
@@ -1966,7 +1981,7 @@ class OrdersController extends AbstractController
         }
 
         $response = '
-        <form name="form_distributor_orders" class="row" id="form_distributor_orders" method="post">
+        <form name="form_clinic_orders" class="row" id="form_clinic_orders" method="post">
             <input type="hidden" name="order_id" value="'. $orders[0]->getOrders()->getId() .'">
             <div class="col-12">
                 <div class="row">
@@ -1989,7 +2004,7 @@ class OrdersController extends AbstractController
                         data-order-id="' . $orderId . '"
                         data-distributor-id="' . $distributorId . '"
                         data-clinic-id="' . $orders[0]->getOrders()->getClinic()->getId() . '"
-                        data-action="click->orders--distributors#onClickOrdersLink"
+                        data-action="click->orders--clinics#onClickOrdersLink"
                     >
                         <i class="fa-solid fa-angles-left me-5 me-md-2"></i>
                         <span class=" d-none d-md-inline-block pe-4">Back To Orders</span>
@@ -2976,7 +2991,7 @@ class OrdersController extends AbstractController
 
             $class = 'bg-warning text-light badge-warning-filled-sm';
 
-            //$this->distributorSendNotification($orderId,$distributorId);
+            $this->distributorSendEmailNotification($orderId,$distributorId);
         }
 
         if($link == 'cancelled'){
@@ -3047,7 +3062,7 @@ class OrdersController extends AbstractController
         $this->em->persist($orderStatus);
         $this->em->flush();
 
-        $this->sendNotification(
+        $this->clinicSendNotification(
             $orderItem->getOrders(), $orderItem->getDistributor(),
             $orderItem->getOrders()->getClinic(), 'Order Update', 1, 0
         );
@@ -3065,7 +3080,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-order-item-status', name: 'distributor_update_order_item_status')]
     public function distributorUpdateOrderItemAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $orderId = $orderItem->getOrders()->getId();
         $distributorId = $orderItem->getDistributor()->getId();
         $allItems = $this->em->getRepository(OrderItems::class)->findBy([
@@ -3089,7 +3104,7 @@ class OrdersController extends AbstractController
             }
         }
 
-        $this->sendNotification(
+        $this->distributorSendNotification(
             $orderItem->getOrders(), $orderItem->getDistributor(),
             $orderItem->getOrders()->getClinic(), 'Order Update',0,1
         );
@@ -3109,12 +3124,12 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-expiry-date', name: 'distributor_update_expiry_date')]
     public function distributorUpdateExpiryDateAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
-        $expiryDate = $request->request->get('expiry_date');
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
+        $expiryDate = $request->request->get('expiry-date');
 
         $orderItem->setExpiryDate(\DateTime::createFromFormat('Y-m-d', $expiryDate));
 
-        //$this->sendNotification($orderItem->getOrders(), $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($orderItem->getOrders(), $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $this->em->persist($orderItem);
         $this->em->flush();
@@ -3134,7 +3149,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-item-price', name: 'distributor_update_price')]
     public function distributorUpdatePriceAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $order = $orderItem->getOrders();
         $price = $request->request->get('price');
 
@@ -3155,7 +3170,7 @@ class OrdersController extends AbstractController
         $this->em->persist($order);
         $this->em->flush();
 
-        //$this->sendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $flash = '<b><i class="fas fa-check-circle"></i> Price updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
@@ -3172,7 +3187,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-item-qty', name: 'distributor_update_qty')]
     public function distributorUpdateQtyAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $order = $orderItem->getOrders();
         $qty = $request->request->get('qty');
 
@@ -3194,7 +3209,7 @@ class OrdersController extends AbstractController
         $this->em->persist($order);
         $this->em->flush();
 
-        //$this->sendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $flash = '<b><i class="fas fa-check-circle"></i> Quantity updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
@@ -3404,7 +3419,7 @@ class OrdersController extends AbstractController
             $badge = 'Order Closed';
         }
 
-        $this->sendNotification(
+        $this->clinicSendNotification(
             $orderStatus->getOrders(),$orderStatus->getDistributor(),$orderStatus->getOrders()->getClinic(),
             $badge,1, 0
         );
@@ -3462,7 +3477,7 @@ class OrdersController extends AbstractController
             'order_id' => $orderId
         ])->getContent();
 
-        $this->distributorSendNotification($orderId, $distributorId);
+        $this->distributorSendEmailNotification($orderId, $distributorId);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3560,7 +3575,7 @@ class OrdersController extends AbstractController
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3602,7 +3617,7 @@ class OrdersController extends AbstractController
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3652,7 +3667,7 @@ class OrdersController extends AbstractController
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
 
         $response['orders'] = json_decode($orders);
@@ -3679,17 +3694,6 @@ class OrdersController extends AbstractController
 
         return new JsonResponse($response);
     }
-
-//    #[Route('/zoho/get/access-token', name: 'zoho_get_access_token')]
-//    public function devGetAccessTokenAction(Request $request): Response
-//    {
-//        $refreshToken = $this->em->getRepository(ApiDetails::class)->findOneBy([
-//            'distributor' => '10',
-//        ]);
-//        $accessToken = $this->zohoRefreshToken($refreshToken->getRefreshTokens()->first()->getToken());
-//
-//        return new JsonResponse($accessToken);
-//    }
 
     public function zohoRefreshToken($refreshToken, $distributorId): string
     {
@@ -3765,8 +3769,8 @@ class OrdersController extends AbstractController
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
         $orderItems = $this->em->getRepository(OrderItems::class)->findByNotCancelled($orderId,$distributorId);
-        $distributorName = $distributor->getDistributorName();
-        $emailAddress = $clinic->getEmail();
+        $distributorName = $this->encryptor->decrypt($distributor->getDistributorName());
+        $emailAddress = $this->encryptor->decrypt($clinic->getEmail());
         $poNumber = $distributor->getPoNumberPrefix() .'-'. $orderId;
         $subject = 'Fluid Order - PO '. $poNumber;
         $url = $this->getParameter('app.base_url').'/'. $type .'/order/'. $orderId;
@@ -4203,7 +4207,7 @@ class OrdersController extends AbstractController
         return $orderStatus->getPoFile();
     }
 
-    public function sendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
+    public function clinicSendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
     {
         // Clinic in app notification
         $notification = new Notifications();
@@ -4230,7 +4234,9 @@ class OrdersController extends AbstractController
                         data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
                     >
                         <span class="badge bg-success me-3">'. $badge .'</span>
                     </a>
@@ -4238,10 +4244,112 @@ class OrdersController extends AbstractController
                 <td>
                     <a 
                         href="#"
-                        data-order-id="'. $order->getId() .'"$notification
+                        data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
+                    >
+                        PO No. '. $distributor->getPoNumberPrefix() .'-'. $order->getId() .'
+                    </a>
+                </td>
+                <td>
+                    <a 
+                        href="#" class="delete-notification" 
+                        data-notification-id="'. $notification->getId() .'"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-action="click->distributors--notifications#onClickDeleteNotification"
+                    >
+                        <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
+                    </a>
+                </td>
+            </tr>
+        </table>';
+
+        $notification->setNotification($message);
+
+        $this->em->persist($notification);
+        $this->em->flush();
+
+        // Email Notifications
+        $sendEmailNotification = true;
+
+        foreach ($order->getOrderItems() as $orderItem)
+        {
+            if($orderItem->getIsAccepted() == 0)
+            {
+                $sendEmailNotification = false;
+
+                break;
+            }
+        }
+
+        if ($sendEmailNotification)
+        {
+            $to = $this->encryptor->decrypt($clinic->getEmail());
+            $orderUrl = $this->getParameter('app.base_url') . '/clinics/order/'. $order->getId() .'/'. $distributor->getId();
+
+            $html = '<p>Please <a href="'. $orderUrl .'">click here</a> in order to view the progress of your order</p><br>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html'  => $html,
+            ]);
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($to)
+                ->subject('Fluid Order - PO  '. $order->getOrderItems()[0]->getPoNumber())
+                ->html($html->getContent());
+
+            $this->mailer->send($email);
+        }
+    }
+
+    public function distributorSendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
+    {
+        // Clinic in app notification
+        $notification = new Notifications();
+
+        $notification->setClinic($order->getClinic());
+        $notification->setIsActive(1);
+        $notification->setIsRead($isRead);
+        $notification->setIsReadDistributor($isReadDistributor);
+        $notification->setOrders($order);
+        $notification->setDistributor($distributor);
+        $notification->setIsOrder(1);
+        $notification->setIsTracking(0);
+        $notification->setIsMessage(0);
+
+        $this->em->persist($notification);
+        $this->em->flush();
+
+        $message = '
+        <table class="w-100">
+            <tr>
+                <td>
+                    <a 
+                        href="#"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
+                        class="order_notification_alert"
+                        data-action="click->clinics--notifications#onClickNotificationPanel"
+                    >
+                        <span class="badge bg-success me-3">'. $badge .'</span>
+                    </a>
+                </td>
+                <td>
+                    <a 
+                        href="#"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
+                        class="order_notification_alert"
+                        data-action="click->clinics--notifications#onClickNotificationPanel"
                     >
                         PO No. '. $distributor->getPoNumberPrefix() .'-'. $order->getId() .'
                     </a>
@@ -4299,7 +4407,7 @@ class OrdersController extends AbstractController
         }
     }
 
-    public function distributorSendNotification($orderId, $distributorId)
+    public function distributorSendEmailNotification($orderId, $distributorId)
     {
         // Email Notifications
         $order = $this->em->getRepository(Orders::class)->find($orderId);

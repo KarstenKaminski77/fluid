@@ -105,6 +105,7 @@ class ChatMessagesController extends AbstractController
                         data-clinic-id="'. $clinicRepo->getId() .'"
                         data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
                     >
                         <span class="badge bg-success me-3">New Message</span>
                     </a>
@@ -117,6 +118,7 @@ class ChatMessagesController extends AbstractController
                         data-clinic-id="'. $clinicRepo->getId() .'"
                         data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
                     >
                         PO No. '. $distributorRepo->getPoNumberPrefix() .'-'. $orderId .'
                     </a>

@@ -143,7 +143,7 @@ export default class extends Controller
                 self.isLoading(true);
             },
             success: function (response)
-            { alert('xxx')
+            {
                 $('#distributor_container').empty().append(response);
                 $('#inventory_item').hide();
                 $('#inventory_btn').hide();

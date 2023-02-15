@@ -4,6 +4,9 @@ import {preventOverflow} from "@popperjs/core";
 export default class extends Controller {
     messages;
     errorPage = '/distributors/error';
+    orderId;
+    distributorId;
+    dateTime;
 
     connect()
     {
@@ -178,12 +181,98 @@ export default class extends Controller {
         window.history.pushState(null, "Fluid", '/distributors/order/'+ orderId);
     }
 
+    onClickChatField(e)
+    {
+        let self = this;
+        let clickedElement = e.currentTarget;
+        self.orderId = $(clickedElement).attr('data-order-id');
+        self.distributorId = $(clickedElement).attr('data-distributor-id');
+
+        $.ajax({
+            url: "/message/is_typing",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'order-id': self.orderId,
+                'distributor-id': self.distributorId,
+                'is-clinic': 0,
+                'is-distributor': 1,
+                'is-typing': 1,
+            },
+            success: function (response)
+            {
+                if(response.clinic_is_typing > 0)
+                {
+                    $('#chat_pulse').show();
+                }
+                else
+                {
+                    $('#chat_pulse').hide();
+                }
+            }
+        });
+    }
+
+    onBlurChatField(e)
+    {
+        let self = this;
+
+        $.ajax({
+            url: "/message/is_typing",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'order-id': self.orderId,
+                'distributor-id': self.distributorId,
+                'is-clinic': 0,
+                'is-distributor': 1,
+                'is-typing': 0,
+            },
+            success: function (response)
+            {
+                $('#chat_pulse').hide();
+            }
+        });
+    }
+    
+    onClickSendChat(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let message = $('#chat_field').val();
+
+        if(message.length > 0)
+        {
+            $.ajax({
+                url:"/distributors/send-message",
+                type: 'POST',
+                dataType: 'json',
+                data:
+                {
+                    'distributor': 1,
+                    'clinic': 0,
+                    'distributor-id': $(clickedElement).data('distributor-id'),
+                    'message': message,
+                    'order-id': $(clickedElement).data('order-id')
+                },
+                success: function(response)
+                {
+                    $('#distributor_chat_container').empty().append(response);
+                    $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
+                    $('#chat_field').val('');
+                    $('#chat_pulse').hide();
+                }
+            });
+        }
+    }
+
     getOrderDetails(orderId)
     {
         let self = this;
 
         $.ajax({
-            url: "/distributors/order",
+            url: "/distributors/get-order",
             type: 'POST',
             data: {
                 'order-id': orderId,
@@ -202,16 +291,16 @@ export default class extends Controller {
                 }
             },
             success: function (response)
-            { console.log('xxx')
+            {
                 // Reset page load time for refresh button alert
                 let date = new Date();
-                let dateTime = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") + ':' + String(date.getSeconds()).padStart(2, '0');
-                sessionStorage.setItem('date_time', dateTime);
+                self.dateTime = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") + ':' + String(date.getSeconds()).padStart(2, '0');
+                sessionStorage.setItem('date_time', self.dateTime);
 
                 $('#distributor_container').empty().append(response.html);
                 $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
                 self.popOver();
-                //self.getChat(orderId, distributorId, clinicId)
+                self.getChat(orderId, response.distributorId, response.clinicId)
                 $('#chat_pulse').hide();
 
                 var maxWidth = Math.max.apply(null, $('.badge').map(function () {
@@ -225,7 +314,7 @@ export default class extends Controller {
         });
     }
 
-    getMessages(distributorId, clinicId)
+    getMessages(clinicId, distributorId)
     {
         let uri = window.location.pathname;
         let isOrderDetail = uri.match('/[a-zA-Z]+/[a-zA-Z]+/[0-9]+');
@@ -238,7 +327,7 @@ export default class extends Controller {
             let totalMessages = messagesSent + messagesReceived;
 
             $.ajax({
-                url: "{{ path('get_messages') }}",
+                url: "/distributors/order/get-messages",
                 type: 'GET',
                 cache: false,
                 timeout: 10000,
@@ -271,16 +360,286 @@ export default class extends Controller {
         }
     };
 
-    getChat(orderId, distributorId, clinicId) {
-        let get_messages = setInterval(function(){
-            this.getMessages(distributorId, clinicId);
+    getChat(orderId, distributorId, clinicId)
+    {
+        self = this;
+
+        setInterval(function(){
+            self.getMessages(clinicId, distributorId);
         }, 1000);
+    }
+
+    onChangeExpDate(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let itemId = $(clickedElement).data('item-id');
+        let expiryDate = $(clickedElement).val();
+
+        if(itemId > 0)
+        {
+            $.ajax({
+                url:"/distributors/update-expiry-date",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'item-id': itemId,
+                    'expiry-date': expiryDate
+                },
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                success: function(response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onChangeItemPrice(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let itemId = $(clickedElement).data('item-id');
+        let price = $(clickedElement).val();
+
+        if(itemId > 0){
+
+            $.ajax({
+                url:"/distributors/update-item-price",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'item-id': itemId,
+                    'price': price
+                },
+                beforeSend: function ()
+                {
+                    self.isLoading(false);
+                },
+                success: function(response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onChangeItemQty(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let itemId = $(clickedElement).data('item-id');
+        let qty = $(clickedElement).val();
+
+        if(itemId > 0)
+        {
+            $.ajax({
+                url:"/distributors/update-item-qty",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'item-id': itemId,
+                    'qty': qty
+                },
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                success: function(response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onClickBtnConfirm(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let itemId = $(clickedElement).data('item-id');
+
+        if(itemId > 0)
+        {
+            $.ajax({
+                url:"/distributors/update-order-item-status",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'item-id': itemId,
+                    'confirmed_status': 1
+                },
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                success: function(response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onClickBtnPending(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let itemId = $(clickedElement).attr('data-item-id');
+
+        if(itemId > 0)
+        {
+            $.ajax({
+                url:"/distributors/update-order-item-status",
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'item-id': itemId,
+                    'confirmed_status': 0
+                },
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                success: function(response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+                }
+            });
+        }
+    }
+
+    onSubmitOrderForm(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let data = new FormData($(clickedElement)[0]);
+        let productId = data.getAll('product_id[]');
+        let expDates = data.getAll('expiry_date[]');
+        let prices = data.getAll('price[]');
+        let qtys = data.getAll('qty[]');
+        let isValid = true;
+
+        for(let $i = 0; $i < productId.length; $i++)
+        {
+            let errorExpDate = $('#error_expiry_date_'+ productId[$i]);
+            let errorPrice = $('#error_price_'+ productId[$i]);
+            let errorQty = $('#error_qty_'+ productId[$i]);
+            let expDate = expDates[$i];
+            let price = prices[$i];
+            let qty = qtys[$i];
+
+            errorExpDate.hide();
+            errorPrice.hide();
+            errorQty.hide();
+
+            if((expDate == '' || expDate == 'undefined') && expDate !== 0)
+            {
+                errorExpDate.show();
+                isValid = false;
+            }
+
+            if(price == '' || price == 'undefined')
+            {
+                errorPrice.show();
+                isValid = false;
+            }
+
+            if(qty == '' || qty == 'undefined')
+            {
+                errorQty.show();
+                isValid = false;
+            }
+        }
+
+        if(isValid)
+        {
+            $.ajax({
+                url: "/distributors/update-order",
+                type: 'POST',
+                contentType: false,
+                processData: false,
+                cache: false,
+                timeout: 600000,
+                dataType: 'json',
+                data: data,
+                beforeSend: function ()
+                {
+                    self.isLoading(true);
+                },
+                success: function (response)
+                {
+                    self.getFlash(response.flash);
+                    self.getOrderDetails(response.order_id);
+                    self.isLoading(false);
+
+                    let date = new Date();
+                    self.dateTime = date.getFullYear() +'-'+ (date.getMonth() + 1) +'-'+ date.getDate() +' '+ String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") +':'+ String(date.getSeconds()).padStart(2, '0');
+
+                    sessionStorage.setItem('date_time', self.dateTime);
+                }
+            });
+        }
     }
 
     checkLastModified(orderId)
     {
         setInterval(this.checkLastModified(orderId), 1000);
     }
+
+    getLastModified(orderId)
+    {
+        let self = this;
+        let sessionDateTime = sessionStorage.getItem('date_time');
+
+        $.ajax({
+            url: "/distributors/get-order-last-updated",
+            type: 'POST',
+            cache: false,
+            timeout: 10000,
+            data: {
+                'order-id': orderId
+            },
+            success: function (response)
+            {
+                if (response > sessionDateTime)
+                {
+                    $('.refresh-distributor-order').removeClass('blinking-text').addClass('blinking-text');
+
+                    let date = new Date();
+                    self.dateTime = date.getFullYear() +'-'+ (date.getMonth() + 1) +'-'+ date.getDate() +' '+ String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") +':'+ String(date.getSeconds()).padStart(2, '0');
+
+                    sessionStorage.setItem('date_time', self.dateTime);
+
+                }
+            }
+        });
+    };
 
     popOver()
     {

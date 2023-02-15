@@ -2091,10 +2091,15 @@ class ProductsController extends AbstractController
                     $size = ' | '. $product->getProduct()->getSize();
                 }
 
-                $select .= "
-                <li onClick=\"selectProductListItem('$id', '$name');\" class='search-item' data-action='click->clinics--inventory#onClickSearchItem'>
-                    $name$dosage$size
-                </li>";
+                $select .= '
+                <li 
+                    data-product-id="'. $id .'"
+                    data-product-name="'. $name .'"
+                    class="search-item" 
+                    data-action="click->clinics--inventory#onClickSearchItem"
+                >
+                    '. $name .' '. $dosage .' '. $size .'
+                </li>';
             }
 
             $select .= '</ul>';
