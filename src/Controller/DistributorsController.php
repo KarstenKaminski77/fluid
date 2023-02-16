@@ -280,7 +280,10 @@ class DistributorsController extends AbstractController
                 $mailer->send($email);
             }
 
-            $response = 'Your Fluid account was successfully created, an email with your login credentials has been sent to your inbox.';
+            $response = '
+            <p class="text-center">
+                Your Fluid account was successfully created, an email with your login credentials has been sent to your inbox.
+            </p>';
 
         } else {
 
@@ -391,8 +394,8 @@ class DistributorsController extends AbstractController
             $isApproved = false;
         }
 
-        if($distributor != null) {
-
+        if($distributor != null)
+        {
             $domainName = explode('@', $data['email']);
 
             $distributor->setDistributorName($this->encryptor->encrypt($data['distributor-name']));
@@ -420,20 +423,20 @@ class DistributorsController extends AbstractController
                 $file = $distributor->getId() . '-' . uniqid() . '.' . $extension;
                 $targetFile = __DIR__ . '/../../public/documents/' . $file;
 
-                if(move_uploaded_file($_FILES['distributor_form']['tmp_name']['trade-license-file'], $targetFile)) {
-
+                if(move_uploaded_file($_FILES['distributor_form']['tmp_name']['trade-license-file'], $targetFile))
+                {
                     $distributor->setTradeLicense($file);
                 }
             }
 
-            if(!empty($_FILES['distributor_form']['name']['logo'])) {
-
+            if(!empty($_FILES['distributor_form']['name']['logo']))
+            {
                 $extension = pathinfo($_FILES['distributor_form']['name']['logo'], PATHINFO_EXTENSION);
                 $file = $distributor->getId() . '-' . uniqid() . '.' . $extension;
                 $targetFile = __DIR__ . '/../../public/images/logos/' . $file;
 
-                if (move_uploaded_file($_FILES['distributor_form']['tmp_name']['logo'], $targetFile)) {
-
+                if (move_uploaded_file($_FILES['distributor_form']['tmp_name']['logo'], $targetFile))
+                {
                     $distributor->setLogo($file);
                     $logo = $file;
                 }
@@ -462,9 +465,9 @@ class DistributorsController extends AbstractController
             }
 
             $message = '<b><i class="fa-solid fa-circle-check"></i></i></b> Company details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $message = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -1201,6 +1204,18 @@ class DistributorsController extends AbstractController
         $distributorId = $this->getUser()->getDistributor()->getId();
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $countries = $this->em->getRepository(Countries::class)->findAll();
+        $managerIdExpDate = null;
+        $tradeLicenseExpDate = null;
+
+        if($distributor->getManagerIdExpDate() != null)
+        {
+            $managerIdExpDate = $distributor->getManagerIdExpDate()->format('Y-m-d');
+        }
+
+        if($distributor->getTradeLicenseExpDate() != null)
+        {
+            $tradeLicenseExpDate = $distributor->getTradeLicenseExpDate()->format('Y-m-d');
+        }
 
         $html = '
         <div class="col-12 text-center mt-1 pt-3 pb-3">
@@ -1314,6 +1329,8 @@ class DistributorsController extends AbstractController
                     </label>
                     <div class="input-group">
                         <input
+                            type="file"
+                            name="distributor_form[logo]"
                             id="distributor_form[logo]"
                             class="form-control"
                             placeholder="Logo"
@@ -1511,7 +1528,7 @@ class DistributorsController extends AbstractController
                         id="manager_id_exp_date"
                         class="form-control"
                         placeholder="Managers ID Expiry Date"
-                        value="'. $distributor->getManagerIdExpDate()->format('Y-m-d') .'"
+                        value="'. $managerIdExpDate .'"
                     >
                     <div class="hidden_msg" id="error_manager_id_exp_date">
                         Required Field
@@ -1581,7 +1598,7 @@ class DistributorsController extends AbstractController
                         id="trade_license_exp_date"
                         class="form-control"
                         placeholder="Trade License Expiry Date"
-                        value="'. $distributor->getTradeLicenseExpDate()->format('Y-m-d') .'"
+                        value="'. $tradeLicenseExpDate .'"
                     >
                     <div class="hidden_msg" id="error_trade_license_exp_date">
                         Required Field
@@ -1606,7 +1623,7 @@ class DistributorsController extends AbstractController
                     <div class="modal-body" style="padding: 0">
                         <div class="row">
                             <div class="col-12 mb-0 text-center">
-                                <img src="images/logos/'. $distributor->getLogo() .'" id="logo_img" class="img-fluid">
+                                <img src="'. $this->getParameter('app.base_url') .'/images/logos/'. $distributor->getLogo() .'" id="logo_img" class="img-fluid">
                             </div>
                         </div>
                     </div>

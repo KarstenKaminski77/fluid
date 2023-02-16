@@ -604,7 +604,12 @@ class ClinicsController extends AbstractController
             
             <!-- Company Information -->
             <div class="col-12" id="company_information_panel">
-                <form name="form_clinic_information" id="form_clinic_information" method="post">
+                <form 
+                    name="form_clinic_information" 
+                    id="form_clinic_information" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitClinicInformation"
+                >
                     <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
                         <!-- Clinic name -->
                         <div class="col-12 col-sm-6 pt-3 pt-sm-0">

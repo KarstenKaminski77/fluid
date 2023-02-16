@@ -501,7 +501,7 @@ export default class extends Controller
             {
                 if(e.status === 500)
                 {
-                    window.location.href = self.errorPage;
+                    //window.location.href = self.errorPage;
                 }
             },
             success: function (response)

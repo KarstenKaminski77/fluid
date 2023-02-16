@@ -27,7 +27,7 @@ class DistributorUsersController extends AbstractController
     private $plainPassword;
     private $encryptor;
 
-    const ITEMS_PER_PAGE = 1;
+    const ITEMS_PER_PAGE = 10;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pagination, MailerInterface $mailer, Encryptor $encryptor)
     {

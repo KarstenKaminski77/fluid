@@ -280,6 +280,10 @@ class DistributorProductsController extends AbstractController
                 ];
             }
         }
+        else
+        {
+
+        }
 
         return new JsonResponse($response);
     }
@@ -577,7 +581,12 @@ class DistributorProductsController extends AbstractController
             <!-- Import Products From API -->
             <div class="row '. $hidden .'" id="import_products_row">
                 <div class="col-12 w-100">
-                    <a role="button" id="import_products" class="float-end text-primary">
+                    <a 
+                        role="button" 
+                        id="import_products" 
+                        class="float-end text-primary"
+                        data-action="products--distributor-products#onClickImportProducts"
+                    >
                         <i class="fa-light fa-cloud-arrow-down me-2"></i>
                         Import Products
                     </a>

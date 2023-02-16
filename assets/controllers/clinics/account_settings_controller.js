@@ -1,10 +1,16 @@
 import { Controller } from '@hotwired/stimulus';
 
-export default class extends Controller {
+export default class extends Controller
+{
+    errorPage = '/clinics/error';
+
+    tinyMce;
+
     connect()
     {
         let uri = window.location.pathname;
         let isAccountSettings = uri.match('/clinics/account');
+        this.tinyMce = tinymce;
 
         if(isAccountSettings != null)
         {
@@ -32,7 +38,7 @@ export default class extends Controller {
             {
                 if(e.status === 500)
                 {
-                    //window.location.href = '/clinics/error';
+                    window.location.href = self.errorPage;
                 }
             },
             success: function (response)
@@ -206,6 +212,7 @@ export default class extends Controller {
 
         if(isValid == true)
         {
+            let input = document.querySelector('#mobile');
             let iti = window.intlTelInput(input, {
                 preferredCountries: ['ae','qa', 'bh', 'om', 'sa'],
                 autoPlaceholder: "polite",
@@ -237,6 +244,7 @@ export default class extends Controller {
                 beforeSend: function ()
                 {
                     self.isLoading(true);
+                    window.scrollTo(0,0);
                 },
                 success: function (response)
                 {
@@ -312,10 +320,9 @@ export default class extends Controller {
 
         let self = this;
         let clickedElement = e.currentTarget;
-        let about = $('#about_copy').val();
+        let about = this.tinyMce.activeEditor.getContent();
         let errorAbout = $('#error_about_copy');
         let isValid = true;
-        let data = new FormData($(this.element).find('#form_about')[0]);
 
         errorAbout.hide();
 
@@ -327,6 +334,10 @@ export default class extends Controller {
 
         if(isValid)
         {
+            $('#about_copy').val(this.tinyMce.activeEditor.getContent());
+
+            let data = new FormData($(clickedElement)[0]);
+
             $.ajax({
                 async: "true",
                 url: "/clinics/update/copy",
@@ -345,7 +356,7 @@ export default class extends Controller {
                 {
                     if(e.status === 500)
                     {
-                        window.location.href = '/clinics/error';
+                        //window.location.href = self.errorPage;
                     }
                 },
                 success: function (response)
@@ -373,13 +384,13 @@ export default class extends Controller {
 
     onSubmitOperatingHours(e)
     {
-        let self = this;
         e.preventDefault();
 
-        let operatingHours = $('#operating_hours_copy').val();
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let operatingHours = this.tinyMce.activeEditor.getContent();
         let errorOperatingHours = $('#error_operating_hours_copy');
         let isValid = true;
-        let data = new FormData($(this.element).find('#form_operating_hours')[0]);
 
         errorOperatingHours.hide();
 
@@ -391,6 +402,10 @@ export default class extends Controller {
 
         if(isValid)
         {
+            $('#operating_hours_copy').val(operatingHours);
+
+            let data = new FormData($(clickedElement)[0]);
+
             $.ajax({
                 async: "true",
                 url: "/clinics/update/copy",
@@ -440,7 +455,8 @@ export default class extends Controller {
         e.preventDefault();
 
         let self = this;
-        let refundPolicy = $('#refund_policy_copy').val();
+        let clickedElement = e.currentTarget;
+        let refundPolicy = this.tinyMce.activeEditor.getContent();
         let errorRefundPolicy = $('#error_refund_policy_copy');
         let isValid = true;
         let data = new FormData($(this.element).find('#form_refund_policy')[0]);
@@ -455,6 +471,10 @@ export default class extends Controller {
 
         if(isValid)
         {
+            $('#refund_policy_copy').val(refundPolicy);
+
+            let data = new FormData($(clickedElement)[0]);
+
             $.ajax({
                 async: "true",
                 url: "/clinics/update/copy",
@@ -504,10 +524,10 @@ export default class extends Controller {
         e.preventDefault();
 
         let self = this;
-        let salesTaxPolicy = $('#sales_tax_policy_copy').val();
+        let clickedElement = e.currentTarget;
+        let salesTaxPolicy = this.tinyMce.activeEditor.getContent();
         let errorSalesTaxPolicy = $('#error_sales_tax_policy_copy');
         let isValid = true;
-        let data = new FormData($(this.element).find('#form_sales_tax_policy')[0]);
 
         errorSalesTaxPolicy.hide();
 
@@ -519,6 +539,9 @@ export default class extends Controller {
 
         if(isValid)
         {
+            $('#sales_tax_policy_copy').val(salesTaxPolicy);
+            let data = new FormData($(clickedElement)[0]);
+
             $.ajax({
                 async: "true",
                 url: "/clinics/update/copy",
@@ -568,10 +591,10 @@ export default class extends Controller {
         e.preventDefault();
 
         let self = this;
-        let shippingPolicy = $('#shipping_policy_copy').val();
+        let clickedElement = e.currentTarget;
+        let shippingPolicy = this.tinyMce.activeEditor.getContent();
         let errorShippingPolicy = $('#error_shipping_policy_copy');
         let isValid = true;
-        let data = new FormData($(this.element).find('#form_shipping_policy')[0]);
 
         errorShippingPolicy.hide();
 
@@ -583,6 +606,9 @@ export default class extends Controller {
 
         if(isValid)
         {
+            $('#shipping_policy_copy').val(shippingPolicy);
+            let data = new FormData($(clickedElement)[0]);
+
             $.ajax({
                 async: "true",
                 url: "/clinics/update/copy",

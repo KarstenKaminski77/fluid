@@ -706,7 +706,7 @@ export default class extends Controller
         if(isValid == true)
         {
             $.ajax({
-                url: "/distributors/update/refund_policy",
+                url: "/distributors/update/sales_tax_policy",
                 type: 'POST',
                 processData: false,
                 contentType: false,
