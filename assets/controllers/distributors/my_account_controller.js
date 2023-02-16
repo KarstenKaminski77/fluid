@@ -18,6 +18,7 @@ export default class extends Controller
         let isRefundPolicy = uri.match('/distributors/refund-policy');
         let isSalesTaxPolicy = uri.match('/distributors/sales-tax-policy');
         let isShippingPolicy = uri.match('/distributors/shipping-policy');
+        this.tinyMce = tinymce;
 
         if(isAccountSettings != null)
         {
@@ -381,8 +382,10 @@ export default class extends Controller
                 if ($.inArray(15, self.permissions) !== -1)
                 {
                     $('#distributor_container').empty().append(response);
+                    tinymce.remove();
                     self.isLoading(false);
                     self.iniTinyMce();
+                    $('.tox-notifications-container').remove();
                 }
                 else
                 {
@@ -474,8 +477,10 @@ export default class extends Controller
                 if ($.inArray(16, self.permissions) !== -1)
                 {
                     $('#distributor_container').empty().append(response);
+                    tinymce.remove();
                     self.isLoading(false);
                     self.iniTinyMce();
+                    $('.tox-notifications-container').remove();
                 }
                 else
                 {
@@ -615,8 +620,10 @@ export default class extends Controller
                 if ($.inArray(16, self.permissions) !== -1)
                 {
                     $('#distributor_container').empty().append(response);
+                    tinymce.remove();
                     self.isLoading(false);
                     self.iniTinyMce();
+                    $('.tox-notifications-container').remove();
                 }
                 else
                 {
@@ -660,8 +667,10 @@ export default class extends Controller
                 if ($.inArray(18, self.permissions) !== -1)
                 {
                     $('#distributor_container').empty().append(response);
+                    tinymce.remove();
                     self.isLoading(false);
                     self.iniTinyMce();
+                    $('.tox-notifications-container').remove();
                 }
                 else
                 {
@@ -758,8 +767,10 @@ export default class extends Controller
                         self.tinyMce.remove();
                     }
                     $('#distributor_container').empty().append(response);
+                    tinymce.remove();
                     self.isLoading(false);
                     self.iniTinyMce();
+                    $('.tox-notifications-container').remove();
                 }
                 else
                 {
@@ -823,7 +834,7 @@ export default class extends Controller
 
     iniTinyMce()
     {
-        this.tinyMce = tinymce.init({
+        tinymce.init({
             selector: '.tinymce-selector',
             plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             editimage_cors_hosts: ['picsum.photos'],
@@ -839,8 +850,8 @@ export default class extends Controller
             contextmenu: 'link image table',
             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
         });
-
-        $('.tox-notifications-container').remove();
+        
+        return tinymce;
     }
 
     initIntlTel()
