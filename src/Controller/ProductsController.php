@@ -8,8 +8,6 @@ use App\Entity\Categories;
 use App\Entity\Categories1;
 use App\Entity\Categories2;
 use App\Entity\Categories3;
-use App\Entity\ClinicProducts;
-use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
@@ -18,10 +16,8 @@ use App\Entity\ListItems;
 use App\Entity\Lists;
 use App\Entity\Manufacturers;
 use App\Entity\OrderItems;
-use App\Entity\Orders;
 use App\Entity\ProductFavourites;
 use App\Entity\ProductImages;
-use App\Entity\ProductManufacturers;
 use App\Entity\ProductNotes;
 use App\Entity\ProductRetail;
 use App\Entity\ProductReviews;
@@ -39,11 +35,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
-use Vich\UploaderBundle\Handler\DownloadHandler;
 
 class ProductsController extends AbstractController
 {
-    const ITEMS_PER_PAGE = 2;
+    const ITEMS_PER_PAGE = 6;
     private $pageManager;
     private $em;
     private $requestStack;

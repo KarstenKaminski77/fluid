@@ -198,7 +198,7 @@ class DistributorClinicsController extends AbstractController
                                 type="submit" 
                                 id="btn_save_customer_connect" 
                                 class="btn btn-primary"
-                                data-action="distributors--my-account#onClickSaveCustomerConnect"
+                                data-action="distributors--distributor-clinics#onClickSaveCustomerConnect"
                             >
                                 SAVE
                             </button>

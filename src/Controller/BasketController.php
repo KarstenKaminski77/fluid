@@ -828,7 +828,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $basket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $basket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline">'. $basket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $background .'">
                             '. $basket->getBasketItems()->count() .'
@@ -1629,7 +1634,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $individualBasket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $individualBasket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline text-truncate">'. $individualBasket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $bgPrimary .'">
                             '. $count .'

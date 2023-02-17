@@ -36,6 +36,7 @@ export default class extends Controller
         let self = this;
         let clickedElement = e.currentTarget;
         let addressId = $(clickedElement).data('address-id');
+        $('.modal-backdrop:first').remove();
         this.iti.destroy();
 
         $.ajax({
@@ -172,6 +173,7 @@ export default class extends Controller
     {
         e.preventDefault();
 
+        $('.modal-backdrop:first').remove();
         $('#delete_address').attr('data-address-id', $(e.currentTarget).data('address-id'));
     }
 
@@ -231,8 +233,8 @@ export default class extends Controller
             success: function (response)
             {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.addresses);
-                $('#paginator').empty().append(response.pagination).show();
+                $('#clinic_container').empty().append(response.addresses);
+                $('#clinic_container').append(response.pagination).show();
                 self.isLoading(false);
             }
         });
@@ -263,8 +265,8 @@ export default class extends Controller
             success: function (response)
             {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.addresses);
-                $('#paginator').empty().append(response.pagination).show();
+                $('#clinic_container').empty().append(response.addresses);
+                $('#clinic_container').append(response.pagination).show();
                 self.isLoading(false);
             }
         });
