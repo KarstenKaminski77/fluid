@@ -80,6 +80,8 @@ export default class extends Controller
         let userId = $(clickedElement).data('user-id');
         let pageId = $(clickedElement).data('page-id');
 
+        $('.modal-backdrop:first').remove();
+
         $.ajax({
             async: "true",
             url: "/clinics/get-user",
@@ -115,9 +117,9 @@ export default class extends Controller
                 let userTelephone = response.telephone;
 
                 $('#telephone_container').empty();
-                $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="'+ userTelephone +'" data-action="keyup->clinics--users#onChangeMobile" autocomplete="off">')
+                $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="'+ userTelephone +'" data-action="keyup->clinics--users#onKeyUpMobile" autocomplete="off">')
 
-                self.initIntlTel(response.isoCode);
+                self.iti = self.initIntlTel(response.isoCode);
             }
         });
 
@@ -138,24 +140,25 @@ export default class extends Controller
         $('#user_position').val('');
         $('#form_users input[type="checkbox"]').attr('checked', false);
         $('#telephone_container').empty();
-        $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="" data-action="change->clinics--users#onChangeMobile" autocomplete="off">');
+        $('#telephone_container').append('<input type="text" id="user_mobile" placeholder="(123) 456-7890*" class="form-control" value="" data-action="keyup->clinics--users#onKeyUpMobile" autocomplete="off">');
+        $('.modal-backdrop:first').remove();
 
         let isoCode = $('#user_iso_code').val() ? $('#user_iso_code').val() : 'za';
-        this.initIntlTel(isoCode);
+        this.iti = this.initIntlTel(isoCode);
     }
 
-    onChangeMobile(e)
+    onKeyUpMobile(e)
     {
         let input = document.querySelector("#user_mobile");
         let isoCode = $('#user_iso_code').val() ? $('#user_iso_code').val() : 'ae';
-        let iti = this.initIntlTel(isoCode);
+        let iti = this.iti;
 
         let handleChange = function() {
             let mobile = $('#user_telephone');
             let mobileNumber = (iti.isValidNumber()) ? iti.getNumber() : false;
             let textNode = document.createTextNode(mobileNumber);
 
-            if(mobileNumber != false){
+            if(mobileNumber){
 
                 $('#user_telephone').val('');
                 $('#user_iso_code').val('');
@@ -279,6 +282,11 @@ export default class extends Controller
                         $('#create_user').empty().append('SAVE').attr('disabled', false);
 
                         self.getUsers(response.page_id);
+
+                        let clearCss = setInterval(function () {
+                            $('body').removeAttr('style');
+                            clearInterval(clearCss);
+                        }, 200);
                     }
                     else
                     {
@@ -297,6 +305,7 @@ export default class extends Controller
         e.preventDefault();
 
         $('#delete_user').attr('data-user-id', $(e.currentTarget).attr('data-user-id'));
+        $('.modal-backdrop:first').remove();
     }
 
     onClickDelete(e)
@@ -343,7 +352,7 @@ export default class extends Controller
                     dataType: 'json',
                     success: function (response)
                     {
-                        $('#basket_container').empty().append(response);
+                        $('#clinic_container').empty().append(response);
                         self.isLoading(false);
                     }
                 });

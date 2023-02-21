@@ -271,7 +271,7 @@ class ClinicUsersController extends AbstractController
                                                 placeholder="(123) 456-7890*"
                                                 class="form-control"
                                                 value=""
-                                                data-action="change->clinics--users#onChangeMobile"
+                                                data-action="keyup->clinics--users#onKeyUpMobile"
                                             >
                                         </span>
                                         <input 
@@ -536,17 +536,24 @@ class ClinicUsersController extends AbstractController
                    <div class="col-md-2 t-cell text-primary border-list pt-3 pb-3">
                        <a href="" class="float-end" data-bs-toggle="modal" data-bs-target="#modal_user" id="user_update_'. $user->getId() .'">
                            <i class="fa-solid fa-pen-to-square edit-icon"></i>
-                       </a>
-                       <a 
-                          href="" 
-                          class="delete-icon float-end open-delete-user-modal" 
-                          data-bs-toggle="modal"
-                          data-user-id="'. $user->getId() .'" 
-                          data-bs-target="#modal_user_delete"
-                          data-action="click->clinics--users#onClickDeleteModal"
-                      >
-                           <i class="fa-solid fa-trash-can"></i>
-                       </a>
+                       </a>';
+
+                       if($user->getIsPrimary() != 1)
+                       {
+                           $html .= '
+                           <a 
+                              href="" 
+                              class="delete-icon float-end open-delete-user-modal" 
+                              data-bs-toggle="modal"
+                              data-user-id="' . $user->getId() . '" 
+                              data-bs-target="#modal_user_delete"
+                              data-action="click->clinics--users#onClickDeleteModal"
+                          >
+                               <i class="fa-solid fa-trash-can"></i>
+                           </a>';
+                       }
+
+                   $html .= '
                    </div>
                </div>
            </div>';

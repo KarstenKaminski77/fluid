@@ -100,7 +100,7 @@ export default class extends Controller {
             success: function (response)
             {
                 $('#modal_list_distributors').remove();
-                $('#inventory_container').append(response);
+                $('#clinic_container').append(response);
                 $('#modal_list_distributors').modal('toggle');
                 $('body').css('overflow', '');
             }
@@ -199,13 +199,13 @@ export default class extends Controller {
         let productId = $(clickedElement).attr("data-id");
         let isValid = true;
 
-        if(listId == '' || listId == 'undefined' || productId == '' || productId == 'undefined'){
-
+        if(listId == '' || listId == 'undefined' || productId == '' || productId == 'undefined')
+        {
             isValid = false;
         }
 
-        if(isValid){
-
+        if(isValid)
+        {
             $.ajax({
                 async: "true",
                 url: "/clinics/inventory/delete-list-item",
@@ -217,9 +217,53 @@ export default class extends Controller {
                     'product-id': productId,
                     'list-id': listId,
                 },
-                success: function (respnse) {
-                    $(clickedElement).closest('.row').empty().append(respnse);
+                success: function (respnse)
+                {
+                    $(clickedElement).closest('.row').empty().append(respnse.html);
+                }
+            });
+        }
+    }
 
+    onClickRemoveItemIcon(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let listId = $(clickedElement).attr("data-value");
+        let productId = $(clickedElement).attr("data-id");
+        let isValid = true;
+
+        if(listId == '' || listId == 'undefined' || productId == '' || productId == 'undefined')
+        {
+            isValid = false;
+        }
+
+        if(isValid)
+        {
+            $.ajax({
+                async: "true",
+                url: "/clinics/inventory/delete-list-item",
+                type: 'POST',
+                cache: false,
+                timeout: 600000,
+                dataType: 'json',
+                data: {
+                    'product-id': productId,
+                    'list-id': listId,
+                },
+                success: function (response)
+                {
+                    if(response.hyperlink == false)
+                    {
+                        let span = '<span class="float-end view-list disabled">View List</span>';
+                        $(clickedElement).closest('.row').find('.view-list').closest('div').empty().append(span);
+                    }
+
+                    let btn = '<a href="" class="list_add_item" data-id="'+ productId +'" data-value="'+ listId +'" data-action="click->products--lists#onClickAddItem">';
+                    btn += '<i class="fa-solid fa-circle-plus pe-2 list-icon list-icon-unchecked"></i>';
+                    btn += '</a>';
+                    $(clickedElement).closest('td').empty().append(btn);
                 }
             });
         }

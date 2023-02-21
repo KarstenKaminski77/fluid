@@ -678,8 +678,8 @@ class BasketController extends AbstractController
     public function updateSavedBasketsAction(Request $request): Response
     {
         $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket-id'));
-        $firstName = $this->getUser()->getFirstName();
-        $lastName = $this->getUser()->getLastName();
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
         $basket->setName($request->request->get('basket-name'));
         $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
@@ -692,7 +692,7 @@ class BasketController extends AbstractController
         return new JsonResponse($response);
     }
 
-    private function getSavedbasketsRightColumn()
+    private function getSavedbasketsRightColumn():string
     {
         $savedBaskets = $this->em->getRepository(Baskets::class)->findBy([
             'clinic' => $this->getUser()->getClinic()->getId(),
@@ -702,7 +702,7 @@ class BasketController extends AbstractController
 
         if(count($savedBaskets) > 1)
         {
-            $response .= '
+            $response = '
             <!-- Basket Items -->
             <div class="row border-bottom bg-secondary d-none d-sm-flex">
                 <div class="col-3 pt-3 pb-3">
@@ -794,6 +794,7 @@ class BasketController extends AbstractController
         $clinicTotals = $this->em->getRepository(Baskets::class)->getClinicTotalItems($clinicId);
         $totalClinic = number_format($clinicTotals[0]['total'] ?? 0,2);
         $countClinic = $clinicTotals[0]['item_count'] ?? 0;
+        $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
 
         $response = '
         <div class="row border-bottom text-center pt-2 pb-2">
@@ -805,7 +806,7 @@ class BasketController extends AbstractController
                 <span class="d-block text-truncate">Items</span>
             </div>
             <div class="col-6 border-bottom pt-1 pb-1 text-center">
-                <span class="d-block text-primary">$'. number_format($totalClinic,2) .'</span>
+                <span class="d-block text-primary">'. $currency .' '. $totalClinic .'</span>
                 <span class="d-block text-truncate">Subtotal</span>
             </div>
         </div>';
@@ -828,7 +829,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $basket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $basket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline">'. $basket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $background .'">
                             '. $basket->getBasketItems()->count() .'
@@ -910,7 +916,7 @@ class BasketController extends AbstractController
         $response = '
         <!-- Basket Name -->
         <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="basket_header">
+            <div class="col-12 text-center pb-3 form-control-bg-grey" id="basket_header">
                 <h4 class="text-primary">'. $basket->getName() .' Basket</h4>
                 <span class="text-primary">
                     Manage All Your Shopping Carts In One Place
@@ -1407,7 +1413,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0" id="saved_items">
                 <div class="col-12 border-bottom border-top pt-3 pb-3 text-center text-sm-start">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">
@@ -1623,7 +1635,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $individualBasket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $individualBasket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline text-truncate">'. $individualBasket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $bgPrimary .'">
                             '. $count .'
@@ -1872,7 +1889,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0">
                 <div class="col-12 border-bottom border-top pt-3 pb-3">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">

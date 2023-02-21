@@ -280,7 +280,10 @@ class DistributorsController extends AbstractController
                 $mailer->send($email);
             }
 
-            $response = 'Your Fluid account was successfully created, an email with your login credentials has been sent to your inbox.';
+            $response = '
+            <p class="text-center">
+                Your Fluid account was successfully created, an email with your login credentials has been sent to your inbox.
+            </p>';
 
         } else {
 
@@ -302,7 +305,7 @@ class DistributorsController extends AbstractController
     #[Route('/distributors/order/{order_id}', name: 'distributor_order')]
     #[Route('/distributors/orders/{distributor_id}', name: 'distributor_order_list')]
     #[Route('/distributors/customers/1', name: 'distributor_customer_list')]
-    #[Route('/distributors/inventory/list/1', name: 'distributor_inventory_list')]
+    #[Route('/distributors/inventory/list', name: 'distributor_inventory_list')]
     public function distributorDashboardAction(Request $request): Response
     {
         if($this->get('security.token_storage')->getToken() == null){
@@ -313,31 +316,8 @@ class DistributorsController extends AbstractController
         }
 
         $distributor = $this->getUser()->getDistributor();
-        $distributorId = $distributor->getId();
         $user = $this->getUser();
         $username = $distributor->getDistributorName();
-        $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
-        $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy(['isDistributor' => 1]);
-        $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $usersPagination = $this->getPagination(1, $userResults, $distributorId);
-        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,0,0);
-        $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
-        $distributorProductsPagination = $this->getPagination(1, $distributorProducts, $distributorId);
-        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
-        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
-        $form = $this->createRegisterForm();
-        $inventoryForm = $this->createDistributorInventoryForm();
-        $addressForm = $this->createDistributorAddressesForm();
-        $userForm = $this->createDistributorUserForm()->createView();
-        $traking = $this->em->getRepository(Tracking::class)->findAll();
-        $clinicId = '';
-        if($request->get('order_id') != null) {
-
-            $order = $this->em->getRepository(Orders::class)->find($request->get('order_id'));
-            $clinicId = $order->getClinic()->getId();
-        }
-        $orderList = false;
-        $orderDetail = false;
 
         $permissions = [];
 
@@ -346,35 +326,10 @@ class DistributorsController extends AbstractController
             $permissions[] = $permission->getPermission()->getId();
         }
 
-        if(substr($request->getPathInfo(),0,20) == '/distributors/orders'){
-
-            $orderList = true;
-        }
-
-        if(substr($request->getPathInfo(),0,20) == '/distributors/order/'){
-
-            $orderDetail = true;
-        }
-
         return $this->render('frontend/distributors/index.html.twig',[
             'distributor' => $distributor,
-            'users' => $userResults,
-            'form' => $form->createView(),
-            'inventory_form' => $inventoryForm->createView(),
-            'address_form' => $addressForm->createView(),
-            'user_form' => $userForm,
-            'order_list' => $orderList,
-            'order_detail' => $orderDetail,
-            'clinic_id' => $clinicId,
-            'users_pagination' => $usersPagination,
+            'permissions' => json_encode($permissions),
             'username' => $username,
-            'permissions' => $permissions,
-            'user_permissions' => $userPermissions,
-            'tracking' => $traking,
-            'distributorProducts' => $distributorProducts,
-            'distributorProductsPagination' => $distributorProductsPagination,
-            'manufacturers' => $manufacturers,
-            'species' => $species,
         ]);
     }
 
@@ -439,8 +394,8 @@ class DistributorsController extends AbstractController
             $isApproved = false;
         }
 
-        if($distributor != null) {
-
+        if($distributor != null)
+        {
             $domainName = explode('@', $data['email']);
 
             $distributor->setDistributorName($this->encryptor->encrypt($data['distributor-name']));
@@ -468,20 +423,20 @@ class DistributorsController extends AbstractController
                 $file = $distributor->getId() . '-' . uniqid() . '.' . $extension;
                 $targetFile = __DIR__ . '/../../public/documents/' . $file;
 
-                if(move_uploaded_file($_FILES['distributor_form']['tmp_name']['trade-license-file'], $targetFile)) {
-
+                if(move_uploaded_file($_FILES['distributor_form']['tmp_name']['trade-license-file'], $targetFile))
+                {
                     $distributor->setTradeLicense($file);
                 }
             }
 
-            if(!empty($_FILES['distributor_form']['name']['logo'])) {
-
+            if(!empty($_FILES['distributor_form']['name']['logo']))
+            {
                 $extension = pathinfo($_FILES['distributor_form']['name']['logo'], PATHINFO_EXTENSION);
                 $file = $distributor->getId() . '-' . uniqid() . '.' . $extension;
                 $targetFile = __DIR__ . '/../../public/images/logos/' . $file;
 
-                if (move_uploaded_file($_FILES['distributor_form']['tmp_name']['logo'], $targetFile)) {
-
+                if (move_uploaded_file($_FILES['distributor_form']['tmp_name']['logo'], $targetFile))
+                {
                     $distributor->setLogo($file);
                     $logo = $file;
                 }
@@ -510,9 +465,9 @@ class DistributorsController extends AbstractController
             }
 
             $message = '<b><i class="fa-solid fa-circle-check"></i></i></b> Company details successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $message = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -530,12 +485,12 @@ class DistributorsController extends AbstractController
         $data = $request->request;
         $distributor = $this->getUser()->getDistributor();
 
-        if($distributor != null) {
+        if($distributor != null)
+        {
+            $about = $data->get('about-us');
 
-            $about = $data->get('about_us');
-
-            if(!empty($about)) {
-
+            if(!empty($about))
+            {
                 $distributor->setAbout($about);
 
                 $this->em->persist($distributor);
@@ -543,9 +498,9 @@ class DistributorsController extends AbstractController
             }
 
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> About us successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> An error occurred.';
         }
 
@@ -558,20 +513,20 @@ class DistributorsController extends AbstractController
         $data = $request->request;
         $distributor = $this->getUser()->getDistributor();
 
-        if($distributor != null) {
-
-            if(!empty($data->get('operating_hours'))) {
-
-                $distributor->setOperatingHours($data->get('operating_hours'));
+        if($distributor != null)
+        {
+            if(!empty($data->get('operating-hours')))
+            {
+                $distributor->setOperatingHours($data->get('operating-hours'));
             }
 
             $this->em->persist($distributor);
             $this->em->flush();
 
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Operating hours successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -584,20 +539,20 @@ class DistributorsController extends AbstractController
         $data = $request->request;
         $distributor = $this->getUser()->getDistributor();
 
-        if($distributor != null) {
-
-            if(!empty($data->get('refund_policy'))) {
-
-                $distributor->setRefundPolicy($data->get('refund_policy'));
+        if($distributor != null)
+        {
+            if(!empty($data->get('refund-policy')))
+            {
+                $distributor->setRefundPolicy($data->get('refund-policy'));
             }
 
             $this->em->persist($distributor);
             $this->em->flush();
 
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Refund policy successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -610,20 +565,20 @@ class DistributorsController extends AbstractController
         $data = $request->request;
         $distributor = $this->getUser()->getDistributor();
 
-        if($distributor != null) {
-
-            if(!empty($data->get('sales_tax_policy'))) {
-
-                $distributor->setSalesTaxPolicy($data->get('sales_tax_policy'));
+        if($distributor != null)
+        {
+            if(!empty($data->get('sales-tax-policy')))
+            {
+                $distributor->setSalesTaxPolicy($data->get('sales-tax-policy'));
             }
 
             $this->em->persist($distributor);
             $this->em->flush();
 
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Sales tax policy successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -636,20 +591,20 @@ class DistributorsController extends AbstractController
         $data = $request->request;
         $distributor = $this->getUser()->getDistributor();
 
-        if($distributor != null) {
-
-            if(!empty($data->get('shipping_policy'))) {
-
-                $distributor->setShippingPolicy($data->get('shipping_policy'));
+        if($distributor != null)
+        {
+            if(!empty($data->get('shipping-policy')))
+            {
+                $distributor->setShippingPolicy($data->get('shipping-policy'));
             }
 
             $this->em->persist($distributor);
             $this->em->flush();
 
             $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Shipping policy successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        } else {
-
+        }
+        else
+        {
             $response = '<b><i class="fas fa-check-circle"></i> Personal details successfully updated.';
         }
 
@@ -686,7 +641,14 @@ class DistributorsController extends AbstractController
                 $size = ' | '. $product->getSize();
             }
 
-            $select .= "<li onClick=\"selectProduct('$id', '$name');\" class='search-item'>$name$dosage$size</li>";
+            $select .= "
+            <li 
+                class=\"search-item\"
+                data-product-id=\"$id\"
+                data-product-name=\"$name\"
+                data-action='click->products--distributor-products#onclickEditIcon'
+            >$name$dosage$size</li>
+            ";
         }
 
         $select .= '</ul>';
@@ -697,21 +659,23 @@ class DistributorsController extends AbstractController
     #[Route('/distributors/inventory-get', name: 'distributor_inventory_get')]
     public function distributorGetInventoryAction(Request $request,TokenStorageInterface $tokenStorage): Response
     {
-        $productId = (int) $request->request->get('product_id');
+        $productId = (int) $request->request->get('product-id');
         $products = $this->em->getRepository(Products::class)->find($productId);
 
-        if($products != null){
-
+        if($products != null)
+        {
             $distributorId = $this->getUser()->getDistributor()->getId();
-
             $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
             $response = [];
+
+            $response['html'] = json_decode($this->forward('App\Controller\DistributorProductsController::getDistributorProductAction')
+            ->getContent());
 
             $distributorProduct = $this->em->getRepository(Distributors::class)
                 ->getDistributorProduct($distributor->getId(), $productId);
 
-            if($distributorProduct != null){
-
+            if($distributorProduct != null)
+            {
                 $response['distributor_id'] = $distributor->getId();
                 $response['itemId'] = $distributorProduct[0]['distributorProducts'][0]['itemId'];
                 $response['sku'] = $distributorProduct[0]['distributorProducts'][0]['sku'];
@@ -721,13 +685,13 @@ class DistributorsController extends AbstractController
                 $response['tax_exempt'] = $distributorProduct[0]['distributorProducts'][0]['taxExempt'];
                 $response['product'] = $distributorProduct[0]['distributorProducts'][0]['product'];
 
-                if($distributorProduct[0]['distributorProducts'][0]['expiryDate'] != null){
-
+                if($distributorProduct[0]['distributorProducts'][0]['expiryDate'] != null)
+                {
                     $response['expiry_date'] = $distributorProduct[0]['distributorProducts'][0]['expiryDate']->format('Y-m-d');
                 }
-
-            } else {
-
+            }
+            else
+            {
                 $product = $this->em->getRepository(Products::class)->find($productId);
 
                 $response['distributor_id'] = $distributor->getId();
@@ -744,9 +708,9 @@ class DistributorsController extends AbstractController
                     'activeIngredient' => $product->getActiveIngredient(),
                 ];
             }
-
-        } else {
-
+        }
+        else
+        {
             $response['message'] = 'Inventory item not found';
         }
 
@@ -1148,7 +1112,8 @@ class DistributorsController extends AbstractController
     #[Route('/distributors/update-tracking-id', name: 'update_tracking_id')]
     public function updateTrackingIdAction(Request $request): Response
     {
-        $distributor = $this->em->getRepository(Distributors::class)->find((int)$request->request->get('distributor-id'));
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $tracking = $this->em->getRepository(Tracking::class)->find((int)$request->request->get('tracking-id'));
 
         $distributor->setTracking($tracking);
@@ -1231,6 +1196,632 @@ class DistributorsController extends AbstractController
         $response['flash'] = '<b><i class="fa-solid fa-circle-check"></i></i></b> Inventory Successfully saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
         return new JsonResponse($response);
+    }
+
+    #[Route('/distributors/get/company-information', name: 'get_company_information')]
+    public function getCompanyInformation(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $countries = $this->em->getRepository(Countries::class)->findAll();
+        $managerIdExpDate = null;
+        $tradeLicenseExpDate = null;
+
+        if($distributor->getManagerIdExpDate() != null)
+        {
+            $managerIdExpDate = $distributor->getManagerIdExpDate()->format('Y-m-d');
+        }
+
+        if($distributor->getTradeLicenseExpDate() != null)
+        {
+            $tradeLicenseExpDate = $distributor->getTradeLicenseExpDate()->format('Y-m-d');
+        }
+
+        $html = '
+        <div class="col-12 text-center mt-1 pt-3 pb-3">
+            <h4 class="text-primary text-truncate">Company Information</h4>
+        </div>
+        <form 
+            name="form_company_information" 
+            id="form_company_information" 
+            method="post"
+            data-action="submit->distributors--my-account#onSubmitCompanyInformation"
+        >
+            <div class="row pb-3 pt-2 pt-sm-3 bg-light border-left border-right border-top">
+    
+                <!-- Company name -->
+                <div class="col-12 col-sm-6">
+                    <label>
+                        Company Name
+                    </label>
+                    <input
+                        name="distributor_form[distributor-name]"
+                        id="distributor_name"
+                        class="form-control"
+                        placeholder="Distributor Name",
+                        value="'. $this->encryptor->decrypt($distributor->getDistributorName()) .'"
+                    />
+                    <div class="hidden_msg" id="error_distributor_name">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- Website -->
+                <div class="col-12 col-sm-6 pt-2 pt-sm-0">
+                    <label>
+                        Website
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text" id="basic-addon1">https://</span>
+                        <input
+                            name="distributor_form[website]"
+                            id="website"
+                            class="form-control"
+                            placeholder="Website",
+                            value="'. $this->encryptor->decrypt($distributor->getWebsite()) .'"
+                        />
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- Email -->
+                <div class="col-12 col-sm-6">
+                    <label>
+                        Email Address
+                    </label>
+                    <input
+                        name="distributor_form[email]"
+                        id="email"
+                        class="form-control"
+                        placeholder="Business Email Address",
+                        value="'. $this->encryptor->decrypt($distributor->getEmail()) .'"
+                    />
+                    <div class="hidden_msg" id="error_email">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- Telephone -->
+                <div class="col-12 col-sm-6 pt-2 pt-sm-0">
+                    <label>
+                        Telephone
+                    </label>
+                    <input
+                        type="text"
+                        name="mobile"
+                        placeholder="Telephone*"
+                        value="'. $this->encryptor->decrypt($distributor->getTelephone()) .'"
+                        id="mobile"
+                        class="form-control"
+                    >
+                    <input
+                        type="hidden"
+                        name="distributor_form[telephone]"
+                        value="'. $this->encryptor->decrypt($distributor->getTelephone()) .'"
+                        id="telephone"
+                    >
+                    <input
+                        type="hidden"
+                        name="distributor_form[iso-code]"
+                        value="'. $this->encryptor->decrypt($distributor->getIsoCode()) .'"
+                        id="iso_code"
+                    >
+                    <input
+                        type="hidden"
+                        name="distributor_form[intl-code]"
+                        value="'. $this->encryptor->decrypt($distributor->getIntlCode()) .'"
+                        id="intl_code"
+                    >
+                    <div class="hidden_msg" id="error_telephone">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- Logo -->
+                <div class="col-12 col-sm-6" id="logo_file">
+                    <label>
+                        Logo
+                    </label>
+                    <div class="input-group">
+                        <input
+                            type="file"
+                            name="distributor_form[logo]"
+                            id="distributor_form[logo]"
+                            class="form-control"
+                            placeholder="Logo"
+                        >';
+
+                        if($distributor->getLogo() != null)
+                        {
+                            $html .= '
+                            <span class="input-group-text">
+                                <a href="" data-bs-toggle="modal" data-bs-target="#modal_logo">
+                                    <i class="fa-regular fa-image"></i>
+                                </a>
+                            </span>';
+                        }
+
+                    $html .= '
+                    </div>
+                </div>
+    
+                <!-- Country -->
+                <div class="col-12 col-sm-6 pt-2 pt-sm-0">
+                    <label>
+                        Country
+                    </label>
+                    <select
+                        name="distributor_form[addressCountry]"
+                        id="country"
+                        class="form-control"
+                    >
+                        <option value="">Select Your Country</option>';
+
+                        foreach($countries as $country)
+                        {
+                            $selected = '';
+
+                            if($country->getId() == $distributor->getAddressCountry()->getId())
+                            {
+                                $selected = 'selected';
+                            }
+
+                            $html .= '<option value="'. $country->getId() .'" '. $selected .'>'. $country->getName() .'</option>';
+                        }
+
+                    $html .= '
+                    </select>
+                    <div class="hidden_msg" id="error_country">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- Street -->
+                <div class="col-12 col-sm-6">
+                    <label>
+                        Street Address
+                    </label>
+                    <input
+                        name="distributor_form[address-street]"
+                        id="street_address"
+                        class="form-control"
+                        placeholder="Street Address",
+                        value="'. $this->encryptor->decrypt($distributor->getAddressStreet()) .'"
+                    />
+                    <div class="hidden_msg" id="error_street_address">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- City -->
+                <div class="col-12 col-sm-6 pt-2 pt-sm-0">
+                    <label>
+                        City
+                    </label>
+                    <input
+                        name="distributor_form[address-city]"
+                        id="city"
+                        class="form-control"
+                        placeholder="City",
+                        value="'. $this->encryptor->decrypt($distributor->getAddressCity()) .'"
+                    />
+                    <div class="hidden_msg" id="error_city">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- Postal Code -->
+                <div class="col-12 col-sm-6">
+                    <label>
+                        Postal Code
+                    </label>
+                    <input
+                        name="distributor_form[address-postal-code]"
+                        id="postal_code"
+                        class="form-control"
+                        placeholder="Postal Code",
+                        value="'. $this->encryptor->decrypt($distributor->getAddressPostalCode()) .'"
+                    />
+                    <div class="hidden_msg" id="error_postal_code">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- State -->
+                <div class="col-12 col-sm-6 pt-2 pt-sm-0">
+                    <label>
+                        State
+                    </label>
+                    <input
+                        name="distributor_form[address-state]"
+                        id="state"
+                        class="form-control"
+                        placeholder="State",
+                        value="'. $this->encryptor->decrypt($distributor->getAddressState()) .'"
+                    />
+                    <div class="hidden_msg" id="error_state">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Manager Name -->
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- First Name -->
+                <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                    <label>
+                        Managers First Name <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="distributor_form[manager-first-name]"
+                        id="manager_first_name"
+                        class="form-control"
+                        placeholder="Managers First Name"
+                        value="'. $this->encryptor->decrypt($distributor->getManagerFirstName()) .'"
+                    >
+                    <div class="hidden_msg" id="error_manager_first_name">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- Last Name -->
+                <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                    <label>
+                        Managers Last Name <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="distributor_form[manager-last-name]"
+                        id="manager_last_name"
+                        class="form-control"
+                        placeholder="Managers Last Name"
+                        value="'. $this->encryptor->decrypt($distributor->getManagerLastName()) .'"
+                    >
+                    <div class="hidden_msg" id="error_manager_last_name">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Manager ID -->
+            <div class="row pb-3 bg-light border-left border-right">
+    
+                <!-- ID No -->
+                <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                    <label>
+                        Managers Emirates ID No. <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="distributor_form[manager-id-no]"
+                        id="manager_id_no"
+                        class="form-control"
+                        placeholder="Managers Emirates ID Number"
+                        value="'. $this->encryptor->decrypt($distributor->getManagerIdNo()) .'"
+                    >
+                    <div class="hidden_msg" id="error_manager_id_no">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- ID Expiry Date -->
+                <div class="col-12 col-sm-6 pt-3 pt-sm-0">
+                    <label>
+                        Managers ID Exp. Date <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="date"
+                        name="distributor_form[manager-id-exp-date]"
+                        id="manager_id_exp_date"
+                        class="form-control"
+                        placeholder="Managers ID Expiry Date"
+                        value="'. $managerIdExpDate .'"
+                    >
+                    <div class="hidden_msg" id="error_manager_id_exp_date">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Trading License -->
+            <div class="row pb-3 bg-light border-left border-right border-bottom">
+    
+                <!-- Upload License -->
+                <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                    <label>
+                        Trade License <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <input
+                            type="file"
+                            name="distributor_form[trade-license-file]"
+                            id="trade_license_file"
+                            class="form-control"
+                        >';
+
+                        if($distributor->getTradeLicense() != null)
+                        {
+                            $html .= '
+                            <span class="input-group-text">
+                                <a href="/download-trade-license/%7Btrade-license%7D?trade-license='. $distributor->getTradeLicense() .'">
+                                    <i class="fa-regular fa-download"></i>
+                                </a>
+                            </span>';
+                        }
+
+                    $html .= '
+                    </div>
+                    <div class="hidden_msg" id="error_trade_license_file">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- License No -->
+                <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                    <label>
+                        Trade License No. <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="distributor_form[trade-license-no]"
+                        id="trade_license_no"
+                        class="form-control"
+                        placeholder="Trade License Number"
+                        value="'. $this->encryptor->decrypt($distributor->getTradeLicenseNo()) .'"
+                    >
+                    <div class="hidden_msg" id="error_trade_license_no">
+                        Required Field
+                    </div>
+                </div>
+    
+                <!-- License Exp Date -->
+                <div class="col-12 col-sm-4 pt-3 pt-sm-0">
+                    <label>
+                        Expiry Date <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="date"
+                        name="distributor_form[trade-license-exp-date]"
+                        id="trade_license_exp_date"
+                        class="form-control"
+                        placeholder="Trade License Expiry Date"
+                        value="'. $tradeLicenseExpDate .'"
+                    >
+                    <div class="hidden_msg" id="error_trade_license_exp_date">
+                        Required Field
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row">
+                <div class="col-12 mt-1 mb-5 ps-0 pe-0">
+                    <input id="btn_company_information" type="submit" class="btn btn-primary w-100" value="UPDATE COMPANY INFORMATION">
+                </div>
+            </div>
+        </form>
+
+        <!-- Modal Logo -->
+        <div class="modal fade" id="modal_logo" tabindex="-1" aria-labelledby="product_delete_label" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="border: none; padding-bottom: 0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: 0">
+                        <div class="row">
+                            <div class="col-12 mb-0 text-center">
+                                <img src="'. $this->getParameter('app.base_url') .'/images/logos/'. $distributor->getLogo() .'" id="logo_img" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>';
+
+        return new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/about', name: 'get_about')]
+    public function getAbout(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">About</h3>
+        </div>
+        
+        <form
+            name="form_about_us"
+            id="form_about_us"
+            method="post"
+            class="col-12 ps-0 pe-0"
+            data-action="distributors--my-account#onSubmitAbout"
+        >
+            <div class="col-12">
+                <textarea
+                    name="about-us"
+                    id="about_us"
+                    placeholder="About"
+                    class="form-control tinymce-selector"
+                >'. $distributor->getAbout() .'</textarea>
+                <div class="hidden_msg" id="error_about_us">
+                    Required Field
+                </div>
+            </div>
+    
+            <div class="col-12 mb-5">
+                <button id="btn_about_us" type="submit" class="btn btn-primary w-100">UPDATE ABOUT US</button>
+            </div>
+        </form>';
+
+        return  new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/operating-hours', name: 'get_distributor_operating_hours')]
+    public function getDistributorOperatingHours(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">Operating Hours</h3>
+        </div>
+        
+        <form
+            name="form_operating_hours"
+            id="form_operating_hours"
+            method="post"
+            class="col-12 ps-0 pe-0"
+            data-action="distributors--my-account#onSubmitOperatingHours"
+        >
+            <div class="col-12">
+                <textarea
+                    name="operating-hours"
+                    id="operating_hours"
+                    placeholder="Operating Hours"
+                    class="form-control tinymce-selector"
+                >'. $distributor->getOperatingHours() .'</textarea>
+                <div class="hidden_msg" id="error_operating_hours">
+                    Required Field
+                </div>
+            </div>
+    
+            <div class="col-12 mb-5">
+                <button id="btn_operating_hours" type="submit" class="btn btn-primary w-100">UPDATE OPERATING HOURS</button>
+            </div>
+        </form>';
+
+        return  new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/refund-policy', name: 'get_distributor_refund_policy')]
+    public function getDistributorRefundPolicy(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">Refund Policy</h3>
+        </div>
+        
+        <form
+            name="form_refund_policy"
+            id="form_refund_policy"
+            method="post"
+            class="col-12 ps-0 pe-0"
+            data-action="distributors--my-account#onSubmitRefundPolicy"
+        >
+            <div class="col-12">
+                <textarea
+                    name="refund-policy"
+                    id="refund_policy"
+                    placeholder="Refund Policy"
+                    class="form-control tinymce-selector"
+                >'. $distributor->getRefundPolicy() .'</textarea>
+                <div class="hidden_msg" id="error_refund_policy">
+                    Required Field
+                </div>
+            </div>
+    
+            <div class="col-12 mb-5">
+                <button id="btn_refund_policy" type="submit" class="btn btn-primary w-100">UPDATE REFUND POLICY</button>
+            </div>
+        </form>';
+
+        return  new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/sales-tax-policy', name: 'get_distributor_sales_tax_policy')]
+    public function getDistributorSalesTaxPolicy(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">Sales Tax Policy</h3>
+        </div>
+        
+        <form
+            name="form_sales_tax_policy"
+            id="form_sales_tax_policy"
+            method="post"
+            class="col-12 ps-0 pe-0"
+            data-action="distributors--my-account#onSubmitSalesTaxPolicy"
+        >
+            <div class="col-12">
+                <textarea
+                    name="sales-tax-policy"
+                    id="sales_tax_policy"
+                    placeholder="Sales Tax Policy"
+                    class="form-control tinymce-selector"
+                >'. $distributor->getSalesTaxPolicy() .'</textarea>
+                <div class="hidden_msg" id="error_sales_tax_policy">
+                    Required Field
+                </div>
+            </div>
+    
+            <div class="col-12 mb-5">
+                <button id="btn_sales_tax_policy" type="submit" class="btn btn-primary w-100">UPDATE REFUND POLICY</button>
+            </div>
+        </form>';
+
+        return  new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/shipping-policy', name: 'get_distributor_shipping_policy')]
+    public function getDistributorShippingPolicy(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">Shipping Policy</h3>
+        </div>
+        
+        <form
+            name="form_shipping_policy"
+            id="form_shipping_policy"
+            method="post"
+            class="col-12 ps-0 pe-0"
+            data-action="distributors--my-account#onSubmitShippingPolicy"
+        >
+            <div class="col-12">
+                <textarea
+                    name="shipping-policy"
+                    id="shipping_policy"
+                    placeholder="Shipping Policy"
+                    class="form-control tinymce-selector"
+                >'. $distributor->getShippingPolicy() .'</textarea>
+                <div class="hidden_msg" id="error_shipping_policy">
+                    Required Field
+                </div>
+            </div>
+    
+            <div class="col-12 mb-5">
+                <button id="btn_shipping_policy" type="submit" class="btn btn-primary w-100">UPDATE SHIPPING POLICY</button>
+            </div>
+        </form>';
+
+        return  new JsonResponse($html);
     }
 
     public function generateInventoryXl($orderId, $distributorId, $status)

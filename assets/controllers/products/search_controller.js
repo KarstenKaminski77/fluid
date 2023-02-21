@@ -596,7 +596,7 @@ export default class extends Controller
                             $('#search_result_distributors_'+ productId).empty().append(response.html);
                             $('.from_'+ productId).empty().append(response.from);
                             $('.basket-id').val($('#btn_basket').attr('data-basket-id'));
-                            popOver();
+                            self.popOver();
                         }
                     });
                 });
@@ -719,5 +719,13 @@ export default class extends Controller
             $("div.spanner").removeClass("show");
             $("div.overlay").removeClass("show");
         }
+    }
+
+    popOver()
+    {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        })
     }
 }

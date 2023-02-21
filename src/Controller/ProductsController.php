@@ -8,8 +8,6 @@ use App\Entity\Categories;
 use App\Entity\Categories1;
 use App\Entity\Categories2;
 use App\Entity\Categories3;
-use App\Entity\ClinicProducts;
-use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
@@ -18,10 +16,8 @@ use App\Entity\ListItems;
 use App\Entity\Lists;
 use App\Entity\Manufacturers;
 use App\Entity\OrderItems;
-use App\Entity\Orders;
 use App\Entity\ProductFavourites;
 use App\Entity\ProductImages;
-use App\Entity\ProductManufacturers;
 use App\Entity\ProductNotes;
 use App\Entity\ProductRetail;
 use App\Entity\ProductReviews;
@@ -39,7 +35,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
-use Vich\UploaderBundle\Handler\DownloadHandler;
 
 class ProductsController extends AbstractController
 {
@@ -79,17 +74,8 @@ class ProductsController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_CLINIC');
         $clinic = $this->getUser()->getClinic();
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
-        $response = 'Please use the search bar above....';
-        $distributors = $this->em->getRepository(Distributors::class)->findAll();
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findBy([], ['name' => 'ASC']);
         $basket = $this->em->getRepository(Baskets::class)->findClinicDefaultBasket($clinic->getId());
-        $clinicOrderDetails = false;
-        $clinicOrderList = false;
-        $charts = $this->forward('App\Controller\ChartsController::getChartsAction')->getContent();
-        $distributorProducts = $this->em->getRepository(DistributorClinics::class)->findBy([
-            'clinic' => $clinic->getId()
-        ]);
-
         $permissions = [];
 
         foreach($user->getClinicUserPermissions() as $permission){
@@ -97,35 +83,13 @@ class ProductsController extends AbstractController
             $permissions[] = $permission->getPermission()->getId();
         }
 
-        if(substr($request->getPathInfo(),0,16) == '/clinics/orders/'){
-
-            $clinicOrderList = true;
-        }
-
-        if(substr($request->getPathInfo(),0,15) == '/clinics/order/'){
-
-            $clinicOrderDetails = true;
-        }
-
         $count_1 = (int) ceil(count($manufacturers) / 2);
         $count_2 = (int) floor(count($manufacturers) / 2);
 
-        $man_first = array_slice($manufacturers, 0, $count_1);
-        $man_second = array_slice($manufacturers, $count_1, $count_2);
-
         return $this->render('frontend/clinics/index.html.twig',[
-            'user' => $user,
-            'response' => $response,
-            'distributors' => $distributors,
-            'man_1' => $man_first,
-            'man_2' => $man_second,
             'basket_id' => $basket[0]->getId(),
-            'clinic_order_details' => $clinicOrderDetails,
-            'clinicOrderList' => $clinicOrderList,
-            'clinic_id' => $clinic->getId(),
-            'charts' => $charts,
             'permissions' => json_encode($permissions),
-            'distributorProducts' => $distributorProducts,
+            'clinic_id' => $clinic->getId(),
             'clinic' => $clinic,
         ]);
     }
@@ -172,7 +136,7 @@ class ProductsController extends AbstractController
         if($keywords != null || $arraySearch != null || $shoppingListId != null) {
 
             // Return keyword search
-            if($keywords != null && $arraySearch == null) {
+            if($keywords != null && $arraySearch == null && $shoppingListId == null) {
 
                 $products = $this->em->getRepository(Products::class)->findByKeystring(
                     $keywords,
@@ -285,6 +249,7 @@ class ProductsController extends AbstractController
                 $class = '';
                 $reviewCount = '';
                 $noteCount = '';
+                $noteContainer = '';
 
                 if(count($countReviews) > 0){
 
@@ -371,6 +336,7 @@ class ProductsController extends AbstractController
                     $lastLame = $this->encryptor->decrypt($productNotes[0]->getClinicUser()->getLastName());
                     $noteString = $productNotes[0]->getNote();
                     $note = '<i class="fa-solid fa-pen-to-square"></i> <b>Notes From '. $firstName .' '. $lastLame .':</b> '. $noteString;
+                    $noteContainer = '<div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>';
                 }
 
                 $name = $product->getName() .' - '. $product->getSize() . $product->getUnit();
@@ -389,9 +355,20 @@ class ProductsController extends AbstractController
 
                 if($product->getProductSpecies() != null)
                 {
+                    $count = count($product->getProductSpecies());
+                    $i = 0;
+
                     foreach($product->getProductSpecies() as $productSpecies)
                     {
-                        $species .= '<button class="btn bg-transparent border-xy ms-3">';
+                        $i++;
+                        $class = '';
+
+                        if($i == $count)
+                        {
+                            $class = ' me-3';
+                        }
+
+                        $species .= '<button class="btn bg-transparent border-xy ms-3'. $class .'">';
                         $species .= '   <i class="'. $productSpecies->getSpecies()->getIcon() .' fa-fw info" style="font-size: 20px !important;"></i>';
                         $species .= '</button>';
                     }
@@ -400,8 +377,11 @@ class ProductsController extends AbstractController
                 $html .= '
                 <div class="row">
                     <div class="col-12 half-border mb-4">
-                        <div class="row prd-container">
-                            <div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>
+                        <div class="row prd-container">';
+
+                            $html .= $noteContainer;
+
+                            $html .= '
                             <!-- Product main container -->
                             <div class="col-12 col-sm-9 ps-3 text-center text-sm-start bg-white border-sm-xy prd-container">
                                 <div class="row">
@@ -537,7 +517,7 @@ class ProductsController extends AbstractController
                                             <i class="fa-regular fa-star"></i> <span class="d-none d-sm-inline">Reviews</span>
                                             '. $reviewCount .'
                                         </button>
-                                        <div class="d-inline-block float-end text-end text-secondary">
+                                        <div class="d-inline-block float-end text-end text-secondary me-3">
                                             <span 
                                                 data-bs-trigger="hover"
                                                 data-bs-container="body" 
@@ -1239,6 +1219,7 @@ class ProductsController extends AbstractController
                    data-distributor-id="' . $distributorId . '"
                    data-bs-toggle="modal"
                    data-bs-target="#modal_add_to_basket_' . $productId . '_' . $distributorId . '"
+                   data-action="click->basket--basket#onClickAddToBasket"
                 >
                 <div class="row distributor-store-row py-3" '. $style .'>
                     <div class="col-4">
@@ -2091,10 +2072,15 @@ class ProductsController extends AbstractController
                     $size = ' | '. $product->getProduct()->getSize();
                 }
 
-                $select .= "
-                <li onClick=\"selectProductListItem('$id', '$name');\" class='search-item' data-action='click->clinics--inventory#onClickSearchItem'>
-                    $name$dosage$size
-                </li>";
+                $select .= '
+                <li 
+                    data-product-id="'. $id .'"
+                    data-product-name="'. $name .'"
+                    class="search-item" 
+                    data-action="click->clinics--inventory#onClickSearchItem"
+                >
+                    '. $name .' '. $dosage .' '. $size .'
+                </li>';
             }
 
             $select .= '</ul>';

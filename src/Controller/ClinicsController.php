@@ -356,7 +356,7 @@ class ClinicsController extends AbstractController
 
         // Account approval required if reg docs change
         if(
-            !empty($tradeLicense) || $tradeLicenseNo != $clinics->getTradeLicenseNo() ||
+            !empty($tradeLicense) || $tradeLicenseNo != $this->encryptor->decrypt($clinics->getTradeLicenseNo()) ||
             $tradeLicenseExpDate != $clinics->getTradeLicenseExpDate()->format('Y-m-d')
         )
         {
@@ -463,11 +463,11 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/get-company-information', name: 'get_company_information')]
+    #[Route('/clinics/get-company-information', name: 'get_clinic_company_information')]
     public function clinicsGetCompanyInformationAction(Request $request): Response
     {
         $species = $this->em->getRepository(Species::class)->findByNameAsc();
-        $permissions = json_decode($request->get('permissions'), true);
+        $permissions = json_decode($request->request->get('permissions'), true);
         $countries = $this->em->getRepository(Countries::class)->findBy([
             'isActive' => 1,
         ]);
@@ -476,7 +476,7 @@ class ClinicsController extends AbstractController
         if(!in_array(10, $permissions))
         {
             $response = '
-            <div class="row mt-3 mt-md-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12 text-center">
                     <i class="fa-solid fa-ban pe-2" style="font-size: 30vh; margin-bottom: 30px; color: #CCC;text-align: center"></i>
                 </div>
@@ -528,7 +528,7 @@ class ClinicsController extends AbstractController
 
         $response = '
         <div class="row position-relative" id="account_settings">
-            <div class="col-12 text-center pt-3 pb-3" id="order_header">
+            <div class="col-12 text-center pb-3" id="order_header">
                 <h4 class="text-primary text-truncate">Account & Settings</h4>
             </div>
             
@@ -604,7 +604,12 @@ class ClinicsController extends AbstractController
             
             <!-- Company Information -->
             <div class="col-12" id="company_information_panel">
-                <form name="form_clinic_information" id="form_clinic_information" method="post">
+                <form 
+                    name="form_clinic_information" 
+                    id="form_clinic_information" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitClinicInformation"
+                >
                     <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
                         <!-- Clinic name -->
                         <div class="col-12 col-sm-6 pt-3 pt-sm-0">

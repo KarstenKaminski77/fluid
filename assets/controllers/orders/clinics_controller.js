@@ -803,7 +803,7 @@ export default class extends Controller
 
         $.ajax({
             async: "true",
-            url: "{{ path('is_typing') }}",
+            url: "/message/is_typing",
             type: 'POST',
             dataType: 'json',
             data: {
@@ -834,12 +834,11 @@ export default class extends Controller
 
         let clickedElement = e.currentTarget;
         let orderId = $(clickedElement).data('order-id');
-        let  distributorId = $(clickedElement).data('distributor-id');
+        let distributorId = $(clickedElement).data('distributor-id');
         let clinicId = $(clickedElement).data('clinic-id');
+        let notificationId = $(clickedElement).data('notification-id');
 
         this.getOrderDetails(orderId, distributorId, clinicId);
-
-        let notificationId = $(clickedElement).data('notification-id');
 
         $.ajax({
             async: "true",

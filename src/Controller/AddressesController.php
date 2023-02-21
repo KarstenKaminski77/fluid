@@ -40,8 +40,8 @@ class AddressesController extends AbstractController
         }
 
         $response = '
-        <div class="row pt-3">
-            <div class="col-12 text-center mt-1 pt-3 pb-3">
+        <div class="row">
+            <div class="col-12 text-center pb-3">
                 <h4 class="text-primary text-truncate">Manage Shipping Addresses</h4>
                 <span class="d-none d-sm-inline mb-5 mt-2 text-center text-primary text-sm-start">
                     Add or remove shipping addresses from the list below.
@@ -151,16 +151,28 @@ class AddressesController extends AbstractController
                                     data-action="click->clinics--addresses#onClickAddressUpdate"
                                 >
                                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
-                                </a>
-                                <a 
-                                    href="" 
-                                    class="delete-icon float-none float-sm-end open-delete-address-modal" 
-                                    data-bs-toggle="modal" data-address-id="' . $address->getId() . '" 
-                                    data-bs-target="#modal_address_delete"
-                                    data-action="click->clinics--addresses#onClickDeleteIcon"
-                                >
-                                    <i class="fa-solid fa-trash-can"></i>
                                 </a>';
+
+                                if($address->getIsDefault() != 1 && $address->getIsDefaultBilling() != 1)
+                                {
+                                    $response .= '
+                                    <a 
+                                        href="" 
+                                        class="delete-icon float-none float-sm-end open-delete-address-modal" 
+                                        data-bs-toggle="modal" data-address-id="' . $address->getId() . '" 
+                                        data-bs-target="#modal_address_delete"
+                                        data-action="click->clinics--addresses#onClickDeleteIcon"
+                                    >
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>';
+                                }
+                                else
+                                {
+                                    $response .= '
+                                    <span class="delete-icon float-none float-sm-end open-delete-address-modal disabled">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </span>';
+                                }
 
                     if($type == 'Billing')
                     {
@@ -446,7 +458,7 @@ class AddressesController extends AbstractController
         </div>
         <div class="modal-footer border-0">
             <button type="button" class="btn btn-secondary w-sm-100 mb-3 mb-sm-0 w-sm-100" data-bs-dismiss="modal">CANCEL</button>
-            <button type="submit" class="btn btn-primary w-sm-100 mb-sm-0 w-sm-100" id="btn_save_address">SAVE</button>
+            <button type="submit" class="btn btn-primary w-sm-100 mb-sm-0 w-sm-100" id="btn_save_address" data-bs-dismiss="modal">SAVE</button>
         </div>';
 
         return new JsonResponse($response);
@@ -577,7 +589,7 @@ class AddressesController extends AbstractController
         if(!in_array(12, $permissions))
         {
             $html = '
-            <div class="row mt-3 mt-md-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12 text-center">
                     <i class="fa-solid fa-ban pe-2" style="font-size: 30vh; margin-bottom: 30px; color: #CCC;text-align: center"></i>
                 </div>
