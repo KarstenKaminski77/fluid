@@ -282,6 +282,11 @@ export default class extends Controller
                         $('#create_user').empty().append('SAVE').attr('disabled', false);
 
                         self.getUsers(response.page_id);
+
+                        let clearCss = setInterval(function () {
+                            $('body').removeAttr('style');
+                            clearInterval(clearCss);
+                        }, 200);
                     }
                     else
                     {

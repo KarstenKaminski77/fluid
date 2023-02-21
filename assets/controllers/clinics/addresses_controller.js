@@ -24,6 +24,7 @@ export default class extends Controller
 
     onClickAddressNew()
     {
+        this.manageModalBackdrop();
         $('#address_id').val(0);
         $('#address_clinic_name').val('');
         $('#address_mobile').val('');
@@ -173,7 +174,7 @@ export default class extends Controller
     {
         e.preventDefault();
 
-        $('.modal-backdrop:first').remove();
+        this.manageModalBackdrop();
         $('#delete_address').attr('data-address-id', $(e.currentTarget).data('address-id'));
     }
 
@@ -198,12 +199,13 @@ export default class extends Controller
             },
             success: function (response) {
                 self.getFlash(response.flash);
-                $('#basket_container').empty().append(response.addresses);
-                $('#paginator').empty().append(response.pagination).show();
+                $('#clinic_container').empty().append(response.addresses);
+                $('#clinic_container').append(response.pagination).show();
                 $('#modal_address_delete').modal('hide');
                 $('.modal-backdrop').removeClass('modal-backdrop');
                 $('#modal_address_delete').addClass('fade');
                 self.isLoading(false);
+                $('body').removeAttr('style');
             }
         });
     }
@@ -341,11 +343,11 @@ export default class extends Controller
                 {
                     self.getFlash(response.flash);
 
-                    $('#basket_container_parent').show();
-                    $('#basket_container').empty().append(response.addresses);
-                    $('#paginator').empty().append(response.pagination).show();
+                    $('#clinic_container').empty().append(response.addresses);
+                    $('#clinic_container').append(response.pagination).show();
                     $('#modal_address').modal('hide');
                     $('.modal-backdrop').removeClass('modal-backdrop');
+                    $('body').removeAttr('style');
                     $('.fade').removeClass('fade');
                     self.isLoading(false);
                     $('#address_clinic_name').val('');
@@ -399,6 +401,7 @@ export default class extends Controller
             dataType: 'json',
             success: function (response) {
                 $('#billing_address_modal').empty();
+                $('.modal-backdrop:first').remove();
                 $('#shipping_address_modal').empty().append(response.modal);
                 $('#address_type').attr('readonly', true);
                 $('#option_shipping').attr('selected', true);
@@ -408,6 +411,7 @@ export default class extends Controller
                     .append('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
                 $('.modal-body-address-new').hide();
                 $('.modal-body-address-existing').show();
+                $('body').removeAttr('style');
 
                 self.input = document.querySelector("#address_mobile");
                 self.iti = self.initIntlTel(response.iso_code);
@@ -511,10 +515,9 @@ export default class extends Controller
                     success: function (response)
                     {
                         $('#checkout_shipping_address').empty().append(response.checkout_address);
-                        $('#modal_shipping_address').modal('toggle');
+                        $('#modal_shipping_address').modal('hide');
                         $('.modal-backdrop').removeClass('modal-backdrop');
                         $('#modal_shipping_address').addClass('fade');
-                        $('#basket_container').css({overflow: "auto"});
                         $('#address_clinic_name').val('');
                         $('#address_telephone').val('');
                         $('#address_line_1').val('');
@@ -524,6 +527,7 @@ export default class extends Controller
                         $('#address_state').val('');
                         $('#shipping_address_id').val(response.checkout_address_id);
                         self.isLoading(false);
+                        $('body').removeAttr('style');
                     }
                 });
             }
@@ -545,10 +549,10 @@ export default class extends Controller
                 success: function (response)
                 {
                     $('#modal_shipping_address').modal('toggle');
-                    $('#basket_container').css({overflow: "auto"});
                     $('#shipping_address_id').val(addressId);
                     $('#checkout_shipping_address').empty().append(response.address);
                     self.isLoading(false);
+                    $('body').removeAttr('style');
                 }
             });
         }
@@ -566,6 +570,7 @@ export default class extends Controller
             success: function (response)
             {
                 $('#shipping_address_modal').empty();
+                $('.modal-backdrop:first').remove();
                 $('#billing_address_modal').empty().append(response.modal);
                 $('#modal_header_address').empty()
                     .append('<h5 class="modal-title" id="address_modal_label">Use an Existing Address</h5>')
@@ -573,6 +578,7 @@ export default class extends Controller
                     .append('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
                 $('.modal-body-address-new').hide();
                 $('.modal-body-address-existing').show();
+                $('body').removeAttr('style');
 
                 self.input = document.querySelector("#address_mobile");
                 self.iti = self.initIntlTel(response.iso_code);
@@ -652,13 +658,13 @@ export default class extends Controller
 
                         $('#checkout_billing_address').empty().append(response.checkout_address);
                         $('#modal_billing_address').modal('toggle');
-                        $('#basket_container').css({overflow: "auto"});
                         $('#address_clinic_name').val('');
                         $('#address_telephone').val('');
                         $('#address_mobile').val('');
                         $('#address_line_1').val('');
                         $('#billing_address_id').val(response.checkout_address_id);
                         self.isLoading(false);
+                        $('body').removeAttr('style');
                     }
                 });
             }
@@ -678,9 +684,9 @@ export default class extends Controller
                 success: function (response)
                 {
                     $('#modal_billing_address').modal('toggle');
-                    $('#basket_container').css({overflow: "auto"});
                     $('#billing_address_id').val(id);
                     $('#checkout_billing_address').empty().append(response.address);
+                    $('body').removeAttr('style');
                 }
             });
         }
@@ -778,6 +784,21 @@ export default class extends Controller
         });
 
         return iti;
+    }
+
+    manageModalBackdrop()
+    {
+        let backdrop = $('.modal-backdrop');
+
+        if(backdrop.length > 1)
+        {
+            $('.modal-backdrop:first').remove();
+        }
+
+        if(backdrop.length == 0)
+        {
+            $('body').append('<div class="modal-backdrop show"></div>');
+        }
     }
 
     getFlash(flash)

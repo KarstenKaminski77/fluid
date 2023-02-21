@@ -35,6 +35,7 @@
         {
             $.session.set('permissions', '{{ permissions }}');
             $.session.set('clinic-id', '{{ clinic_id|default(0) }}');
+            $.session.set('trade-license', '{{ clinic.tradeLicense }}' ? '{{ clinic.tradeLicense }}' : false);
 
             $(document).on('click', '.dropdown-item, #btn_basket', function ()
             {

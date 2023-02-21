@@ -1,6 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 
-export default class extends Controller {
+export default class extends Controller
+{
     connect(e) {
 
     }
@@ -150,11 +151,15 @@ export default class extends Controller {
     {
         let clickedElement = e.currentTarget;
 
-        $('#review_product_id').val($(clickedElement).data("product-id"))
+        $('#review_product_id').val($(clickedElement).data("product-id"));
 
-        if($('.btn_create_review').length == 1)
+        if ($('.modal-backdrop').length > 1)
         {
-            $(clickedElement).attr('data-bs-target','modal_review_all');
+            $('.modal-backdrop:first').remove();
+        }
+
+        if($('.btn_create_review').length == 1) {
+            $(clickedElement).attr('data-bs-target', 'modal_review_all');
             $('#modal_review_all').modal('toggle');
         }
     }
@@ -227,7 +232,6 @@ export default class extends Controller {
                 success: function (response)
                 {
                     self.getFlash(response);
-                    $('#modal_review').modal('toggle');
 
                     let productId = $('#review_product_id').val();
 
@@ -278,7 +282,13 @@ export default class extends Controller {
                         }
                     });
 
-                    $('body').css('overflow','');
+                    $('.modal-backdrop').remove();
+                },
+                complete: function ()
+                {
+                    $('#modal_review').hide();
+                    $('.modal-backdrop').remove();
+                    $('body').removeAttr('style');
                 }
             });
         }
@@ -422,12 +432,9 @@ export default class extends Controller {
             {
                 self.isLoading(true);
             },
-            success: function (response) {
-
-                $('#inventory').empty().hide();
-                $('#inventory_container').hide();
-                $('.review_panel').empty();
-                $('#basket_container').empty().append(response.response).addClass('bg-light border-xy').css({overflow:''}).show();
+            success: function (response)
+            {
+                $('#clinic_container').empty().append(response.response).addClass('bg-light border-xy').css({overflow:''}).show();
                 $('.recent-reviews').empty().append('Showing All Reviews For '+ response.product_name);
                 $('.btn-view-all-reviews').hide();
                 $('#review_details_container').addClass('half-border');

@@ -356,7 +356,7 @@ class ClinicsController extends AbstractController
 
         // Account approval required if reg docs change
         if(
-            !empty($tradeLicense) || $tradeLicenseNo != $clinics->getTradeLicenseNo() ||
+            !empty($tradeLicense) || $tradeLicenseNo != $this->encryptor->decrypt($clinics->getTradeLicenseNo()) ||
             $tradeLicenseExpDate != $clinics->getTradeLicenseExpDate()->format('Y-m-d')
         )
         {

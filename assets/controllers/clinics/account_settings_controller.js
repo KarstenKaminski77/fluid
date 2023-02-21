@@ -133,7 +133,7 @@ export default class extends Controller
         let errorTradeLicenseFile = $('#error_trade_license_file');
         let errorTradeLicenseNo = $('#error_trade_license_no');
         let errorTradeLicenseExpDate = $('#error_trade_license_exp_date');
-        let isTradeLicense = '{{ clinic.tradeLicense }}' ? '{{ clinic.tradeLicense }}' : false;
+        let isTradeLicense = $.session.get('trade-license');
 
         errorClinicName.hide();
         errorClinicEmail.hide();

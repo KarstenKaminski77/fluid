@@ -678,8 +678,8 @@ class BasketController extends AbstractController
     public function updateSavedBasketsAction(Request $request): Response
     {
         $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket-id'));
-        $firstName = $this->getUser()->getFirstName();
-        $lastName = $this->getUser()->getLastName();
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
         $basket->setName($request->request->get('basket-name'));
         $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
@@ -692,7 +692,7 @@ class BasketController extends AbstractController
         return new JsonResponse($response);
     }
 
-    private function getSavedbasketsRightColumn()
+    private function getSavedbasketsRightColumn():string
     {
         $savedBaskets = $this->em->getRepository(Baskets::class)->findBy([
             'clinic' => $this->getUser()->getClinic()->getId(),
@@ -702,7 +702,7 @@ class BasketController extends AbstractController
 
         if(count($savedBaskets) > 1)
         {
-            $response .= '
+            $response = '
             <!-- Basket Items -->
             <div class="row border-bottom bg-secondary d-none d-sm-flex">
                 <div class="col-3 pt-3 pb-3">

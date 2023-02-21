@@ -189,6 +189,7 @@ export default class extends Controller
         let noteId = $(clickedElement).data("note-id");
         let productId = $(clickedElement).data("product-id");
 
+        $('.modal-backdrop:first').remove();
         $('#delete_note').attr('data-delete-note-id', noteId);
         $('#delete_note').attr('data-delete-product-id', productId);
     }
@@ -220,16 +221,62 @@ export default class extends Controller
             },
             success: function (response)
             {
-                $('#modal_note_delete').modal('toggle');
+                $('#notes_'+ productId).empty().append(response);
+                $('.modal-backdrop').remove();
 
-                $('.note_'+ noteId).each(function ()
-                {
-                    $(this).remove();
+                $.ajax({
+                    async: "true",
+                    url: "/clinics/get-product-notes",
+                    type: 'POST',
+                    cache: false,
+                    timeout: 600000,
+                    dataType: 'json',
+                    data: {
+                        'product-id': productId,
+                    },
+                    success: function (response)
+                    {
+                        if(response)
+                        {
+                            self.getNoteCount(response.note_count, productId);
+
+                            $('#product_notes_label_'+ productId).empty().append('<i class="fa-solid fa-pen-to-square"></i> <b>Notes From '+ response.from +':</b> '+ response.note);
+                            $('#product_notes_label_'+ productId).removeClass('hidden_msg');
+                        }
+                        else
+                        {
+                            self.getNoteCount(0, productId);
+
+                            $('#product_notes_label_'+ productId).addClass('hidden_msg');
+                        }
+
+                        self.isLoading(false);
+                    }
                 });
-
-                self.isLoading(false);
             }
         });
+    }
+
+    getNoteCount(noteCount,productId)
+    {
+        if(noteCount > 0)
+        {
+            let btnNote = '';
+
+            btnNote += '<i class="fa-solid fa-pencil"></i> <span class="d-none d-sm-inline">Notes</span>';
+            btnNote += '<span class="position-absolute text-opacity-25 start-100 translate-middle badge border rounded-circle bg-primary" ';
+            btnNote += 'style="z-index: 999">' + noteCount + '</span>';
+
+            $('#btn_note_' + productId).empty().append(btnNote);
+        }
+        else
+        {
+            let btnNote = '';
+
+            btnNote += '<i class="fa-solid fa-pencil"></i> <span class="d-none d-sm-inline">Notes</span>';
+
+            $('#btn_note_' + productId).empty().append(btnNote);
+        }
     }
 
     getFlash(flash)

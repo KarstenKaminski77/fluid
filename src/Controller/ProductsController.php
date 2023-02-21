@@ -38,7 +38,7 @@ use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
 
 class ProductsController extends AbstractController
 {
-    const ITEMS_PER_PAGE = 6;
+    const ITEMS_PER_PAGE = 2;
     private $pageManager;
     private $em;
     private $requestStack;
@@ -167,7 +167,7 @@ class ProductsController extends AbstractController
         if($keywords != null || $arraySearch != null || $shoppingListId != null) {
 
             // Return keyword search
-            if($keywords != null && $arraySearch == null) {
+            if($keywords != null && $arraySearch == null && $shoppingListId == null) {
 
                 $products = $this->em->getRepository(Products::class)->findByKeystring(
                     $keywords,
@@ -384,9 +384,20 @@ class ProductsController extends AbstractController
 
                 if($product->getProductSpecies() != null)
                 {
+                    $count = count($product->getProductSpecies());
+                    $i = 0;
+
                     foreach($product->getProductSpecies() as $productSpecies)
                     {
-                        $species .= '<button class="btn bg-transparent border-xy ms-3">';
+                        $i++;
+                        $class = '';
+
+                        if($i == $count)
+                        {
+                            $class = ' me-3';
+                        }
+
+                        $species .= '<button class="btn bg-transparent border-xy ms-3'. $class .'">';
                         $species .= '   <i class="'. $productSpecies->getSpecies()->getIcon() .' fa-fw info" style="font-size: 20px !important;"></i>';
                         $species .= '</button>';
                     }
@@ -532,7 +543,7 @@ class ProductsController extends AbstractController
                                             <i class="fa-regular fa-star"></i> <span class="d-none d-sm-inline">Reviews</span>
                                             '. $reviewCount .'
                                         </button>
-                                        <div class="d-inline-block float-end text-end text-secondary">
+                                        <div class="d-inline-block float-end text-end text-secondary me-3">
                                             <span 
                                                 data-bs-trigger="hover"
                                                 data-bs-container="body" 
@@ -1234,6 +1245,7 @@ class ProductsController extends AbstractController
                    data-distributor-id="' . $distributorId . '"
                    data-bs-toggle="modal"
                    data-bs-target="#modal_add_to_basket_' . $productId . '_' . $distributorId . '"
+                   data-action="click->basket--basket#onClickAddToBasket"
                 >
                 <div class="row distributor-store-row py-3" '. $style .'>
                     <div class="col-4">

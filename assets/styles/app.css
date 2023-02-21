@@ -1,4 +1,4 @@
-
+@charset "UTF-8";
 @import "~bootstrap";
 @import "~bootstrap-icons";
 @import "~slick-carousel/slick/slick.css";
@@ -12,6 +12,7 @@ html {
     box-sizing: unset !important;
     overflow-x: hidden;
     background-color: #f4f4f4 !important;
+    overflow: visible !important;
 }
 
 body, html {
@@ -40,9 +41,21 @@ body, form-control {
     padding-top: 140px;
 }
 
+.show.bs.modal {
+    overflow: visible !important;
+}
+
+.modal{
+    overflow: auto !important;
+}
+
 a, a:hover {
     text-decoration: none;
     color: #b3b4b2;
+}
+
+.btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show{
+    border-color: transparent !important;
 }
 
 .eye{

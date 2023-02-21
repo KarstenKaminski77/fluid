@@ -25,6 +25,17 @@ export default class extends Controller {
         }
     }
 
+    onClickAddToBasket(e)
+    {
+        $('.modal-backdrop:first').remove();
+
+        if($('.modal-backdrop').length == 0)
+        {
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+        }
+        $('body').removeAttr('style');
+    }
+
     onSubmitAddtoBasket(e)
     {
         e.preventDefault();
@@ -68,15 +79,21 @@ export default class extends Controller {
                     {
                         //window.location.href = '/clinics/error';
                     }
+                    let clearCss = setInterval(function () {
+                        $('body').removeAttr('style');
+                        clearInterval(clearCss);
+                    }, 200);
+
+
                 },
                 success: function (response)
                 {
                     if(response.error.length == '')
                     {
                         self.getFlash(response.message)
-                        $(clickedElement).closest('.modal').modal('toggle');
-                        $('.modal-backdrop').removeClass('modal-backdrop');
-                        $('.fade').removeClass('fade');
+                        $(clickedElement).closest('.modal').modal('hide');
+                        $('body').removeAttr('style');
+                        $('.modal-backdrop').remove();
                         $('.modal-basket-qty').val(1);
                         self.isLoading(false);
 
@@ -599,7 +616,7 @@ export default class extends Controller {
                 self.isLoading(false);
                 $('#basket_name_string_'+ basketId).empty().append(basketName).show();
                 $('#basket_name_input_'+ basketId).hide();
-                $('#update_saved_basket_'+ basketId).replaceWith('<a href="" class="basket-edit" data-basket-id="'+ basketId +'"><i class="fa-solid fa-pencil float-end me-3"></i></a>');
+                $('#update_saved_basket_'+ basketId).replaceWith('<a href="" class="basket-edit" data-basket-id="'+ basketId +'" data-action="click->basket--basket#onClickEditBasket"><i class="fa-solid fa-pencil float-end me-3"></i></a>');
                 $('#basket_left_col').empty().append(response);
                 $('#saved_basket_first_'+ basketId).addClass('saved-basket-link');
             }
@@ -698,6 +715,14 @@ export default class extends Controller {
         if($(clickedElement).data('basket-id') == 'undefined')
         {
             self.getBasket($(clickedElement).data('basket-id'), true);
+        }
+    }
+
+    onClickSavedBasketAddToBasket()
+    {
+        if($('.modal-backdrop').length > 1)
+        {
+            $('.modal-backdrop:first').remove();
         }
     }
 
@@ -812,6 +837,10 @@ export default class extends Controller {
                 $('#saved_items_container').hide();
                 self.isLoading(false);
                 //clearInterval(get_messages);
+                if($('.saved-item-row').length > 0)
+                {
+                    $('#basket_inner').css('padding-bottom','4rem');
+                }
 
                 if($(window).width() < 992)
                 {
@@ -882,7 +911,7 @@ export default class extends Controller {
             {
                 if(e.status === 500)
                 {
-                    window.location.href = '/clinics/error';
+                    //window.location.href = '/clinics/error';
                 }
             },
             success: function (response)

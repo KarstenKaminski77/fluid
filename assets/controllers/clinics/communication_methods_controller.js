@@ -42,6 +42,11 @@ export default class extends Controller
         $('#communication_methods_type').val('');
         $('#col_send_to').hide();
         $('#btn_save_communication_method').empty().append('CREATE');
+
+        if($('.modal-backdrop').length > 1)
+        {
+            $('.modal-backdrop:first').remove();
+        }
     }
 
     onChangeMethodType(e)
@@ -61,16 +66,18 @@ export default class extends Controller
             $('#send_to_container').empty().append('<input type="text" name="clinic_communication_methods_form[sendTo]" id="send_to" class="form-control">');
             $('#label_send_to').empty().append('Email Address').show();
             $('#send_to').attr('placeholder', 'Enter your email address');
+            $('#col_communication_method').removeClass('col-12').addClass('col-6');
         }
 
         if(communicationMethod == 3)
         {
             $('#send_to_container').empty().append('<input type="text" name="clinic_communication_methods_form[sendTo]" id="send_to" class="form-control" data-action="keyup->clinics--communication-methods#onChangeSendTo">');
             $('#label_send_to').empty().append('Mobile Phone Number').show();
+            $('#col_communication_method').removeClass('col-12').addClass('col-6');
 
             let isoCode = $('#iso_code').val() ? $('#iso_code').val() : 'ae';
 
-            this.initIntlTel(isoCode);
+            this.iti = this.initIntlTel(isoCode);
         }
 
         if(communicationMethod == 2 || communicationMethod == 3) {
@@ -158,6 +165,11 @@ export default class extends Controller
         $('#communication_method_id').val(clinicMethodId);
         $('#communication_methods_modal_label').empty().append('Update A Communication Method');
         $('#btn_save_communication_method').empty().append('UPDATE');
+
+        if($('.modal-backdrop').length > 1)
+        {
+            $('.modal-backdrop:first').remove();
+        }
     }
 
     onSubmitCommunicationMethodForm(e)
@@ -239,7 +251,6 @@ export default class extends Controller
                 success: function (response)
                 {
                     self.getFlash(response.flash);
-                    $('#modal_communication_methods').modal('toggle');
                     $('#modal_communication_methods').modal('hide');
                     $('.modal-backdrop').removeClass('modal-backdrop');
                     $('.fade').removeClass('fade');
@@ -251,6 +262,12 @@ export default class extends Controller
                     $('#mobile_no').val('');
                     $('#communication_methods_type').val('');
                     self.isLoading(false);
+
+                    let removeCss = setInterval(function ()
+                    {
+                        $('body').removeAttr('style');
+                        clearInterval(removeCss);
+                    }, 200);
                 }
             });
         }
@@ -259,6 +276,11 @@ export default class extends Controller
     onClickDeleteIcon(e)
     {
         $('#delete_method').attr('data-communication-method-id', $(e.currentTarget).data('clinic-communication-method-id'));
+
+        if($('.modal-backdrop').length > 1)
+        {
+            $('.modal-backdrop:first').remove();
+        }
     }
 
     onClickDelete(e)
@@ -294,6 +316,12 @@ export default class extends Controller
                 self.getFlash(response.flash);
                 $('#clinic_container').empty().append(response.communication_methods);
                 self.isLoading(false);
+
+                let removeCss = setInterval(function ()
+                {
+                    $('body').removeAttr('style');
+                    clearInterval(removeCss);
+                }, 400);
             }
         });
     }
