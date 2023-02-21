@@ -48,8 +48,8 @@ class CommunicationMethodsController extends AbstractController
         $select .= '</select>';
 
         $response = '
-        <div class="row pt-3">
-            <div class="col-12 text-center mt-1 pt-3 pb-3">
+        <div class="row">
+            <div class="col-12 text-center pb-3">
                 <h4 class="text-primary text-truncate">Manage Communication Methods</h4>
                 <span class="mb-5 mt-2 text-center text-primary text-sm-start d-none d-sm-inline">
                     Add or remove communication methods from the list below.

@@ -476,7 +476,7 @@ class ClinicsController extends AbstractController
         if(!in_array(10, $permissions))
         {
             $response = '
-            <div class="row mt-3 mt-md-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12 text-center">
                     <i class="fa-solid fa-ban pe-2" style="font-size: 30vh; margin-bottom: 30px; color: #CCC;text-align: center"></i>
                 </div>
@@ -528,7 +528,7 @@ class ClinicsController extends AbstractController
 
         $response = '
         <div class="row position-relative" id="account_settings">
-            <div class="col-12 text-center pt-3 pb-3" id="order_header">
+            <div class="col-12 text-center pb-3" id="order_header">
                 <h4 class="text-primary text-truncate">Account & Settings</h4>
             </div>
             

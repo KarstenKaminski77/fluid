@@ -224,7 +224,7 @@ class ListsController extends AbstractController
 
         $html = '
         <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey border-bottom">
+            <div class="col-12 text-center pb-3 form-control-bg-grey border-bottom">
                 <h4 class="text-primary">Order Lists</h4>
                 <span class="text-primary">
                     Order Lists make it easy to repurchase your most commonly ordered items

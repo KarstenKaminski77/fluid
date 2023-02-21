@@ -280,6 +280,7 @@ class ProductsController extends AbstractController
                 $class = '';
                 $reviewCount = '';
                 $noteCount = '';
+                $noteContainer = '';
 
                 if(count($countReviews) > 0){
 
@@ -366,6 +367,7 @@ class ProductsController extends AbstractController
                     $lastLame = $this->encryptor->decrypt($productNotes[0]->getClinicUser()->getLastName());
                     $noteString = $productNotes[0]->getNote();
                     $note = '<i class="fa-solid fa-pen-to-square"></i> <b>Notes From '. $firstName .' '. $lastLame .':</b> '. $noteString;
+                    $noteContainer = '<div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>';
                 }
 
                 $name = $product->getName() .' - '. $product->getSize() . $product->getUnit();
@@ -406,8 +408,11 @@ class ProductsController extends AbstractController
                 $html .= '
                 <div class="row">
                     <div class="col-12 half-border mb-4">
-                        <div class="row prd-container">
-                            <div class="alert-warning p-2 '. $class .'" id="product_notes_label_'. $product->getId() .'">'. $note .'</div>
+                        <div class="row prd-container">';
+
+                            $html .= $noteContainer;
+
+                            $html .= '
                             <!-- Product main container -->
                             <div class="col-12 col-sm-9 ps-3 text-center text-sm-start bg-white border-sm-xy prd-container">
                                 <div class="row">

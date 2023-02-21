@@ -1874,7 +1874,7 @@ class OrdersController extends AbstractController
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Total: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
-                                AED' . number_format($order->getTotal(),2) . '
+                                AED ' . number_format($order->getTotal(),2) . '
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Date: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
@@ -2719,7 +2719,7 @@ class OrdersController extends AbstractController
         $html = '
         <div class="col-12">
             <div class="row">
-                <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="order_header">
+                <div class="col-12 text-center pb-3 form-control-bg-grey" id="order_header">
                     <h4 class="text-primary text-truncate">Manage Fluid Orders</h4>
                     <span class="text-primary d-none d-sm-inline">
                         Manage All Your Orders In One Place

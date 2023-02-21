@@ -40,8 +40,8 @@ class AddressesController extends AbstractController
         }
 
         $response = '
-        <div class="row pt-3">
-            <div class="col-12 text-center mt-1 pt-3 pb-3">
+        <div class="row">
+            <div class="col-12 text-center pb-3">
                 <h4 class="text-primary text-truncate">Manage Shipping Addresses</h4>
                 <span class="d-none d-sm-inline mb-5 mt-2 text-center text-primary text-sm-start">
                     Add or remove shipping addresses from the list below.
@@ -589,7 +589,7 @@ class AddressesController extends AbstractController
         if(!in_array(12, $permissions))
         {
             $html = '
-            <div class="row mt-3 mt-md-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12 text-center">
                     <i class="fa-solid fa-ban pe-2" style="font-size: 30vh; margin-bottom: 30px; color: #CCC;text-align: center"></i>
                 </div>
