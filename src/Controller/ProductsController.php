@@ -74,17 +74,8 @@ class ProductsController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_CLINIC');
         $clinic = $this->getUser()->getClinic();
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
-        $response = 'Please use the search bar above....';
-        $distributors = $this->em->getRepository(Distributors::class)->findAll();
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findBy([], ['name' => 'ASC']);
         $basket = $this->em->getRepository(Baskets::class)->findClinicDefaultBasket($clinic->getId());
-        $clinicOrderDetails = false;
-        $clinicOrderList = false;
-        $charts = $this->forward('App\Controller\ChartsController::getChartsAction')->getContent();
-        $distributorProducts = $this->em->getRepository(DistributorClinics::class)->findBy([
-            'clinic' => $clinic->getId()
-        ]);
-
         $permissions = [];
 
         foreach($user->getClinicUserPermissions() as $permission){
@@ -92,35 +83,13 @@ class ProductsController extends AbstractController
             $permissions[] = $permission->getPermission()->getId();
         }
 
-        if(substr($request->getPathInfo(),0,16) == '/clinics/orders/'){
-
-            $clinicOrderList = true;
-        }
-
-        if(substr($request->getPathInfo(),0,15) == '/clinics/order/'){
-
-            $clinicOrderDetails = true;
-        }
-
         $count_1 = (int) ceil(count($manufacturers) / 2);
         $count_2 = (int) floor(count($manufacturers) / 2);
 
-        $man_first = array_slice($manufacturers, 0, $count_1);
-        $man_second = array_slice($manufacturers, $count_1, $count_2);
-
         return $this->render('frontend/clinics/index.html.twig',[
-            'user' => $user,
-            'response' => $response,
-            'distributors' => $distributors,
-            'man_1' => $man_first,
-            'man_2' => $man_second,
             'basket_id' => $basket[0]->getId(),
-            'clinic_order_details' => $clinicOrderDetails,
-            'clinicOrderList' => $clinicOrderList,
-            'clinic_id' => $clinic->getId(),
-            'charts' => $charts,
             'permissions' => json_encode($permissions),
-            'distributorProducts' => $distributorProducts,
+            'clinic_id' => $clinic->getId(),
             'clinic' => $clinic,
         ]);
     }

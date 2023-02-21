@@ -5,7 +5,7 @@ export default class extends Controller
     connect()
     {
         $('#notifications_panel').hide();
-        setInterval(this.getNotifications, 1000);
+        setInterval(this.getNotifications, 3000);
     }
 
     onClickNotificationsBtn(e)
@@ -91,6 +91,53 @@ export default class extends Controller
             }
         });
     };
+
+    getOrderDetails(orderId)
+    {
+        let self = this;
+
+        $.ajax({
+            url: "/distributors/get-order",
+            type: 'POST',
+            data: {
+                'order-id': orderId,
+                'permissions': JSON.parse($.session.get('permissions')),
+            },
+            dataType: 'json',
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            complete: function (e)
+            {
+                if (e.status === 500)
+                {
+                    //window.location.href = self.errorPage;
+                }
+            },
+            success: function (response)
+            {
+                // Reset page load time for refresh button alert
+                let date = new Date();
+                self.dateTime = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") + ':' + String(date.getSeconds()).padStart(2, '0');
+                sessionStorage.setItem('date_time', self.dateTime);
+
+                $('#distributor_container').empty().append(response.html);
+                $('#distributor_chat_inner').scrollTop($('#distributor_chat_inner').prop("scrollHeight"));
+                self.popOver();
+                self.getChat(orderId, response.distributorId, response.clinicId)
+                $('#chat_pulse').hide();
+
+                var maxWidth = Math.max.apply(null, $('.badge').map(function () {
+                    return $(this).outerWidth(true);
+                }).get());
+
+                $('.badge').css({'width': maxWidth + 'px'});
+
+                self.isLoading(false);
+            }
+        });
+    }
 
     getOrderNotifications() {
 
