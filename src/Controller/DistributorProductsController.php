@@ -327,7 +327,7 @@ class DistributorProductsController extends AbstractController
                                 foreach($manufacturers as $manufacturer)
                                 {
                                     $html .= '
-                                    <option value="'. $this->encryptor->decrypt($manufacturer->getManufacturers()->getId()) .'">
+                                    <option value="'. $manufacturer->getManufacturers()->getId() .'">
                                         '. $this->encryptor->decrypt($manufacturer->getManufacturers()->getName()) .'
                                     </option>';
                                 }
