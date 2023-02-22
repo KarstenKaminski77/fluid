@@ -61,7 +61,7 @@ class DistributorClinicsController extends AbstractController
 
             $distributorClinics->setClinic($clinic);
             $distributorClinics->setDistributor($distributor);
-            $distributorClinics->setIsActive(0);
+            $distributorClinics->setIsActive(1);
             $distributorClinics->setIsIgnored(0);
 
             $this->em->persist($distributorClinics);
