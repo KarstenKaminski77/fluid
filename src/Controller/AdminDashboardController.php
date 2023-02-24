@@ -100,7 +100,7 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/product/crud', name: 'product_crud')]
     public function productCrudAction(Request $request): Response
     {
-        $productId = $request->get('product_id') ?? $request->request->get('delete'); dd($productId);
+        $productId = $request->get('product_id') ?? $request->request->get('delete');
         $product = $this->em->getRepository(Products::class)->find($productId);
 
         if($request->request->get('delete') != null){
