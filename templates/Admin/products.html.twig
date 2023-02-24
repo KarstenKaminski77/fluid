@@ -75,7 +75,7 @@
             <div class="row mt-4">
 
                 {# Is Published #}
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-4">
                     <div class="form-check form-switch">
                         {% set is_published = '' %}
                         {% if product.isPublished == 1 %}
@@ -98,24 +98,53 @@
                 </div>
 
                 {# Expiry Date #}
-                <div class="col-12 col-md-6">
-                    <div class="form-check form-switch">
-                        {% set expiry_date = '' %}
-                        {% if product.expiryDateRequired == 1 %}
-                            {% set expiry_date = 'checked' %}
+                <div class="col-12 col-md-4">
+                    <table class="w-100">
+                        <tr>
+                            <td class="text-start text-sm-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    {% set expiry_date = '' %}
+                                    {% if product.expiryDateRequired == 1 %}
+                                        {% set expiry_date = 'checked' %}
+                                    {% endif %}
+                                    <input
+                                        name="expiry-date"
+                                        id="expiry_date"
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        value="1"
+                                        tabindex="2"
+                                        {{ expiry_date }}
+                                    >
+                                    <label class="ms-2 text-primary" for="expiry_date">
+                                        Expiry Date
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                {# Controlled Drug #}
+                <div class="col-12 col-md-4">
+                    <div class="form-check form-switch float-start float-sm-end">
+                        {% set isControlled = '' %}
+                        {% if product.isControlled == 1 %}
+                            {% set isControlled = 'checked' %}
                         {% endif %}
                         <input
-                            name="expiry-date"
-                            id="expiry_date"
+                            name="is-controlled"
+                            id="is_controlled"
                             class="form-check-input"
                             type="checkbox"
                             role="switch"
                             value="1"
-                            tabindex="2"
-                            {{ expiry_date }}
+                            tabindex="3"
+                            {{ isControlled }}
                         >
-                        <label class="ms-2 text-primary" for="expiry_date">
-                            Expiry Date
+                        <label class="ms-2 text-primary" for="is_controlled">
+                            Controlled Drug
                         </label>
                     </div>
                 </div>
@@ -844,10 +873,11 @@
                             $('#images_container').empty().append(response.images);
                             $('#gallery_toggle').show();
 
-                            if(btn == 'save_return'){
-
-                                window.location.assign('{{ path('products_list',{ 'page_id':1 }) }}');
+                            if($("button[type=submit]:focus").hasClass('action-saveAndReturn'))
+                            {
+                                window.location.assign('/admin/products/'+ $.session.get('page-no'));
                             }
+
                         }
                     });
                 }

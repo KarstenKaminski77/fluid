@@ -7,43 +7,79 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row border-bottom admin-header" style="left: 16.8%">
+    <div class="row border-bottom admin-header" style="left: 16.8%" data-controller="admin--products-list">
         <div class="col-12 col-sm-3 text-truncate mt-1 pt-3 pb-3 ps-4">
             <h4 class="text-truncate m-0">Products</h4>
         </div>
         <div class="col-12 col-sm-9 text-truncate mt-1 pt-3 pb-3 px-4">
-            <div class="input-group">
-                <input
-                        name="search-string"
-                        id="search_string"
-                        class="form-control form-control-sm"
-                        type="text"
-                        placeholder="Search..."
-                >
-                <div class="input-group-append">
-                    <button
-                            class="btn btn-primary btn-sm w-sm-100 mt-2 mt-sm-0"
-                            id="search_btn"
+            <div class="row">
+                <div class="col-1 pe-0">
+                    {% set increment = 10 %}
+                    {% set i = 0 %}
+                    <select
+                        name="items-per-page"
+                        id="items_per_page"
+                        class="form-control form-control-sm d-inline"
                     >
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                    <a
-                        href="{{ path('products', {'productId':0}) }}"
-                        class="btn btn-primary btn-sm float-end w-sm-100 text-truncate ms-3 mt-2 mt-sm-0"
-                    >
-                        <i class="fa-solid fa-circle-plus me-2"></i> ADD PRODUCT
-                    </a>
-                    <a
-                            href="{{ path('products_list', {'page_id':1}) }}"
-                            class="btn btn-secondary float-end btn-sm ms-sm-3 w-sm-100 mt-2 mt-sm-0"
-                    >
-                        <i class="fa-solid fa-rotate-right"></i>
-                    </a>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        {% for i in range(1, increment) %}
+                            <option value="{{ i * 10 }}">{{ i * 10 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-11">
+                    <div class="input-group">
+                        <input
+                            name="search-string"
+                            id="search_string"
+                            class="form-control form-control-sm"
+                            type="text"
+                            placeholder="Search..."
+                        >
+                        <div class="select-wrapper">
+                            <select
+                                id="manufacturers"
+                                name="manufacturers"
+                                class="input-group-border"
+                            >
+                                <option value="">Filter by brand</option>
+                                {% for manufacture in manufacturers %}
+                                    <option value="{{ manufacture.id }}">{{ nzo_decrypt(manufacture.name) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="input-group-append">
+                            <button
+                                class="btn btn-primary btn-sm w-sm-100 mt-2 mt-sm-0"
+                                id="search_btn"
+                                data-action="click->admin--products-list#onClickBtnSearch"
+                            >
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                            <a
+                                href="#"
+                                class="btn btn-primary btn-sm float-end w-sm-100 text-truncate ms-3 mt-2 mt-sm-0"
+                            >
+                                <i class="fa-solid fa-circle-plus me-2"></i> ADD PRODUCT
+                            </a>
+                            <a
+                                href=""
+                                id="reset_filters"
+                                class="btn btn-secondary float-end btn-sm ms-sm-3 w-sm-100 mt-2 mt-sm-0"
+                            >
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row pb-3 pt-2 pt-sm-4 mt-sm-5 border-left border-right">
+    <div class="row pb-3 pt-2 pt-sm-4 mt-sm-5 border-left border-right" data-controller="admin--products-list">
         <div class="row pb-3 border-bottom d-none d-md-flex">
             <div class="col-1 fw-bold ps-4 text-truncate">
                 #ID
@@ -51,7 +87,7 @@
             <div class="col-1 fw-bold text-truncate">
                 Published
             </div>
-            <div class="col-3 fw-bold text-truncate">
+            <div class="col-4 fw-bold text-truncate">
                 Name
             </div>
             <div class="col-2 fw-bold text-truncate">
@@ -62,97 +98,9 @@
             </div>
             <div class="col-1 fw-bold text-truncate">
                 Stock
-            </div>
-            <div class="col-1 fw-bold text-truncate">
-                Price
             </div>
         </div>
         <div id="products">
-        {% for product in products %}
-        <div class="row py-3 border-bottom-dashed" id="row_{{ product.id }}">
-            <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
-                #ID
-            </div>
-            <div class="col-8 col-md-1 ps-4 text-truncate">
-                #{{ product.id }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Published
-            </div>
-            <div class="col-8 col-md-1 text-truncate">
-                <div class="form-check form-switch">
-                    {% set is_published = '' %}
-                    {% if product.isPublished == 1 %}
-                        {% set is_published = 'checked' %}
-                    {% endif %}
-                    <input
-                        name="is_published"
-                        class="form-check-input is-published"
-                        type="checkbox"
-                        role="switch"
-                        data-product-id="{{ product.id }}"
-                        value="{{ product.isPublished }}"
-                        {{ is_published }}
-                    >
-                </div>
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Name
-            </div>
-            <div class="col-8 col-md-3 text-truncate">
-                {{ product.name }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Category
-            </div>
-            <div class="col-8 col-md-2 text-truncate">
-                {% set categoryName = '' %}
-                {% if product.category is not null %}
-                    {% set categoryName = product.category.name %}
-                {% endif %}
-                {{ categoryName }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Sub Category
-            </div>
-            <div class="col-8 col-md-2 text-truncate">
-                {% set category3 = '' %}
-                {% if product.category2|length > 0 %}
-                    {% set category3 = product.category2.name %}
-                {% endif %}
-                {{ category3 }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Stock
-            </div>
-            <div class="col-8 col-md-1 text-truncate">
-                {{ product.stockCount }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Price
-            </div>
-            <div class="col-8 col-md-1 text-truncate">
-                ${{ product.unitPrice|format_number({fraction_digit: 2}) }}
-            </div>
-            <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
-                <a
-                    href="{{ path('products', { 'productId':product.id }) }}"
-                    class="float-start float-md-end ms-5 ms-md-0 open-user-modal"
-                >
-                    <i class="fa-solid fa-pen-to-square edit-icon"></i>
-                </a>
-                <a
-                    href=""
-                    class="delete-icon float-end open-delete-user-modal"
-                    data-bs-toggle="modal"
-                    data-product-id="{{ product.id }}"
-                    data-bs-target="#modal_delete_product"
-                >
-                    <i class="fa-solid fa-trash-can"></i>
-                </a>
-            </div>
-        </div>
-        {% endfor %}
         </div>
         <div class="row py-3">
             <div class="col-12">
@@ -191,36 +139,89 @@
 
 <script>
 
-    $(document).ready(function (){
+    $(document).ready(function ()
+    {
+        let uri = window.location.pathname.split('/');
+        let pageNo = uri[3];
 
-        $(document).on('click', '#search_btn', function (e) {
+        $('#search_string').val($.session.get('search-string'));
+        $('#manufacturers').val($.session.get('manufacturer'));
+        $('#items_per_page').val($.session.get('items-per-page'));
 
+        getProducts(pageNo);
+
+        $(document).on('click', '#search_btn', function ()
+        {
+            getProducts(1);
+        });
+
+        $(document).on('change', '#manufacturers, #items_per_page', function ()
+        {
+            let uri = window.location.pathname.split('/');
+            pageNo = uri[3];
+
+            getProducts(pageNo);
+        });
+
+        $(document).on('click', '.address-pagination', function (e)
+        {
             e.preventDefault();
 
+            getProducts($(this).attr('data-page-id'));
+        });
+
+        function getProducts(pageNo)
+        {
             let searchString = $('#search_string').val();
+            let manufacturer = $('#manufacturers').val();
+            let itemsPerPage = $('#items_per_page').val();
 
-            if(searchString != '' || searchString != 'undefined') {
+            $.session.set('page-no', pageNo);
 
+            if(searchString != '' || searchString != 'undefined')
+            {
                 $.ajax({
-                    url: "{{ path('product_search') }}",
+                    url: "/admin/product-search",
                     type: 'POST',
                     dataType: 'json',
                     data: {
                         'search-string': searchString,
+                        'manufacturer': manufacturer,
+                        'items-per-page': itemsPerPage,
+                        'page_id': pageNo,
                     },
-                    beforeSend: function () {
-
+                    beforeSend: function ()
+                    {
                         isLoading(true);
                     },
-                    success: function (response) {
-
+                    success: function (response)
+                    {
                         $('#products').empty().append(response.html);
-                        $('.custom-pagination').hide();
+                        $.session.set('search-string', searchString);
+                        $.session.set('manufacturer', manufacturer);
+                        $.session.set('items-per-page', itemsPerPage);
+
+                        popOver();
                         isLoading(false);
+
+                        window.history.pushState(null, "Fluid", '/admin/products/'+ response.currentPage);
                     }
                 });
             }
-        });
+        }
+
+        $(document).on('click', '#reset_filters', function (e)
+        {
+            e.preventDefault();
+
+            $.session.set('search-string', '');
+            $.session.set('manufacturer', '');
+
+            $('#search_string').val('');
+            $('#manufacturers').val('');
+
+            getProducts(1);
+        })
 
         $(document).on('change', '.is-published', function (e){
 
@@ -272,6 +273,14 @@
                 }
             });
         });
+
+        function popOver()
+        {
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl)
+            })
+        }
     });
 </script>
 {% endblock %}

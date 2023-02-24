@@ -65,11 +65,27 @@ class ProductsRepository extends ServiceEntityRepository
     /**
      * @return Products[] Returns an array of Products objects
      */
-    public function findBySearchAdmin($keyword)
+    public function findBySearchAdmin($keyword, $manufacturer)
     {
         $queryBuilder = $this->createQueryBuilder('p')
-            ->andWhere('p.name LIKE :keyword')
-            ->setParameter('keyword', '%'. $keyword .'%')
+            ->select('p', 'pm')
+            ->join('p.productManufacturer', 'pm');
+
+        if(!empty($keyword))
+        {
+            $queryBuilder
+                ->andWhere('p.name LIKE :keyword')
+                ->setParameter('keyword', '%'. $keyword .'%');
+        }
+
+        if(!empty($manufacturer))
+        {
+            $queryBuilder
+                ->andWhere('pm.id = :manufacturer')
+                ->setParameter('manufacturer', $manufacturer);
+        }
+
+        $queryBuilder
             ->orderBy('p.name', 'ASC');
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];

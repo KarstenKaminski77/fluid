@@ -1524,8 +1524,7 @@ class ProductsController extends AbstractController
         $response = '
         <div 
             id="carousel_'. $productId .'" 
-            class="carousel carousel-dark slide carousel-fade" 
-            data-bs-ride="carousel" 
+            class="carousel carousel-dark" 
             data-bs-interval="false"
         >';
 

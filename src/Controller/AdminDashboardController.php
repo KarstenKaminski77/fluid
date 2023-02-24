@@ -87,18 +87,20 @@ class AdminDashboardController extends AbstractController
     {
         $products = $this->em->getRepository(Products::class)->adminFindAll();
         $results = $this->page_manager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/products/');
+        $pagination = $this->getPagination((int) $request->get('page_id'), $results, '/admin/products/');
+        $manufacturers = $this->em->getRepository(Manufacturers::class)->findAll();
 
         return $this->render('Admin/products_list.html.twig',[
             'products' => $results,
-            'pagination' => $pagination
+            'pagination' => $pagination,
+            'manufacturers' => $manufacturers,
         ]);
     }
 
     #[Route('/admin/product/crud', name: 'product_crud')]
     public function productCrudAction(Request $request): Response
     {
-        $productId = $request->get('product_id') ?? $request->request->get('delete');
+        $productId = $request->get('product_id') ?? $request->request->get('delete'); dd($productId);
         $product = $this->em->getRepository(Products::class)->find($productId);
 
         if($request->request->get('delete') != null){
@@ -150,6 +152,7 @@ class AdminDashboardController extends AbstractController
 
             $this->em->flush();
 
+            $product->setIsControlled($data->get('is-controlled') ?? 0);
             $product->setIsPublished($data->get('is-published') ?? 0);
             $product->setIsActive(1);
             $product->setExpiryDateRequired($data->get('expiry-date') ?? 0);
@@ -3507,11 +3510,28 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/product-search', name: 'product_search')]
     public function productSearch(Request $request): Response
     {
+        $itemsPerPage = $request->request->get('items-per-page') ?? self::ITEMS_PER_PAGE;
         $searchString = $request->request->get('search-string');
-        $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString);
-        $results = $this->page_manager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/products/');
+        $manufacturer = $request->request->get('manufacturer');
+        $pageNo = $request->request->get('page_id');
+        $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString, $manufacturer);
         $html = '';
+        $num = (count($products[1]) / 10) * 10;
+        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage;
+
+        if($num > $remainder)
+        {
+            $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage);
+            $pagination = $this->getPagination($request->request->get('page_id'), $results, '/admin/products/');
+            $currentPage = $pageNo;
+        }
+        else
+        {
+
+            $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage, 1);
+            $pagination = $this->getPagination(1, $results, '/admin/products/');
+            $currentPage = 1;
+        }
 
         foreach($results as $result){
 
@@ -3535,7 +3555,7 @@ class AdminDashboardController extends AbstractController
             }
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ product.id }}">
+            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -3552,8 +3572,8 @@ class AdminDashboardController extends AbstractController
                             class="form-check-input is-published"
                             type="checkbox"
                             role="switch"
-                            data-product-id="{{ product.id }}"
-                            value="{{ product.isPublished }}"
+                            data-product-id="'. $result->getId() .'"
+                            value="'. $result->getIsPublished() .'"
                             '. $checked .'
                         >
                     </div>
@@ -3561,19 +3581,43 @@ class AdminDashboardController extends AbstractController
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Name
                 </div>
-                <div class="col-8 col-md-3 text-truncate">
+                <div 
+                    class="col-8 col-md-4 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $result->getName() .'"
+                >
                     '. $result->getName() .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Category
                 </div>
-                <div class="col-8 col-md-2 text-truncate">
+                <div 
+                    class="col-8 col-md-2 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $category1 .'"
+                >
                     '. $category1 .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Sub Category
                 </div>
-                <div class="col-8 col-md-2 text-truncate">
+                <div 
+                    class="col-8 col-md-2 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $category2 .'"
+                >
                     '. $category2 .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
@@ -3581,12 +3625,6 @@ class AdminDashboardController extends AbstractController
                 </div>
                 <div class="col-8 col-md-1 text-truncate">
                     '. $result->getStockCount() .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Price
-                </div>
-                <div class="col-8 col-md-1 text-truncate">
-                    '. $result->getUnitPrice() .'
                 </div>
                 <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                     <a
@@ -3599,7 +3637,7 @@ class AdminDashboardController extends AbstractController
                         href=""
                         class="delete-icon float-end open-delete-user-modal"
                         data-bs-toggle="modal"
-                        data-product-id="{{ product.id }}"
+                        data-product-id="'. $result->getId() .'"
                         data-bs-target="#modal_delete_product"
                     >
                         <i class="fa-solid fa-trash-can"></i>
@@ -3608,9 +3646,12 @@ class AdminDashboardController extends AbstractController
             </div>';
         }
 
+        $html .= $pagination;
+
         $response = [
             'html' => $html,
             'pagination' => $pagination,
+            'currentPage' => $currentPage,
         ];
 
         return new JsonResponse($response);
@@ -3628,7 +3669,7 @@ class AdminDashboardController extends AbstractController
         foreach($results as $result){
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ activeIngredient.id }}">
+            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getActiveIngredient()->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -6072,13 +6113,14 @@ class AdminDashboardController extends AbstractController
 
             $pagination .= '
             <!-- Pagination -->
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col-12">';
-
+            //$currentPage, $pageId, $lastPage, count($results));
             if ($lastPage > 1) {
 
-                $previousPageNo = $currentPage - 1;
-                $previousPage = $url . $previousPageNo;
+                $previousPage_no = $currentPage - 1;
+                $url = '/clinics/addresses';
+                $previousPage = $url;
 
                 $pagination .= '
                 <nav class="custom-pagination">
@@ -6099,64 +6141,42 @@ class AdminDashboardController extends AbstractController
                 <li class="page-item ' . $disabled . '">
                     <a 
                         class="address-pagination" 
+                        aria-disabled="' . $dataDisabled . '" 
+                        data-page-id="' . $currentPage - 1 . '" 
                         href="' . $previousPage . '"
+                        data-action="click->admin--products-list#onClickPagination"
                     >
                         <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                     </a>
                 </li>';
 
-                $is_active = false;
-                $c = 0;
-                $i = $currentPage;
-                $pageCount = $currentPage + 9;
+                $isActive = false;
 
-                // First 10 pages
-                // If page count is less than 10
-                if($currentPage < 10 && $lastPage < 10){
-
-                    $i = 1;
-                    $pageCount = $lastPage;
-                }
-
-                // If page count is greater than 10
-                if($currentPage < 10 && $lastPage > 10){
-
-                    $i = 1;
-                    $pageCount = 10;
-                }
-
-                // Last 10 pages
-                if($currentPage > 10 && $currentPage > $lastPage - 10){
-
-                    $i = $currentPage - 10;
-                    $pageCount = $currentPage;
-                }
-
-                for ($i; $i <= $pageCount; $i++) {
+                for ($i = 1; $i <= $lastPage; $i++) {
 
                     $active = '';
-                    $c++;
 
                     if ($i == (int)$currentPage) {
 
                         $active = 'active';
-                        $is_active = true;
+                        $isActive = true;
                     }
 
                     // Go to previous page if all records for a page have been deleted
-                    if(!$is_active && $i == count($results)){
+                    if(!$isActive && $i == count($results)){
 
                         $active = 'active';
                     }
 
                     $pagination .= '
                     <li class="page-item ' . $active . '">
-                        <a class="address-pagination" href="' . $url . $i . '">' . $i . '</a>
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="' . $i . '" 
+                            href="' . $url . '"
+                            data-action="click->admin--products-list#onClickPagination"
+                        >' . $i . '</a>
                     </li>';
-
-                    if($i == $lastPage){
-                        break;
-                    }
                 }
 
                 $disabled = 'disabled';
@@ -6171,21 +6191,25 @@ class AdminDashboardController extends AbstractController
                 $pagination .= '
                 <li class="page-item ' . $disabled . '">
                     <a 
-                        class="address-pagination" 
+                        class="address-pagination"  
                         aria-disabled="' . $dataDisabled . '" 
-                        href="' . $url . $currentPage + 1 . '">
+                        data-page-id="' . $currentPage + 1 . '" 
+                        href="' . $url . '"
+                        data-action="click->admin--products-list#onClickPagination"
+                    >
                         <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>';
 
                 if(count($results) < $currentPage){
 
-                    $currentPage = count($results);
+                    //$currentPage = count($results);
                 }
 
                 $pagination .= '
                         </ul>
                     </nav>
+                    <input type="hidden" id="page_no" value="' . $currentPage . '">
                 </div>';
             }
         }
