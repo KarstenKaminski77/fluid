@@ -61,7 +61,7 @@
                                 <i class="fa-solid fa-magnifying-glass"></i>
                             </button>
                             <a
-                                href="#"
+                                href="{{ path('products', {'productId':0}) }}"
                                 class="btn btn-primary btn-sm float-end w-sm-100 text-truncate ms-3 mt-2 mt-sm-0"
                             >
                                 <i class="fa-solid fa-circle-plus me-2"></i> ADD PRODUCT
@@ -192,14 +192,14 @@
                     success: function (response)
                     {
                         $('#products').empty().append(response.html);
+                        isLoading(false);
                         $.session.set('search-string', searchString);
                         $.session.set('manufacturer', manufacturer);
                         $.session.set('items-per-page', itemsPerPage);
 
-                        popOver();
-                        isLoading(false);
-
                         window.history.pushState(null, "Fluid", '/admin/products/'+ response.currentPage);
+
+                        popOver();
                     }
                 });
             }
