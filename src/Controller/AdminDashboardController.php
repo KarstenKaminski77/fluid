@@ -3513,7 +3513,7 @@ class AdminDashboardController extends AbstractController
         $itemsPerPage = $request->request->get('items-per-page') ?? self::ITEMS_PER_PAGE;
         $searchString = $request->request->get('search-string');
         $manufacturer = $request->request->get('manufacturer');
-        $pageNo = $request->request->get('page_id');
+        $pageNo = $request->request->get('page_id') ?? 1;
         $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString, $manufacturer);
         $html = '';
         $num = (count($products[1]) / 10) * 10;
