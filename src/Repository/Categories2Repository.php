@@ -52,4 +52,14 @@ class Categories2Repository extends ServiceEntityRepository
             ->orderBy('c.name', 'ASC');
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
+
+    public function findList($category1Id)
+    {
+        $queryBuilder = $this->createQueryBuilder('c')
+            ->select('c')
+            ->andWhere('c.category1 = :category1Id')
+            ->setParameter('category1Id', $category1Id)
+            ->orderBy('c.name', 'ASC');
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
 }

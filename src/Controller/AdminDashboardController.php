@@ -2707,11 +2707,9 @@ class AdminDashboardController extends AbstractController
         }
 
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findAll();
-        $species = $this->em->getRepository(Species::class)->findAll();
-        $categories = $this->em->getRepository(Categories1::class)->findAll();
-        $categories2 = $this->em->getRepository(Categories2::class)->findBy([
-            'category1' => $category1Id
-        ]);
+        $species = $this->em->getRepository(Species::class)->adminFindAll();
+        $categories = $this->em->getRepository(Categories1::class)->findList();
+        $categories2 = $this->em->getRepository(Categories2::class)->findList($category1Id);
         $categories3 = $this->em->getRepository(Categories3::class)->findBy([
             'category2' => $category2Id
         ]);
@@ -2754,7 +2752,7 @@ class AdminDashboardController extends AbstractController
         if($species != null){
 
             $speciesList = $this->getMultiDropdownList(
-                $species, 'species', ProductManufacturers::class, 'getName',
+                $species[1], 'species', ProductManufacturers::class, 'getName',
                 'products', $request->get('productId'), 'getProducts'
             );
             $array = '';
@@ -2793,12 +2791,12 @@ class AdminDashboardController extends AbstractController
         }
 
         $categoriesList = $this->individualDropdownList(
-            $categories, 'category', 'category', 'getName'
+            $categories[1], 'category', 'category', 'getName'
         );
 
         // Categories2 dropdown
         $subCategoriesList = $this->individualDropdownList(
-            $categories2, 'sub-category', 'sub_category', 'getName'
+            $categories2[1], 'sub-category', 'sub_category', 'getName'
         );
 
         // Categories3 dropdown
@@ -5360,14 +5358,14 @@ class AdminDashboardController extends AbstractController
 
     private function categoryTagDropdownList($label, $selectedTags, $level): string
     {
-        $tags = $this->em->getRepository(Tags::class)->findAll();
+        $tags = $this->em->getRepository(Tags::class)->adminFindAll();
 
         $list = '
         <div class="px-3 row">
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through selected dropdown options
-        foreach($tags as $tag){
+        foreach($tags[1] as $tag){
 
             // Get related records
             $select = $label .'-select';
@@ -5499,14 +5497,14 @@ class AdminDashboardController extends AbstractController
 
     private function productFormDropdownList($label, $selectedForm): string
     {
-        $forms = $this->em->getRepository(ProductForms::class)->findAll();
+        $forms = $this->em->getRepository(ProductForms::class)->findAllAsc();
 
         $list = '
         <div class="row">
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through selected dropdown options
-        foreach($forms as $form){
+        foreach($forms[1] as $form){
 
             // Get related records
             $select = $label .'-select';
@@ -6058,7 +6056,7 @@ class AdminDashboardController extends AbstractController
     private function getActiveIngredientDropdownList($productId): array
     {
         $product = $this->em->getRepository(Products::class)->find($productId);
-        $activeIngredients = $this->em->getRepository(ActiveIngredients::class)->findAll();
+        $activeIngredients = $this->em->getRepository(ActiveIngredients::class)->adminFindAll();
         $list['selected'] = '';
         $list['selected'] = '';
         $list['twigArray'] = [];
@@ -6068,7 +6066,7 @@ class AdminDashboardController extends AbstractController
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through all dropdown options
-        foreach($activeIngredients as $activeIngredient){
+        foreach($activeIngredients[1] as $activeIngredient){
 
             $select = 'ingredient-select';
 
