@@ -61,7 +61,7 @@ class AdminDashboardController extends AbstractController
     private MailerInterface $mailer;
     private $children;
     private Encryptor $encryptor;
-    const ITEMS_PER_PAGE = 7;
+    const ITEMS_PER_PAGE = 4;
 
     public function __construct(
         EntityManagerInterface $em, PaginationManager $page_manager, Encryptor $encryptor,
@@ -85,9 +85,10 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/products/{page_id}', name: 'products_list')]
     public function productsList(Request $request): Response
     {
+        $dataAction = 'data-action="click->admin--products-list#onClickPagination"';
         $products = $this->em->getRepository(Products::class)->adminFindAll();
         $results = $this->page_manager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination((int) $request->get('page_id'), $results, '/admin/products/');
+        $pagination = $this->getPagination((int) $request->get('page_id'), $results, '/admin/products/', $dataAction);
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findAll();
 
         return $this->render('Admin/products_list.html.twig',[
@@ -3424,17 +3425,100 @@ class AdminDashboardController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/species/{page_id}', name: 'species_list')]
+    #[Route('/admin/species', name: 'species_list')]
     public function speciesList(Request $request): Response
     {
+        $pageId = $request->request->get('page-id') ?? 1;
         $species = $this->em->getRepository(Species::class)->adminFindAll();
         $results = $this->page_manager->paginate($species[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/species/');
+        $pagination = $this->getPagination($pageId, $results, '/admin/species/');
 
         return $this->render('Admin/species_list.html.twig',[
             'species' => $results,
             'pagination' => $pagination
         ]);
+    }
+
+    #[Route('/admin/species/paginate', name: 'species_list_paginate')]
+    public function speciesListPaginate(Request $request): Response
+    {
+        $pageId = $request->request->get('page-id') ?? 1;
+        $species = $this->em->getRepository(Species::class)->adminFindAll();
+        $results = $this->page_manager->paginate($species[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($pageId, $results, '/admin/species/');
+        $html = '';
+
+        foreach($results as $result)
+        {
+            $specieId = $result->getId();
+            $specieName = $result->getName();
+            $specieIcon = $result->getIcon();
+            $editUrl = $this->generateUrl('species', ['speciesId' => $specieId]);
+
+            $html .= '
+            <div class="row py-3 border-bottom-dashed" id="row_'. $specieId .'">
+                <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                    #ID
+                </div>
+                <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #'. $specieId .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Species
+                </div>
+                <div class="col-8 col-md-3 text-truncate">
+                    '. $specieName .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Icon
+                </div>
+                <div class="col-8 col-md-3 text-truncate">';
+
+                if($result->getIcon() != null)
+                {
+                    $html .= '<i class="'. $specieIcon .' fs-5"></i>';
+                }
+
+                $html .= '
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Modified
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $result->getModified()->format('Y-m-d H:i:s') .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Created
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $result->getCreated()->format('Y-m-d') .'
+                </div>
+                <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                    <a
+                        href="'. $editUrl .'"
+                        class="float-start float-md-end open-user-modal ms-5 ms-md-0"
+                    >
+                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                    </a>
+                    <a
+                        href=""
+                        class="delete-icon float-end open-delete-species-modal"
+                        data-bs-toggle="modal"
+                        data-species-id="'. $specieId .'"
+                        data-bs-target="#modal_delete_species"
+                    >
+                        <i class="fa-solid fa-trash-can"></i>
+                    </a>
+                </div>
+            </div>';
+        }
+
+        $response = [
+            'html' => $html,
+            'pagination' => $pagination,
+        ];
+
+        return new JsonResponse($response);
     }
 
     #[Route('/admin/countries/{page_id}', name: 'countries_list')]
@@ -4890,7 +4974,7 @@ class AdminDashboardController extends AbstractController
                 if (in_array('ROLE_SPECIE', $roles)) {
 
                     $tag = 'a';
-                    $href = 'href="' . $this->generateUrl('species_list', ['page_id' => 1]) . '"';
+                    $href = 'href="' . $this->generateUrl('species_list') . '"';
                     $disabled = '';
                     $textPrimary = 'text-primary';
 
@@ -6125,7 +6209,7 @@ class AdminDashboardController extends AbstractController
         return $list;
     }
 
-    public function getPagination($pageId, $results, $url): string
+    public function getPagination($pageId, $results, $url, $dataAction = ''): string
     {
         $currentPage = $pageId;
         $lastPage = $this->page_manager->lastPage($results);
@@ -6141,7 +6225,6 @@ class AdminDashboardController extends AbstractController
             if ($lastPage > 1) {
 
                 $previousPage_no = $currentPage - 1;
-                $url = '/clinics/addresses';
                 $previousPage = $url;
 
                 $pagination .= '
@@ -6166,7 +6249,7 @@ class AdminDashboardController extends AbstractController
                         aria-disabled="' . $dataDisabled . '" 
                         data-page-id="' . $currentPage - 1 . '" 
                         href="' . $previousPage . '"
-                        data-action="click->admin--products-list#onClickPagination"
+                        '. $dataAction .'
                     >
                         <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                     </a>
@@ -6196,7 +6279,7 @@ class AdminDashboardController extends AbstractController
                             class="address-pagination" 
                             data-page-id="' . $i . '" 
                             href="' . $url . '"
-                            data-action="click->admin--products-list#onClickPagination"
+                            '. $dataAction .'
                         >' . $i . '</a>
                     </li>';
                 }
@@ -6217,7 +6300,7 @@ class AdminDashboardController extends AbstractController
                         aria-disabled="' . $dataDisabled . '" 
                         data-page-id="' . $currentPage + 1 . '" 
                         href="' . $url . '"
-                        data-action="click->admin--products-list#onClickPagination"
+                        '. $dataAction .'
                     >
                         <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                     </a>
