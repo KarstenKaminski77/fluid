@@ -5093,7 +5093,10 @@ class AdminDashboardController extends AbstractController
 
         $filesystem = new Filesystem();
 
-        $filesystem->remove(__DIR__ . '/../../public/images/products/'. $image->getImage());
+        if($image->getImage() != null)
+        {
+            $filesystem->remove(__DIR__ . '/../../public/images/products/'. $image->getImage());
+        }
 
         $this->em->remove($image);
         $this->em->flush();
