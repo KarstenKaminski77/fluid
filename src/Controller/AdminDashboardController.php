@@ -3527,7 +3527,7 @@ class AdminDashboardController extends AbstractController
         $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString, $manufacturer);
         $html = '';
         $num = (count($products[1]) / 10) * 10;
-        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage;
+        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage ?? 0;
 
         if($num > $remainder)
         {
