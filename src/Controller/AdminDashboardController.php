@@ -3520,14 +3520,20 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/product-search', name: 'product_search')]
     public function productSearch(Request $request): Response
     {
-        $itemsPerPage = $request->request->get('items-per-page') ?? self::ITEMS_PER_PAGE;
+        $itemsPerPage = $request->request->get('items-per-page');
         $searchString = $request->request->get('search-string');
         $manufacturer = $request->request->get('manufacturer');
         $pageNo = $request->request->get('page_id') ?? 1;
         $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString, $manufacturer);
         $html = '';
         $num = (count($products[1]) / 10) * 10;
-        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage ?? 0;
+
+        if(empty($itemsPerPage))
+        {
+            $itemsPerPage = self::ITEMS_PER_PAGE;
+        }
+
+        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage;
 
         if($num > $remainder)
         {
