@@ -280,7 +280,7 @@ class AdminDashboardController extends AbstractController
             }
 
             // Video
-            if(is_array($data->get('video')) && !empty($data->get('video')))
+            if(is_array($data->get('video')) && !empty($data->get('video')[0]))
             {
                 for ($i = 0; $i < count($data->get('video')); $i++)
                 {
@@ -293,11 +293,14 @@ class AdminDashboardController extends AbstractController
                         $productImage->setIsDefault(1);
                     }
 
-                    $productImage->setProduct($product);
-                    $productImage->setImage($data->get('video')[$i]);
-                    $productImage->setFileType(3);
+                    if(!empty($data->get('video')[$i]))
+                    {
+                        $productImage->setProduct($product);
+                        $productImage->setImage($data->get('video')[$i]);
+                        $productImage->setFileType(3);
 
-                    $this->em->persist($productImage);
+                        $this->em->persist($productImage);
+                    }
                 }
             }
 
