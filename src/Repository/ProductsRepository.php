@@ -69,7 +69,9 @@ class ProductsRepository extends ServiceEntityRepository
     {
         $queryBuilder = $this->createQueryBuilder('p')
             ->select('p', 'pm')
-            ->join('p.productManufacturer', 'pm');
+            ->join('p.productManufacturer', 'pm')
+            ->andWhere('p.isActive = :isActive')
+            ->setParameter('isActive', 1);
 
         if(!empty($keyword))
         {

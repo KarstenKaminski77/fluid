@@ -41,9 +41,7 @@
 {% block javascripts %}
 
     <!-- jQuery -->
-    <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
-    <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('js/jquery.session.min.js') }}"></script>
+    {{ encore_entry_script_tags('app') }}
     <script src="{{ asset('js/jquery.session.min.js') }}"></script>
     <script src="{{ asset('js/intlTelInput.min.js') }}"></script>
     <script type="text/javascript" src="https://unpkg.com/default-passive-events"></script>

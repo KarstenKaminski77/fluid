@@ -121,7 +121,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
-                    <button type="submit" class="btn btn-danger btn-sm" id="delete_user">DELETE</button>
+                    <button type="submit" class="btn btn-danger btn-sm" id="delete_product">DELETE</button>
                 </div>
             </div>
         </div>
@@ -247,24 +247,24 @@
         });
         $(document).on('click', '.delete-icon', function (e){
 
-            $('#delete_user').attr('data-product-id', $(this).data('product-id'));
+            $('#delete_product').attr('data-product-id', $(this).data('product-id'));
         });
-        $(document).on('click', '#delete_user', function (e){
+        $(document).on('click', '#delete_product', function (e){
 
-            let product_id = $(this).attr('data-product-id');
+            let productId = $(this).attr('data-product-id');
 
             $.ajax({
                 url: "{{ path('product_crud') }}",
                 type: 'POST',
                 dataType: 'json',
                 data: {
-                    delete:product_id,
+                    'delete':productId,
                 },
                 success: function (response) {
 
                     getFlash(response);
                     $('#modal_delete_product').modal('toggle');
-                    $('#row_'+ product_id).remove();
+                    $('#row_'+ productId).remove();
                 }
             });
         });

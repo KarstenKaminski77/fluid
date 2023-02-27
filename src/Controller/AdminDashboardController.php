@@ -106,6 +106,7 @@ class AdminDashboardController extends AbstractController
         if($request->request->get('delete') != null){
 
             $product->setIsActive(0);
+            $product->setIsPublished(0);
 
             $this->em->persist($product);
             $this->em->flush();
@@ -240,25 +241,50 @@ class AdminDashboardController extends AbstractController
             // Image = 1
             // PDF = 2
             // Video = 3
-            $productImage = new ProductImages();
 
-            if(!empty($_FILES['image']['name'])) {
+            if(is_array($_FILES['image']['name']) && !empty($_FILES['image']['name'][0]))
+            {
+                for($i = 0; $i < count($_FILES['image']['name']); $i++)
+                {
+                    $productImage = new ProductImages();
 
-                $fileName = $_FILES['image'];
-                $extension = pathinfo($fileName['name'], PATHINFO_EXTENSION);
-                $newFileName = uniqid('fluid_'. $product->getId() .'_', true) . '.' . $extension;
-                $filePath = __DIR__ . '/../../public/images/products/';
+                    $fileName = $_FILES['image'];
+                    $extension = pathinfo($fileName['name'][$i], PATHINFO_EXTENSION);
+                    $newFileName = uniqid('fluid_'. $product->getId() .'_', true) . '.' . $extension;
+                    $filePath = __DIR__ . '/../../public/images/products/';
 
-                if(move_uploaded_file($fileName['tmp_name'], $filePath . $newFileName)){
+                    if(move_uploaded_file($fileName['tmp_name'][$i], $filePath . $newFileName)){
 
-                    if($extension == 'jpg' || $extension == 'jpeg' || $extension == 'png' || $extension == 'gif' || $extension == 'webp'){
+                        if($extension == 'jpg' || $extension == 'jpeg' || $extension == 'png' || $extension == 'gif' || $extension == 'webp'){
 
-                        $productImage->setFileType(1);
+                            $productImage->setFileType(1);
 
-                    } elseif($extension == 'pdf'){
+                        } elseif($extension == 'pdf'){
 
-                        $productImage->setFileType(2);
+                            $productImage->setFileType(2);
+                        }
+
+                        $productImage->setIsDefault(0);
+
+                        if(count($productImages) == 0){
+
+                            $productImage->setIsDefault(1);
+                        }
+
+                        $productImage->setProduct($product);
+                        $productImage->setImage($newFileName);
+
+                        $this->em->persist($productImage);
                     }
+                }
+            }
+
+            // Video
+            if(is_array($data->get('video')) && !empty($data->get('video')))
+            {
+                for ($i = 0; $i < count($data->get('video')); $i++)
+                {
+                    $productImage = new ProductImages();
 
                     $productImage->setIsDefault(0);
 
@@ -268,27 +294,11 @@ class AdminDashboardController extends AbstractController
                     }
 
                     $productImage->setProduct($product);
-                    $productImage->setImage($newFileName);
+                    $productImage->setImage($data->get('video')[$i]);
+                    $productImage->setFileType(3);
 
                     $this->em->persist($productImage);
                 }
-            }
-
-            // Video
-            if(!empty($data->get('video'))){
-
-                $productImage->setIsDefault(0);
-
-                if(count($productImages) == 0){
-
-                    $productImage->setIsDefault(1);
-                }
-
-                $productImage->setProduct($product);
-                $productImage->setImage($data->get('video'));
-                $productImage->setFileType(3);
-
-                $this->em->persist($productImage);
             }
 
             $product->setDescription($data->get('details'));
