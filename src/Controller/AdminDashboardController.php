@@ -256,7 +256,10 @@ class AdminDashboardController extends AbstractController
 
                     if(move_uploaded_file($fileName['tmp_name'][$i], $filePath . $newFileName)){
 
-                        if($extension == 'jpg' || $extension == 'jpeg' || $extension == 'png' || $extension == 'gif' || $extension == 'webp'){
+                        if(
+                            $extension == 'jpg' || $extension == 'jpeg' || $extension == 'jfif' ||
+                            $extension == 'png' || $extension == 'gif' || $extension == 'webp'
+                        ){
 
                             $productImage->setFileType(1);
 
