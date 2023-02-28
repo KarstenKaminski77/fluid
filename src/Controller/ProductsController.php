@@ -1051,6 +1051,8 @@ class ProductsController extends AbstractController
         $productId = $request->request->get('product-id') ?? 18;
         $clinicId = $this->getUser()->getClinic()->getId();
         $product = $this->em->getRepository(Products::class)->find($productId);
+        $product = $this->em->getRepository(Products::class)->findyDistributor($productId);
+        dd($product);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
         $response['html'] = '';

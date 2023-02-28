@@ -292,7 +292,7 @@ export default class extends Controller
                 {
                     if(e.status === 500)
                     {
-                        window.location.href = self.errorPage;
+                        //window.location.href = self.errorPage;
                     }
                 },
                 success: function (response)
@@ -328,7 +328,7 @@ export default class extends Controller
                     accessDenied.show();
                 }
 
-                if(response.button == true)
+                if(response.button == true && $('#tracking_id').val() == 1)
                 {
                     $('#zoho_container').show();
                     $('#inventory_search_container').hide();
@@ -396,6 +396,11 @@ export default class extends Controller
                     {
                         $('#unit_price').prop('disabled', true);
                         $('#stock_count').prop('disabled', true);
+                    }
+
+                    if($('#tracking_id').val() == 3)
+                    {
+                        $('#stock_count').prop('disabled', false);
                     }
 
                     if(data.tax_exempt == 0)

@@ -286,4 +286,26 @@ class ProductsRepository extends ServiceEntityRepository
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
+
+    public function findyDistributor($productId)
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "SELECT p.*, dp.* FROM products p JOIN distributor_products dp ON p.id = dp.product_id WHERE dp.product_id = :productId";
+        $stmt = $conn->prepare($sql)->executeQuery(['productId' => $productId])->fetchAllAssociative();
+
+        return $stmt;
+//        $dql = "SELECT p FROM App\Entity\Products p JOIN App\Entity\DistributorProducts dp ON p.id = dp.product_id WHERE p.id = $productId";
+//        $query = $this->getEntityManager()->createQuery($dql);
+//        return $query->execute();
+
+//        $queryBuilder = $this->createQueryBuilder('p')
+//            ->select('p', 'dp')
+//            ->join('p.distributorProducts', 'dp')
+//            ->andWhere('dp.product = :productId')
+//            ->setParameter('productId', $productId)
+//            ->groupBy('dp.id');
+//dd($productId, count($queryBuilder->getQuery()->getResult()));
+//        return $queryBuilder->getQuery()->getResult();
+    }
 }

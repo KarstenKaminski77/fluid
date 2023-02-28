@@ -520,8 +520,13 @@ class DistributorProductsController extends AbstractController
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $trackingId = $distributor->getTracking()->getId();
         $hidden = 'hidden';
-        $apiClientId = $this->encryptor->decrypt($distributor->getApiDetails()->getClientId()) ?? '';
         $tracking = $this->em->getRepository(Tracking::class)->findAll();
+        $apiClientId = null;
+
+        if($distributor->getApiDetails() != null)
+        {
+            $apiClientId = $this->encryptor->decrypt($distributor->getApiDetails()->getClientId()) ?? '';
+        }
 
         if($trackingId == 2)
         {
