@@ -1050,7 +1050,6 @@ class ProductsController extends AbstractController
     {
         $productId = $request->request->get('product-id') ?? 18;
         $clinicId = $this->getUser()->getClinic()->getId();
-        $distributorProducts = $this->em->getRepository(Products::class)->findyDistributor($productId);
         $product = $this->em->getRepository(Products::class)->find($productId);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
@@ -1105,24 +1104,9 @@ class ProductsController extends AbstractController
             $basketPermission = false;
         }
 
-        foreach($distributorProducts as $distributor)
+        foreach($product->getDistributorProducts() as $distributor)
         {
-            $trackingId = $distributor['tracking_id'];
-            $itemId = $distributor['item_id'];
-            $distributorId = $distributor['distributor_id'];
-            $distributorName = $distributor['distributor_name'];
-            $logo = $distributor['logo'];
-            $productSize = $distributor['size'];
-            $productId = $distributor['product_id'];
-            $unitPrice = $distributor['unit_price'] ?? 0.00;
-            $stockLevel = $distributor['stock_count'] ?? 0;
-            $sku = $distributor['sku'];
-            $shippingPolicy = $distributor['shipping_policy'] ?? '<p>Shipping policy has not been updated</p>';
-            $taxPolicy = $distributor['sales_tax_policy'] ?? '<p>Sales tax policy has not been updated</p>';
-            $apiDetails = $this->em->getRepository(ApiDetails::class)->findOneBy([
-                'distributor' => $distributorId,
-            ]);
-                $i++;
+            $i++;
 
             $trackingId = $distributor->getDistributor()->getTracking()->getId();
             $distributorId = $distributor->getDistributor()->getId();
@@ -1229,7 +1213,7 @@ class ProductsController extends AbstractController
 
                 $style = '';
 
-                if($i == count($distributorProducts))
+                if($i == count($product->getDistributorProducts()))
                 {
                     $style = 'style="border-bottom: none !important"';
                 }
