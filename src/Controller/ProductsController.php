@@ -1053,6 +1053,7 @@ class ProductsController extends AbstractController
         $product = $this->em->getRepository(Products::class)->find($productId);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
+        $response['html'] = '';
         $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
             'product' => $product->getId(),
             'isDefault' => 1
@@ -1107,31 +1108,35 @@ class ProductsController extends AbstractController
 
             $trackingId = $distributor->getDistributor()->getTracking()->getId();
             $distributorId = $distributor->getDistributor()->getId();
+            $distributorName = $distributor->getDistributor()->getDistributorName();
             $unitPrice = $distributor->getUnitPrice() ?? 0.00;
             $stockLevel = $distributor->getStockCount() ?? 0;
+            $sku = $distributor->getSku();
+            $apiDetails = $distributor->getDistributor()->getApiDetails();
+            $itemId = $distributor->getItemId();
+            $logo = $distributor->getDistributor()->getLogo();
             $shippingPolicy = $distributor->getDistributor()->getShippingPolicy() ?? '<p>Shipping policy has not been updated</p>';
             $taxPolicy = $distributor->getDistributor()->getSalesTaxPolicy() ?? '<p>Sales tax policy has not been updated</p>';
             $i++;
 
             if (
-                ($distributor->getDistributor()->getApiDetails() != null && $trackingId == 1)
+                ($apiDetails != null && $trackingId == 1)
                 || ($trackingId == 2 || $trackingId == 3)
             ) {
-
                 // Only show stock levels if fully / semi tracked
-                if($trackingId == 1){
-
+                if($trackingId == 1)
+                {
                     // Retrieve price & stock from api
                     $priceStockLevels = json_decode($this->forward('App\Controller\ProductsController::zohoRetrieveItem',[
                         'distributorId' => $distributorId,
-                        'itemId' => $distributor->getItemId(),
+                        'itemId' => $itemId,
                     ])->getContent(), true);
 
-                    If($priceStockLevels != null && is_array($priceStockLevels)){
-
+                    If($priceStockLevels != null && is_array($priceStockLevels))
+                    {
                         $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                             'distributor' => $distributorId,
-                            'product' => $distributor->getProduct()->getId()
+                            'product' => $productId,
                         ]);
 
                         // Update price & stock
@@ -1146,53 +1151,52 @@ class ProductsController extends AbstractController
                     }
 
                 // Semi tracked
-                } elseif($trackingId == 2){
-
-                    $stockLevel = $distributor->getStockCount();
-                    $unitPrice = $distributor->getUnitPrice();
+                }
+                elseif($trackingId == 2)
+                {
+                    $stockLevel = $stockLevel;
 
                 // Not tracked
-                } elseif($trackingId == 3){
-
+                }
+                elseif($trackingId == 3)
+                {
                     $stockLevel = 0;
-                    $unitPrice = $distributor->getUnitPrice();
-
                 }
 
                 $disabled = '';
                 $btnDisabled = '';
 
-                if($trackingId == 1){
-
+                if($trackingId == 1)
+                {
                     $stockIcon = 'fa-shield-check in-stock';
                     $trackingCopy = 'Fully Tracked';
                     $stockCopy = '
                     <span class="is_available">' . $stockLevel . ' In Stock</span> This item is in stock and ready to ship';
-
-                } elseif($trackingId == 2){
-
+                }
+                elseif($trackingId == 2)
+                {
                     $stockIcon = 'fa-shield-check text-info';
                     $trackingCopy = 'Semi Fully Tracked';
                     $stockCopy = '<span class="is_available">In Stock</span> This item is in stock and ready to ship';
-
-                } else {
-
+                }
+                else
+                {
                     $stockIcon = 'fa-shield-exclamation text-muted';
                     $trackingCopy = 'Not Tracked';
                     $stockCopy = '<span class="is_available">In Stock</span> This item is in stock and ready to ship';
                 }
 
-                if($distributor->getDistributor()->getLogo() != null){
-
-                    $logo = '<img src="/images/logos/' . $distributor->getDistributor()->getLogo() . '" class="img-fluid mh-30">';
-
-                } else {
-
+                if($logo != null)
+                {
+                    $logo = '<img src="/images/logos/' . $logo . '" class="img-fluid mh-30">';
+                }
+                else
+                {
                     $logo = '<p><i class="fa-thin fa-image-slash fs-4 mh-30" style="line-height: 30px"></i></p>';
                 }
 
-                if ($stockLevel == 0 && ($trackingId == 1 || $trackingId == 2)) {
-
+                if($stockLevel == 0 && ($trackingId == 1 || $trackingId == 2))
+                {
                     $stockIcon = 'fa-shield-xmark out-of-stock';
                     $disabled = 'disabled';
                     $stockCopy = '<span class="not_available">Out Of Stock</span> This item is out of stock';
@@ -1200,8 +1204,8 @@ class ProductsController extends AbstractController
                     $btnDisabled = 'btn-secondary disabled';
                 }
 
-                if (!$basketPermission) {
-
+                if (!$basketPermission)
+                {
                     $disabled = 'disabled';
                 }
 
@@ -1212,10 +1216,10 @@ class ProductsController extends AbstractController
                     $style = 'style="border-bottom: none !important"';
                 }
 
-                $response['html'] = '
+                $response['html'] .= '
                 <a href=""
                    class="basket_link"
-                   data-product-id="' . $product->getId() . '"
+                   data-product-id="' . $productId . '"
                    data-distributor-id="' . $distributorId . '"
                    data-bs-toggle="modal"
                    data-bs-target="#modal_add_to_basket_' . $productId . '_' . $distributorId . '"
@@ -1244,7 +1248,13 @@ class ProductsController extends AbstractController
             </a>
 
             <!-- Modal Add To Basket -->
-            <div class="modal fade" action="" id="modal_add_to_basket_' . $productId . '_' . $distributorId . '" tabindex="-1" aria-labelledby="basket_label" aria-hidden="true">
+            <div 
+                class="modal fade" 
+                id="modal_add_to_basket_' . $productId . '_' . $distributorId . '" 
+                tabindex="-1" 
+                aria-labelledby="basket_label" 
+                aria-hidden="true"
+            >
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
                         <div class="modal-header basket-modal-header">
@@ -1253,10 +1263,9 @@ class ProductsController extends AbstractController
 
                 if (
                     $distributor->getDistributor() != null &&
-                    (is_array($distributorClinics) && in_array($distributor->getDistributor()->getId(), $distributorClinics) && $trackingId == 1) ||
+                    (is_array($distributorClinics) && in_array($distributorId, $distributorClinics) && $trackingId == 1) ||
                     ($trackingId == 2 || $trackingId == 3)
                 ) {
-
                     $response['html'] .= '
                     <form 
                         name="form_add_to_basket" 
@@ -1264,7 +1273,7 @@ class ProductsController extends AbstractController
                         method="post"
                         data-action="submit->basket--basket#onSubmitAddtoBasket"
                     >
-                        <input type="hidden" name="product_id" value="' . $product->getId() . '">
+                        <input type="hidden" name="product_id" value="' . $productId . '">
                         <input type="hidden" name="distributor_id" value="' . $distributorId . '">
                         <input type="hidden" name="price" value="' . number_format($unitPrice, 2) . '">
                         <input type="hidden" name="status" value="active">
@@ -1305,8 +1314,8 @@ class ProductsController extends AbstractController
 
                     $popover = '';
 
-                    if (!in_array(1, $permissions)) {
-
+                    if(!in_array(1, $permissions))
+                    {
                         $response['html'] .= '
                         <span
                             class="btn btn-disabled w-100 text-truncate"
@@ -1319,9 +1328,9 @@ class ProductsController extends AbstractController
                         >
                             ADD TO BASKET
                         </span>';
-
-                    } else {
-
+                    }
+                    else
+                    {
                         $response['html'] .= '
                         <button
                             type="submit"
@@ -1364,7 +1373,10 @@ class ProductsController extends AbstractController
                                     </a>
                                 </div>
                                 <div class="col-12 col-sm-6 text-end" style="padding-bottom: 0.75rem">
-                                    <i class="fa-regular fa-user me-3"></i> <b>' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '</b>
+                                    <i class="fa-regular fa-user me-3"></i> 
+                                    <b>
+                                        ' . $this->encryptor->decrypt($distributorName) . '
+                                    </b>
                                 </div>
 
                                 <!-- Panel Item Facts -->
@@ -1377,7 +1389,7 @@ class ProductsController extends AbstractController
                                                     Unit Price
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $currency . ' ' . number_format($distributor->getUnitPrice() ?? 0.00 / $product->getSize(), 2) . '
+                                                    ' . $currency . ' ' . number_format($unitPrice ?? 0.00 / $product->getSize(), 2) . '
                                                 </div>
                                             </div>
                                         </div>
@@ -1388,7 +1400,7 @@ class ProductsController extends AbstractController
                                                     Manufacturer
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '
+                                                    ' . $this->encryptor->decrypt($distributorName) . '
                                                 </div>
                                             </div>
                                         </div>
@@ -1401,7 +1413,7 @@ class ProductsController extends AbstractController
                                                     Fluid ID
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $distributor->getDistributor()->getId() . '
+                                                    ' . $distributorId . '
                                                 </div>
                                             </div>
                                         </div>
@@ -1412,7 +1424,7 @@ class ProductsController extends AbstractController
                                                     SKU
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $distributor->getSku() . '
+                                                    ' . $sku . '
                                                 </div>
                                             </div>
                                         </div>
@@ -1426,7 +1438,7 @@ class ProductsController extends AbstractController
                                                     <span class="text-truncate">Seller Profile</span>
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    <a href="">' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '</a>
+                                                    <a href="">' . $this->encryptor->decrypt($distributorName) . '</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -1437,7 +1449,7 @@ class ProductsController extends AbstractController
                                                     List Price
                                                 </div>
                                                 <div class="col-8 text-end">
-                                                    ' . $currency . ' ' . number_format($distributor->getUnitPrice(), 2) . '
+                                                    ' . $currency . ' ' . number_format($unitPrice, 2) . '
                                                 </div>
                                             </div>
                                         </div>
@@ -1456,14 +1468,11 @@ class ProductsController extends AbstractController
                             </div>
                         </div>
                     </form>';
-
-                } else {
-
-                    if ($distributor->getDistributor()->getLogo() != null) {
-
-                        $logo = $distributor->getDistributor()->getLogo();
-
-                    } else {
+                }
+                else
+                {
+                    if ($logo == null)
+                    {
 
                         $logo = 'image-not-found.jpg';
                     }
@@ -1474,16 +1483,16 @@ class ProductsController extends AbstractController
                             <img src="/images/logos/' . $logo . '" class="img-fluid" style="max-width: 150px">
                             <h4 class="pt-4 pb-4">
                                 You\'re Not Currently Connected to
-                                ' . $this->encryptor->decrypt($distributor->getDistributor()->getDistributorName()) . '
+                                ' . $this->encryptor->decrypt($distributorName) . '
                             </h4>
                             <buttton
                                 class="btn btn-primary distributor-clinic-connect"
                                 data-clinic-id="' . $this->getUser()->getClinic()->getId() . '"
-                                data-distributor-id="' . $distributor->getDistributor()->getId() . '"
+                                data-distributor-id="' . $distributorId . '"
                                 data-product-id="' . $productId . '"
                                 data-action="click->products--search#onClickClinicConnect"
                             >
-                                CONNECT WITH ' . strtoupper($this->encryptor->decrypt($distributor->getDistributor()->getDistributorName())) . '
+                                CONNECT WITH ' . strtoupper($this->encryptor->decrypt($distributorName)) . '
                             </buttton>
                         </div>
                     </div>

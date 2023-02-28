@@ -1127,7 +1127,12 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#modal_save_basket">
+                        <a 
+                            href="#" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#modal_save_basket"
+                            data-action="basket--basket#onClickSaveBasket"
+                        >
                             <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
                         </a>';

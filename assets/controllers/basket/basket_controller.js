@@ -267,6 +267,14 @@ export default class extends Controller {
         }
     }
 
+    onClickSaveBasket()
+    {
+        if($('.modal-backdrop').length > 1)
+        {
+            $('.modal-backdrop:first').remove();
+        }
+    }
+
     onClickPrintBasket(e)
     {
         let clone = $('#basket_items').clone();
@@ -565,6 +573,12 @@ export default class extends Controller {
                     $('.modal-backdrop').removeClass('modal-backdrop');
                     $('.fade').removeClass('fade');
                     self.getBasket(response.basketId, true, '');
+
+                    let removeCss = setInterval(function ()
+                    {
+                        $('body').removeAttr('style');
+                        clearInterval(removeCss);
+                    }, 200);
                 }
             });
         }

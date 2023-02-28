@@ -27,8 +27,10 @@ class ProductNotesController extends AbstractController
     private function noteCreateNew($productId)
     {
         return '
-            <div class="row mt-4">
-                <div class="col-12">
+            <div 
+                class="row hidden create-new-note"
+            >
+                <div class="col-12 mb-4">
                     <form 
                         name="form_note_'. $productId .'" 
                         class="form_note" id="form_note_'. $productId .'" 
@@ -38,17 +40,16 @@ class ProductNotesController extends AbstractController
                         <input type="hidden" name="product-id" value="'. $productId .'">
                         <input type="hidden" name="note-id" id="note_id_'. $productId .'" value="0">
                         <div class="row">
-                            <div class="col-12 col-sm-10 mb-3 mb-sm-0">
-                                <input type="text" name="note" id="note_'. $productId .'" class="form-control">
+                            <div class="col-12 mb-3 mb-sm-0">
+                                <div class="input-group">
+                                    <input type="text" name="note" id="note_'. $productId .'" class="form-control">
+                                    <button type="submit" class="btn btn-primary">
+                                        ADD NEW NOTE
+                                    </button>
+                                </div>
                                 <div class="hidden_msg" id="error_note_'. $productId .'">
                                     Required Field
                                 </div>
-                            </div>
-                            <div class="col-12 col-sm-2">
-                                <button type="submit" class="btn btn-primary float-end w-100">
-                                    <i class="fa-solid fa-circle-plus"></i>
-                                    &nbsp;ADD NEW NOTE
-                                </button>
                             </div>
                         </div>
                     </form>
@@ -96,9 +97,35 @@ class ProductNotesController extends AbstractController
             'product' => $product,
         ]);
 
-        $response = '<h5 class="pb-3 pt-3">Item Notes</h5>';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Item Notes</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end">
+                <a 
+                    href="" 
+                    class="text-primary pt-3 d-inline-block"
+                    data-action="click->products--notes#onClickCreateNewLink"
+                >
+                    <i class="far fa-square-plus fa-plus-square"></i>
+                    &nbsp;Add New Note
+                </a>
+            </div>
+        </div>';
 
-        foreach($productNotes as $note){
+        $response .= $this->noteCreateNew($productId);
+        $i = 0;
+
+        foreach($productNotes as $note)
+        {
+            $i++;
+            $marginBottom = 'mb-4';
+
+            if($i == count($productNotes))
+            {
+                $marginBottom = '';
+            }
 
             $response .= '
             <div class="row note_'. $note->getId() .'">
@@ -127,14 +154,12 @@ class ProductNotesController extends AbstractController
                     </a>
                 </div>
             </div>
-            <div class="row mb-4 note_'. $note->getId() .'">
+            <div class="row '. $marginBottom .' note_'. $note->getId() .'">
                 <div class="col-12 info-sm">
                     '. $this->encryptor->decrypt($note->getClinicUser()->getFirstName()) .' '. $this->encryptor->decrypt($note->getClinicUser()->getLastName()) .' . '. $note->getCreated()->format('M d Y H:i') .'
                 </div>
             </div>';
         }
-
-        $response .= $this->noteCreateNew($productId);
 
         return new JsonResponse($response);
     }
@@ -186,10 +211,36 @@ class ProductNotesController extends AbstractController
             'clinic' => $clinic,
             'product' => $product,
         ]);
-        $response = '';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Item Notes</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end">
+                <a 
+                    href="" 
+                    class="text-primary pt-3 d-inline-block"
+                    data-action="click->products--notes#onClickCreateNewLink"
+                >
+                    <i class="far fa-square-plus fa-plus-square"></i>
+                    &nbsp;Add New Note
+                </a>
+            </div>
+        </div>';
+
+        $response .= $this->noteCreateNew($product->getId());
+        $i = 0;
 
         foreach($productNotes as $note)
         {
+            $i++;
+            $marginBottom = 'mb-4';
+
+            if($i == count($productNotes))
+            {
+                $marginBottom = '';
+            }
+
             $response .= '
             <div class="row">
                 <div class="col-10">
@@ -218,14 +269,12 @@ class ProductNotesController extends AbstractController
                     </a>
                 </div>
             </div>
-            <div class="row mb-4">
+            <div class="row '. $marginBottom .'">
                 <div class="col-12 info-sm">
                     '. $this->encryptor->decrypt($note->getClinicUser()->getFirstName()) .' '. $this->encryptor->decrypt($note->getClinicUser()->getLastName()) .' . '. $note->getCreated()->format('M d Y H:i') .'
                 </div>
             </div>';
         }
-
-        $response .= $this->noteCreateNew($product->getId());
 
         return new JsonResponse($response);
     }

@@ -559,7 +559,7 @@ export default class extends Controller
             },
             success: function (response)
             {
-                $('#clinic_container').empty().append(response.html).show();
+                $('#clinic_container').removeClass('col-container').empty().append(response.html).show();
                 window.scrollTo(0,0);
                 $('.has-megamenu').show(700);
                 $('#favourite_label').empty().append('('+ response.favouriteCount +') Favourite Items');

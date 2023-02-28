@@ -56,7 +56,24 @@ class ListsController extends AbstractController
             $permissions = json_decode($request->request->get('permissions'), true);
         }
 
-        $response = '<h5 class="pb-3 pt-3">Order Lists</h5>';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Order Lists</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end pt-3">
+                <a 
+                    href=""
+                    class="mb-3 mb-sm-0 w-sm-100 bg-transparent border-0 text-primary create-new-list" 
+                    data-action="click->products--lists#onClickCreateNew"
+                >
+                    <i class="far fa-plus-square"></i>
+                    &nbsp;Create New
+                </a>
+            </div>
+        </div>';
+
+        $response .= $this->listCreateNew($productId, $request->request->get('keyword'));
 
         if(count($lists) == 0){
 
@@ -143,9 +160,19 @@ class ListsController extends AbstractController
 
                 $response .= $this->getListRow($icon, $lists[$i]->getName(), $lists[$i]->getId(), $itemCount, $request->request->get('keyword'));
             }
-        }
 
-        $response .= $this->listCreateNew($productId, $request->request->get('keyword'));
+            $response .= '
+            <div class="col-12 d-inline-block mt-3">
+                <a 
+                    href="" data-keyword-string="'. $request->request->get('keyword') .'" 
+                    class="float-end w-sm-100 manage-lists text-primary"
+                    data-action="click->products--lists#onClickViewManageLists"
+                >
+                    View And Manage Your Lists
+                    <i class="fas fa-chevron-double-right ms-1"></i>
+                </a>
+            </div>';
+        }
 
         return new JsonResponse($response);
     }
@@ -606,7 +633,24 @@ class ListsController extends AbstractController
 
         $lists = $this->em->getRepository(Lists::class)->getClinicLists($clinic->getId());
 
-        $response = '<h3 class="pb-3 pt-3">Order Lists</h3>';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Order Lists</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end pt-3">
+                <a 
+                    href=""
+                    class="mb-3 mb-sm-0 w-sm-100 bg-transparent border-0 text-primary create-new-list" 
+                    data-action="click->products--lists#onClickCreateNew"
+                >
+                    <i class="far fa-plus-square"></i>
+                    &nbsp;Create New
+                </a>
+            </div>
+        </div>';
+
+        $response .= $this->listCreateNew($productId);
 
         for($i = 0; $i < count($lists); $i++)
         {
@@ -666,7 +710,20 @@ class ListsController extends AbstractController
             $response .= $this->getListRow($icon, $lists[$i]->getName(), $lists[$i]->getId(), $itemCount);
         }
 
-        $response .= $this->listCreateNew($productId);
+        if(count($lists) > 0)
+        {
+            $response .= '
+            <div class="col-12 d-inline-block mt-3">
+                <a 
+                    href="" data-keyword-string="'. $request->request->get('keyword') .'" 
+                    class="float-end w-sm-100 manage-lists text-primary"
+                    data-action="click->products--lists#onClickViewManageLists"
+                >
+                    View And Manage Your Lists 
+                    <i class="fas fa-chevron-double-right ms-1"></i>
+                </a>
+            </div>';
+        }
 
         return new JsonResponse($response);
     }
@@ -1397,8 +1454,8 @@ class ListsController extends AbstractController
     private function listCreateNew($productId, $keyword = '')
     {
         return '
-            <div class="row mt-4">
-                <div class="col-12 col-sm-9">
+            <div class="row hidden create-new-note">
+                <div class="col-12 mb-4">
                     <form 
                         name="form_list" 
                         id="form_list" 
@@ -1409,30 +1466,25 @@ class ListsController extends AbstractController
                         <input type="hidden" name="list-id" value="0">
                         <input type="hidden" name="list-type" value="custom">
                         <div class="row">
-                            <div class="col-12 col-sm-8">
-                                <input type="text" name="list-name" id="list_name" class="form-control mb-3 mb-sm-0">
+                            <div class="col-12">
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        name="list-name" 
+                                        id="list_name" 
+                                        class="form-control mb-3 mb-sm-0"
+                                    >
+                                    <button type="submit" class=" btn btn-primary mb-3 mb-sm-0 w-sm-100" id="list_create_new">
+                                        CREATE NEW
+                                    </button>
+                                </div>
+                                
                                 <div class="hidden_msg" id="error_list_name">
                                     Required Field
                                 </div>
                             </div>
-                            <div class="col-12 col-sm-4">
-                                <button type="submit" class="btn btn-primary mb-3 mb-sm-0 w-100 w-sm-100" id="list_create_new">
-                                    <i class="fa-solid fa-circle-plus"></i>
-                                    &nbsp;CREATE NEW
-                                </button>
-                            </div>
                         </div>
                     </form>
-                </div>
-                <div class="col-12 col-sm-3">
-                    <a 
-                        href="" data-keyword-string="'. $keyword .'" 
-                        class="btn btn-secondary float-end w-100 w-sm-100 
-                        manage-lists"
-                        data-action="click->products--lists#onClickViewManageLists"
-                    >
-                        VIEW AND MANAGE YOUR LISTS 
-                    </a>
                 </div>
             </div>';
     }

@@ -224,6 +224,15 @@ export default class extends Controller {
             });
         }
     }
+    
+    onClickCreateNew(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+
+        $(clickedElement).closest('.panel-lists').find('.create-new-note').slideToggle(700);
+    }
 
     onClickRemoveItemIcon(e)
     {
@@ -327,6 +336,13 @@ export default class extends Controller {
 
         let listId = $(e.currentTarget).attr('data-list-id');
         $('#delete_list').attr('data-list-id', listId);
+        $('.modal-backdrop:first').remove();
+
+        let removeCss = setInterval(function ()
+        {
+            $('body').removeAttr('style');
+            clearInterval(removeCss);
+        }, 200);
     }
 
     onClickConfirmDelete(e)
@@ -541,15 +557,21 @@ export default class extends Controller {
                 beforeSend: function ()
                 {
                     self.isLoading(true);
+                    $('#modal_list_add_to_basket').modal('toggle');
                 },
                 success: function (response)
                 {
-                    $('#modal_list_add_to_basket').modal('toggle');
+
                     $(".modal-backdrop").remove();
                     self.getBasket(response,true,'');
 
+                    let removeCss = setInterval(function ()
+                    {
+                        $('body').removeAttr('style');
+                        clearInterval(removeCss);
+                    }, 200);
                 },
-                complete: function(e, xhr, settings)
+                complete: function(e)
                 {
                     if(e.status === 500)
                     {

@@ -54,6 +54,24 @@ export default class extends Controller
         }
     }
 
+    onClickCreateNewLink(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+
+        $(clickedElement).closest('.row').next().slideToggle(700);
+    }
+
+    onClickCreateNew(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+
+        $(clickedElement).parent().next().next().slideToggle(700);
+    }
+
     onSubmitNotesForm(e)
     {
         let clickedElement = e.currentTarget;
@@ -173,7 +191,8 @@ export default class extends Controller
             },
             success: function (response)
             {
-                $(clickedElement).closest('.panel-notes').find('button').empty().append('<i class="fa-solid fa-circle-plus"></i> &nbsp;UPDATE NOTE');
+                $(clickedElement).closest('.panel-notes').find('button').empty().append('UPDATE NOTE');
+                $(clickedElement).closest('.panel-notes').find('.create-new-note').slideDown(700);
                 $('#note_id_'+ response.productId).val(noteId);
                 $('#note_'+ response.productId).empty().val(response.note);
                 self.isLoading(false);
@@ -192,6 +211,12 @@ export default class extends Controller
         $('.modal-backdrop:first').remove();
         $('#delete_note').attr('data-delete-note-id', noteId);
         $('#delete_note').attr('data-delete-product-id', productId);
+
+        let removeCss = setInterval(function ()
+        {
+            $('body').removeAttr('style');
+            clearInterval(removeCss);
+        }, 200);
     }
 
     onClickDelete(e)
