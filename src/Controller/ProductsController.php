@@ -1050,24 +1050,23 @@ class ProductsController extends AbstractController
     {
         $productId = $request->request->get('product-id') ?? 18;
         $clinicId = $this->getUser()->getClinic()->getId();
+        $distributorProducts = $this->em->getRepository(Products::class)->findyDistributor($productId);
         $product = $this->em->getRepository(Products::class)->find($productId);
-        $product = $this->em->getRepository(Products::class)->findyDistributor($productId);
-        dd($product);
         $user = $this->em->getRepository(ClinicUsers::class)->find($this->getUser()->getId());
         $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
         $response['html'] = '';
         $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
-            'product' => $product->getId(),
+            'product' => $productId,
             'isDefault' => 1
         ]);
 
         // Get default image
-        if($firstImage == null){
-
+        if($firstImage == null)
+        {
             $firstImage = 'image-not-found.jpg';
-
-        } else {
-
+        }
+        else
+        {
             $firstImage = $firstImage->getImage();
         }
 
@@ -1081,12 +1080,12 @@ class ProductsController extends AbstractController
         ]);
         $distributorClinics = '';
 
-        if(is_array($distributorClinicsRepo) && count($distributorClinicsRepo) > 0){
-
+        if(is_array($distributorClinicsRepo) && count($distributorClinicsRepo) > 0)
+        {
             $distributorClinics = [];
 
-            foreach($distributorClinicsRepo as $value){
-
+            foreach($distributorClinicsRepo as $value)
+            {
                 $distributorClinics[] = (int) $value->getDistributor()->getId();
             }
         }
@@ -1096,17 +1095,34 @@ class ProductsController extends AbstractController
         $basketPermission = true;
         $i = 0;
 
-        foreach($user->getClinicUserPermissions() as $permission){
-
+        foreach($user->getClinicUserPermissions() as $permission)
+        {
             $permissions[] = $permission->getPermission()->getId();
         }
 
-        if(!in_array(1, $permissions)){
-
+        if(!in_array(1, $permissions))
+        {
             $basketPermission = false;
         }
 
-        foreach($product->getDistributorProducts() as $distributor) {
+        foreach($distributorProducts as $distributor)
+        {
+            $trackingId = $distributor['tracking_id'];
+            $itemId = $distributor['item_id'];
+            $distributorId = $distributor['distributor_id'];
+            $distributorName = $distributor['distributor_name'];
+            $logo = $distributor['logo'];
+            $productSize = $distributor['size'];
+            $productId = $distributor['product_id'];
+            $unitPrice = $distributor['unit_price'] ?? 0.00;
+            $stockLevel = $distributor['stock_count'] ?? 0;
+            $sku = $distributor['sku'];
+            $shippingPolicy = $distributor['shipping_policy'] ?? '<p>Shipping policy has not been updated</p>';
+            $taxPolicy = $distributor['sales_tax_policy'] ?? '<p>Sales tax policy has not been updated</p>';
+            $apiDetails = $this->em->getRepository(ApiDetails::class)->findOneBy([
+                'distributor' => $distributorId,
+            ]);
+                $i++;
 
             $trackingId = $distributor->getDistributor()->getTracking()->getId();
             $distributorId = $distributor->getDistributor()->getId();
@@ -1213,7 +1229,7 @@ class ProductsController extends AbstractController
 
                 $style = '';
 
-                if($i == count($product->getDistributorProducts()))
+                if($i == count($distributorProducts))
                 {
                     $style = 'style="border-bottom: none !important"';
                 }

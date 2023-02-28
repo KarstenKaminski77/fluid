@@ -291,21 +291,27 @@ class ProductsRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $sql = "SELECT p.*, dp.* FROM products p JOIN distributor_products dp ON p.id = dp.product_id WHERE dp.product_id = :productId";
+        $sql = "
+        SELECT 
+            p.name,
+            p.id as product_id,
+            p.size,
+            d.id as distributor_id,
+            d.distributor_name,
+            d.tracking_id,
+            d.shipping_policy,
+            d.sales_tax_policy,
+            d.logo,
+            dp.unit_price,
+            dp.stock_count,
+            dp.item_id,
+            dp.sku
+        FROM products p 
+            JOIN distributor_products dp ON p.id = dp.product_id 
+            JOIN distributors d ON dp.distributor_id = d.id 
+        WHERE dp.product_id = :productId";
         $stmt = $conn->prepare($sql)->executeQuery(['productId' => $productId])->fetchAllAssociative();
 
         return $stmt;
-//        $dql = "SELECT p FROM App\Entity\Products p JOIN App\Entity\DistributorProducts dp ON p.id = dp.product_id WHERE p.id = $productId";
-//        $query = $this->getEntityManager()->createQuery($dql);
-//        return $query->execute();
-
-//        $queryBuilder = $this->createQueryBuilder('p')
-//            ->select('p', 'dp')
-//            ->join('p.distributorProducts', 'dp')
-//            ->andWhere('dp.product = :productId')
-//            ->setParameter('productId', $productId)
-//            ->groupBy('dp.id');
-//dd($productId, count($queryBuilder->getQuery()->getResult()));
-//        return $queryBuilder->getQuery()->getResult();
     }
 }
