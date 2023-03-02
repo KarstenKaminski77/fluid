@@ -265,6 +265,11 @@ class Distributors
      */
     private $managerIdExpDate;
 
+    /**
+     * @ORM\OneToMany(targetEntity=ControlledDrugFiles::class, mappedBy="distributor")
+     */
+    private $controlledDrugFiles;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -289,6 +294,7 @@ class Distributors
         $this->distributorUserPermissions = new ArrayCollection();
         $this->refreshTokens = new ArrayCollection();
         $this->distributorClinics = new ArrayCollection();
+        $this->controlledDrugFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1155,6 +1161,36 @@ class Distributors
     public function setManagerIdExpDate(?\DateTimeInterface $managerIdExpDate): self
     {
         $this->managerIdExpDate = $managerIdExpDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ControlledDrugFiles>
+     */
+    public function getControlledDrugFiles(): Collection
+    {
+        return $this->controlledDrugFiles;
+    }
+
+    public function addControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if (!$this->controlledDrugFiles->contains($controlledDrugFile)) {
+            $this->controlledDrugFiles[] = $controlledDrugFile;
+            $controlledDrugFile->setDistributor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if ($this->controlledDrugFiles->removeElement($controlledDrugFile)) {
+            // set the owning side to null (unless already changed)
+            if ($controlledDrugFile->getDistributor() === $this) {
+                $controlledDrugFile->setDistributor(null);
+            }
+        }
 
         return $this;
     }

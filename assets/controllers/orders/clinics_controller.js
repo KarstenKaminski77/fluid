@@ -29,7 +29,120 @@ export default class extends Controller
         }
     }
 
-    // Order Lists
+    onClickBtnProceedControlled(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+
+        $.ajax({
+            async: "true",
+            url: "/clinics/checkout/controlled-drugs",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'basket-id': $(clickedElement).data('basket-id'),
+                permissions: $.session.get('permissions'),
+            },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            complete: function(e, xhr, settings)
+            {
+                if(e.status === 500)
+                {
+                    //window.location.href = '/clinics/error';
+                }
+            },
+            success: function (response)
+            {
+                let header = '<h4 class="text-primary">Controlled Drugs</h4>\n' +
+                    '        <span class="text-primary">\n' +
+                    '            A purchase order is required when ordering a controlled drug.\n' +
+                    '        </span>';
+
+                $('#basket_header, #basket_action_row_1, #basket_action_row_2, #basket_inner').empty();
+                $('#basket_header').append(header);
+                $('#basket_inner').empty().append(response);
+                $('#btn_checkout').hide();
+
+                self.isLoading(false);
+            }
+        });
+
+
+    }
+
+    onChangePoFile(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let allFilesUploaded = true;
+        let clickedElement = e.currentTarget;
+        let distributorId = $(clickedElement).attr('data-distributor-id');
+        let data = new FormData($('#form_po_'+ distributorId)[0]);
+        data.append('po-file', $('input[type=file]')[0].files[0]);
+
+        $.ajax({
+            async: "true",
+            url: "/clinics/upload-controlled-po",
+            type: 'POST',
+            contentType: false,
+            processData: false,
+            cache: false,
+            timeout: 600000,
+            dataType: 'json',
+            data: data,
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+                window.scrollTo(0, 0);
+                $('body').scrollTop($('body').prop("scrollHeight"));
+            },
+            complete: function(e, xhr, settings)
+            {
+                if(e.status === 500)
+                {
+                    //window.location.href = '/clinics/error';
+                }
+            },
+            success: function (response)
+            {
+                self.isLoading(false);
+
+                $(clickedElement).closest('form').find('a')
+                    .removeClass('hidden').attr('href', '/pdf_controlled_po.php?pdf='+ response);
+
+                $('.file-link').each(function ()
+                {
+                    if($(this).attr('href') == '#')
+                    {
+                        allFilesUploaded = false;
+                    }
+                });
+
+                if(allFilesUploaded == true)
+                {
+                    $('#basket_inner').find('.row').next().removeClass('hidden');
+                }
+            }
+        });
+    }
+
+    onSubmitFormPo(e)
+    {
+        e.preventDefault();
+
+        let clickedElement = e.currentTarget;
+        let distributorId = $(clickedElement).atrr('data-distributor-id');
+
+        alert(distributorId);
+        console.log(data);
+    }
+
     onClickBtnProceed(e)
     {
         e.preventDefault();
@@ -54,7 +167,7 @@ export default class extends Controller
             {
                 if(e.status === 500)
                 {
-                    window.location.href = '/clinics/error';
+                    //window.location.href = '/clinics/error';
                 }
             },
             success: function (response)
@@ -872,7 +985,7 @@ export default class extends Controller
             {
                 if (e.status === 500)
                 {
-                    window.location.href = '/clinics/error';
+                    //window.location.href = '/clinics/error';
                 }
             },
             success: function (response)

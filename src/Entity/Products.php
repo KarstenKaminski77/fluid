@@ -987,7 +987,7 @@ class Products
         return $this;
     }
 
-    public function isIsControlled(): ?bool
+    public function getIsControlled(): ?bool
     {
         return $this->isControlled;
     }

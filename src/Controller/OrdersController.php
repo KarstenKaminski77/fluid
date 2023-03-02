@@ -8,6 +8,7 @@ use App\Entity\Baskets;
 use App\Entity\ChatMessages;
 use App\Entity\ChatParticipants;
 use App\Entity\Clinics;
+use App\Entity\ControlledDrugFiles;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
@@ -51,10 +52,303 @@ class OrdersController extends AbstractController
         $this->encryptor = $encryptor;
     }
 
+    #[Route('/clinics/checkout/controlled-drugs', name: 'checkout_controlled_drugs')]
+    public function getCheckoutControlledDrugsAction(Request $request): Response
+    {
+        $allFilesUploaded = true;
+        $distributorsArray = [];
+        $clinic = $this->getUser()->getClinic();
+        $basketId = $request->request->get('basket-id');
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $order = $this->em->getRepository(Orders::class)->findOneBy([
+            'basket' => $basketId,
+        ]);
+
+        // Create / update orders
+        if($order == null)
+        {
+            $order = new Orders();
+        }
+
+        $deliveryFee = 0;
+        $subTotal = $basket->getTotal();
+        $email = $this->encryptor->decrypt($clinic->getEmail());
+        $tax = 0;
+
+        $order->setBasket($basket);
+        $order->setClinic($clinic);
+        $order->setStatus('checkout');
+        $order->setDeliveryFee($deliveryFee);
+        $order->setSubTotal($subTotal);
+        $order->setTax($tax);
+        $order->setTotal($deliveryFee + $subTotal + $tax);
+        $order->setEmail($this->encryptor->encrypt($email));
+
+        $this->em->persist($order);
+        $this->em->flush();
+
+        $orderId = $order->getId();
+        $response['order_id'] = $order->getId();
+        $orderItems = $this->em->getRepository(OrderItems::class)->findBy([
+            'orders' => $order->getId(),
+        ]);
+        $orderStatus = $this->em->getRepository(OrderStatus::class)->findBy([
+            'orders' => $order->getId(),
+
+        ]);
+        $distributorId = '';
+
+        // Remove any previous items
+        if(count($orderItems) > 0)
+        {
+            foreach($orderItems as $orderItem)
+            {
+                $this->em->remove($orderItem);
+            }
+        }
+
+        // Remove previous status
+        if(count($orderStatus) > 0)
+        {
+            foreach($orderStatus as $status)
+            {
+                $this->em->remove($status);
+            }
+        }
+
+        // Create new order items
+        if(count($basket->getBasketItems()) > 0)
+        {
+            foreach($basket->getBasketItems() as $basketItem)
+            {
+                // Generate PO prefix if one isn't yet set
+                $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
+                $prefix = $distributor->getPoNumberPrefix();
+                $name = $distributor->getDistributorName();
+
+                if($prefix == null)
+                {
+                    $words = preg_split("/\s+/", $this->encryptor->decrypt($name));
+                    $prefix = '';
+
+                    foreach($words as $word)
+                    {
+
+                        $prefix .= substr(ucwords($word), 0, 1);
+                    }
+
+                    $distributor->setPoNumberPrefix($prefix);
+                    $this->em->persist($distributor);
+                }
+
+                if(!in_array($basketItem->getDistributor()->getId(), $distributorsArray))
+                {
+                    $distributorsArray[] = $basketItem->getDistributor()->getId();
+                }
+
+                $orderItems = new OrderItems();
+                $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+                $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
+
+                $orderItems->setOrders($order);
+                $orderItems->setDistributor($distributor);
+                $orderItems->setProduct($basketItem->getProduct());
+                $orderItems->setUnitPrice($basketItem->getUnitPrice());
+                $orderItems->setQuantity($basketItem->getQty());
+                $orderItems->setQuantityDelivered($basketItem->getQty());
+                $orderItems->setTotal($basketItem->getTotal());
+                $orderItems->setName($basketItem->getName());
+                $orderItems->setPoNumber($prefix .'-'. $order->getId());
+                $orderItems->setOrderPlacedBy($this->encryptor->encrypt($firstName .' '. $lastName));
+                $orderItems->setIsAccepted(0);
+                $orderItems->setIsRenegotiate(0);
+                $orderItems->setIsCancelled(0);
+                $orderItems->setIsConfirmedDistributor(0);
+                $orderItems->setIsQuantityCorrect(0);
+                $orderItems->setIsQuantityInCorrect(0);
+                $orderItems->setIsQuantityAdjust(0);
+                $orderItems->setIsAcceptedOnDelivery(1);
+                $orderItems->setIsRejectedOnDelivery(0);
+                $orderItems->setStatus('Pending');
+                $orderItems->setItemId($basketItem->getItemId());
+
+                $this->em->persist($orderItems);
+
+                // Order Status
+                if($distributorId != $basketItem->getDistributor()->getId())
+                {
+                    $distributorId = $basketItem->getDistributor()->getId();
+                    $status = $this->em->getRepository(Status::class)->find(2);
+
+                    $orderStatus = new OrderStatus();
+
+                    $orderStatus->setOrders($order);
+                    $orderStatus->setDistributor($basketItem->getDistributor());
+                    $orderStatus->setStatus($status);
+
+                    $this->em->persist($orderStatus);
+                }
+            }
+
+            $this->em->flush();
+        }
+
+        // Update distributor totals
+        foreach($distributorsArray as $dist)
+        {
+            $distributorTotal = 0;
+            $distributorTotals = $this->em->getRepository(OrderItems::class)->findBy([
+                'distributor' => $dist,
+                'orders' => $orderId,
+            ]);
+
+            foreach($distributorTotals as $total)
+            {
+                $distributorTotal += $total->getTotal();
+            }
+
+            foreach($distributorTotals as $total)
+            {
+                $total->setDistributorTotal($distributorTotal);
+                $this->em->persist($total);
+            }
+
+            $this->em->flush();
+        }
+
+        $controlledDrugItems = $this->em->getRepository(Orders::class)->findByControlledDrug($order->getId());
+        $orderItems = $controlledDrugItems[0]->getOrderItems();
+
+        $response = '
+        <div class="row mt-4">
+            <div class="col-12 mt-2">
+                <div class="alert alert-secondary">';
+
+                    foreach($orderItems as $item)
+                    {
+                        $distributor = $item->getDistributor();
+                        $controlledDrugFiles = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+                            'orders' => $orderId,
+                            'distributor' => $distributor->getId(),
+                        ]);
+                        $product = $item->getProduct();
+
+                        if($controlledDrugFiles == null)
+                        {
+                            $controlledDrugFiles = new ControlledDrugFiles();
+
+                            $controlledDrugFiles->setOrders($order);
+                            $controlledDrugFiles->setDistributor($distributor);
+
+                            $this->em->persist($controlledDrugFiles);
+                            $this->em->flush();
+                        }
+
+                        if($controlledDrugFiles->getPurchaseOrder() == null)
+                        {
+                            $allFilesUploaded = false;
+                        }
+
+                        $class = 'hidden file-link';
+                        $href = '#';
+
+                        if($controlledDrugFiles->getPurchaseOrder() != null)
+                        {
+                            $class = 'file-link';
+                            $href = $this->getParameter('app.base_url') .'/pdf_controlled_po.php?pdf='. $controlledDrugFiles->getPurchaseOrder();
+                        }
+
+                        $response .= '
+                        <div class="row">
+                        <!-- Thumbnail -->
+                            <div class="col-12 col-sm-2 text-center pt-3">
+                                <img class="img-fluid basket-img" src="/images/logos/'. $distributor->getLogo() .'" style="max-height: 45px">
+                            </div>
+                            <div class="col-12 col-sm-10 pt-3">
+                                <div class="row">
+                                    <!-- Distributor Name -->
+                                    <div class="col-12 col-sm-8 d-table">
+                                        <div class="row d-table-row">
+                                            <div class="col-12 d-table-cell align-middle">
+                                                <h6 class="fw-bold text-center text-sm-start text-primary mb-0">
+                                                    '. $this->encryptor->decrypt($distributor->getDistributorName()) .'
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Product Quantity -->
+                                    <div class="col-12 col-sm-4 d-table text-end">
+                                        <form 
+                                            name="form_po" 
+                                            id="form_po_'. $distributor->getId() .'" 
+                                            enctype="multipart/form-data"
+                                            data-distributor-id="'. $distributor->getId() .'"
+                                            data-action="submit->orders--clinics#onSubmitFormPo"
+                                        >
+                                            <input type="hidden" name="distributor-id" value="'. $distributor->getId() .'">
+                                            <input type="hidden" name="order-id" value="'. $orderId .'">
+                                            <span class="d-inline-block me-3">
+                                                <a
+                                                    href="'. $href .'"
+                                                    class="'. $class .'"
+                                                >
+                                                    <i class="fas fa-download text-primary"></i>
+                                                </a>
+                                            </span>
+                                            <label 
+                                                for="file_upload_'. $distributor->getId() .'" 
+                                                class="file-upload btn btn-sm btn-primary btn-block d-inline-block"
+                                            >
+                                                <i class="fa fa-upload mr-2 me-2"></i>Upload PO
+                                                <input 
+                                                    id="file_upload_'. $distributor->getId() .'" 
+                                                    type="file" 
+                                                    style="display: none"
+                                                    data-action="change->orders--clinics#onChangePoFile"
+                                                    data-distributor-id="'. $distributor->getId() .'"
+                                                >
+                                            </label>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>';
+                    }
+
+                $response .= '
+                </div>
+            </div>
+        </div>';
+
+        $classHidden = 'hidden';
+
+        if($allFilesUploaded)
+        {
+            $classHidden = '';
+        }
+
+        $response .= '
+        <div class="row '. $classHidden .'">
+            <div class="col-12 text-end">
+                <a 
+                    href="" 
+                    class="btn btn-primary"
+                    data-action="click->orders--clinics#onClickBtnProceed"
+                    data-basket-id="'. $basketId .'"
+                >
+                    PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                </a>
+            </div>
+        </div>';
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/clinics/checkout/options', name: 'checkout_options')]
     public function getCheckoutOptionsAction(Request $request): Response
     {
         $requiresAuth = $request->request->get('require-auth');
+        $distributorsArray = [];
         $purchaseOrders = null;
 
         if($requiresAuth == null)
@@ -191,6 +485,11 @@ class OrdersController extends AbstractController
                     $this->em->persist($distributor);
                 }
 
+                if(!in_array($basketItem->getDistributor()->getId(), $distributorsArray))
+                {
+                    $distributorsArray[] = $basketItem->getDistributor()->getId();
+                }
+
                 $orderItems = new OrderItems();
                 $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
                 $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
@@ -236,6 +535,29 @@ class OrdersController extends AbstractController
 
                     $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
                 }
+            }
+
+            $this->em->flush();
+        }
+
+        // Update distributor totals
+        foreach($distributorsArray as $dist)
+        {
+            $distributorTotal = 0;
+            $distributorTotals = $this->em->getRepository(OrderItems::class)->findBy([
+                'distributor' => $dist,
+                'orders' => $order->getId(),
+            ]);
+
+            foreach($distributorTotals as $total)
+            {
+                $distributorTotal += $total->getTotal();
+            }
+
+            foreach($distributorTotals as $total)
+            {
+                $total->setDistributorTotal($distributorTotal);
+                $this->em->persist($total);
             }
 
             $this->em->flush();
@@ -1019,6 +1341,37 @@ class OrdersController extends AbstractController
             $disabled = 'disabled';
         }
 
+        // Controlled drugs
+        $isControlledDrug = true;
+        $isControlledDrugBtn = '';
+
+        foreach($orders as $order)
+        {
+            if($order->getProduct()->getIsControlled() == 1)
+            {
+                $isControlledDrug = true;
+                break;
+            }
+        }
+
+        if($isControlledDrug)
+        {
+            $pdf = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+                'orders' => $orderId,
+                'distributor' => $distributor->getId(),
+            ]);
+            $isControlledDrugBtn = '
+            <a 
+                href="'. $this->getParameter('app.base_url') .'/pdf_controlled_po.php?pdf='. $pdf->getPurchaseOrder() .'" 
+                class="" 
+                data-order-id="'. $orderId .'" 
+                data-distributor-id="'. $distributor->getId() .'"
+            >
+                <i class="fal fa-file-medical me-5 me-md-2"></i>
+                <span class=" d-none d-md-inline-block pe-4">Controlled Drug</span>
+            </a>';
+        }
+
         $html = '
         <form 
             name="form_distributor_orders" 
@@ -1072,6 +1425,8 @@ class OrdersController extends AbstractController
                         } else {
 
                             if($isAuthorised){
+
+                                $html .= $isControlledDrugBtn;
 
                                 $html .= '
                                 <button type="submit" class="saved_baskets_link btn btn-sm btn-light p-0 text-primary">
@@ -1874,7 +2229,7 @@ class OrdersController extends AbstractController
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Total: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
-                                AED ' . number_format($order->getTotal(),2) . '
+                                AED ' . number_format($order->getOrderItems()[0]->getDistributorTotal(),2) . '
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Date: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
@@ -2708,7 +3063,7 @@ class OrdersController extends AbstractController
     {
         $clinic = $this->getUser()->getClinic();
         $currency = $clinic->getCountry()->getCurrency();
-        $orders = $this->em->getRepository(Orders::class)->findClinicOrders(
+        $orders = $this->em->getRepository(OrderItems::class)->findClinicOrders(
             $clinic->getId(),$request->request->get('distributor-id'),
             $request->request->get('date'), $request->request->get('status')
         );
@@ -2883,22 +3238,27 @@ class OrdersController extends AbstractController
                 <div class="row">
                     <div class="col-12 border-right bg-light col-cell border-left border-right border-bottom">';
 
-                foreach ($results as $order) {
-
+                foreach ($results as $order)
+                {
+                    $statusId = $order->getOrders()->getOrderStatuses()[0]->getStatus()->getId();
+                    $status = $this->em->getRepository(OrderStatus::class)->findOneBy([
+                        'distributor' => $order->getDistributor()->getId(),
+                        'orders' => $order->getOrders()->getId()
+                    ]);
                     $html .= '
                     <!-- Orders -->
                     <div class="row border-bottom t-row">
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">#Id </div>
                         <div class="col-8 col-md-10 col-xl-1 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $order->getId() . '
+                            ' . $order->getOrders()->getId() .'
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Distributor </div>
                         <div class="col-8 col-md-10 col-xl-4 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $this->encryptor->decrypt($order->getOrderItems()[0]->getDistributor()->getDistributorName()) . '
+                            ' . $this->encryptor->decrypt($order->getDistributor()->getDistributorName()) . '
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Total </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $currency .' '. number_format($order->getTotal(),2) . '
+                            ' . $currency .' '. number_format($order->getDistributorTotal(),2) . '
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Daste </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
@@ -2906,16 +3266,16 @@ class OrdersController extends AbstractController
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Status </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . ucfirst($order->getOrderStatuses()[0]->getStatus()->getStatus()) . '
+                            ' . ucfirst($status->getStatus()->getStatus()) . '
                         </div>
                         <div class="col-12 col-sm-1 pt-3 pb-3 text-end border-list">
                             <a 
-                                href="' . $this->getParameter('app.base_url') . '/clinics/order/' . $order->getId() . '/' . $order->getOrderStatuses()[0]->getDistributor()->getId() . '" 
+                                href="'. $order->getOrders()->getOrderStatuses()[0]->getId() .'" 
                                 class="pe-0 pe-sm-3 float-end"
                                 id="order_detail_link"
-                                data-order-id="' . $order->getId() . '"
-                                data-distributor-id="' . $order->getOrderStatuses()[0]->getDistributor()->getId() . '"
-                                data-clinic-id="' . $order->getClinic()->getId() . '"
+                                data-order-id="' . $order->getOrders()->getId() . '"
+                                data-distributor-id="' . $order->getDistributor()->getId() . '"
+                                data-clinic-id="' . $order->getOrders()->getClinic()->getId() . '"
                                 data-action="click->orders--clinics#onClickOrderDetail"
                             >
                                 <i class="fa-solid fa-pen-to-square"></i>
@@ -3693,6 +4053,31 @@ class OrdersController extends AbstractController
         }
 
         return new JsonResponse($response);
+    }
+
+    #[Route('/clinics/upload-controlled-po', name: 'clinics_upload_controlled_po')]
+    public function clinicsUploadPoAction(Request $request): Response
+    {
+        $orderId = $request->request->get('order-id');
+        $distributorId = $request->request->get('distributor-id');
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $controlledDrugFile = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $orderId,
+            'distributor' => $distributor,
+        ]);
+        $extension = pathinfo($_FILES['po-file']['name'], PATHINFO_EXTENSION);
+        $file = $orderId .'-'. $distributorId . '-' . uniqid() . '.' . $extension;
+        $targetFile = __DIR__ . '/../../public/documents/' . $file;
+
+        if(move_uploaded_file($_FILES['po-file']['tmp_name'], $targetFile)) {
+
+            $controlledDrugFile->setPurchaseOrder($file);
+
+            $this->em->persist($controlledDrugFile);
+            $this->em->flush();
+        }
+
+        return new JsonResponse($file);
     }
 
     public function zohoRefreshToken($refreshToken, $distributorId): string

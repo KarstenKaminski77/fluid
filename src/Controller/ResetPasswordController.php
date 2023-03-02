@@ -148,7 +148,6 @@ class ResetPasswordController extends AbstractController
         }
 
         $emailTo = $this->encryptor->decrypt($user->getEmail());
-        $user->setEmail($this->encryptor->decrypt($user->getEmail()));
 
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);

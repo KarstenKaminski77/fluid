@@ -115,6 +115,11 @@ class Orders
      */
     private $orderStatuses;
 
+    /**
+     * @ORM\OneToMany(targetEntity=ControlledDrugFiles::class, mappedBy="orders")
+     */
+    private $controlledDrugFiles;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -128,6 +133,7 @@ class Orders
         $this->chatMessages = new ArrayCollection();
         $this->notifications = new ArrayCollection();
         $this->orderStatuses = new ArrayCollection();
+        $this->controlledDrugFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -465,6 +471,36 @@ class Orders
             // set the owning side to null (unless already changed)
             if ($orderStatus->getOrders() === $this) {
                 $orderStatus->setOrders(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ControlledDrugFiles>
+     */
+    public function getControlledDrugFiles(): Collection
+    {
+        return $this->controlledDrugFiles;
+    }
+
+    public function addControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if (!$this->controlledDrugFiles->contains($controlledDrugFile)) {
+            $this->controlledDrugFiles[] = $controlledDrugFile;
+            $controlledDrugFile->setOrders($this);
+        }
+
+        return $this;
+    }
+
+    public function removeControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if ($this->controlledDrugFiles->removeElement($controlledDrugFile)) {
+            // set the owning side to null (unless already changed)
+            if ($controlledDrugFile->getOrders() === $this) {
+                $controlledDrugFile->setOrders(null);
             }
         }
 

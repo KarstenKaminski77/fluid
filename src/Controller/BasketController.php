@@ -7,8 +7,10 @@ use App\Entity\Baskets;
 use App\Entity\ClinicProducts;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
+use App\Entity\ControlledDrugFiles;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
+use App\Entity\Orders;
 use App\Entity\ProductImages;
 use App\Entity\Products;
 use App\Services\PaginationManager;
@@ -194,8 +196,18 @@ class BasketController extends AbstractController
         $basketItem = $this->em->getRepository(BasketItems::class)->find($basketItemId);
         $basketId = $basketItem->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrug = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $basket->getOrders()->getId(),
+            'distributor' => $basketItem->getDistributor()->getId(),
+        ]);
 
-        if($basketItem != null){
+        if($basketItem != null)
+        {
+            // Check for controlled drugs and remove
+            if($controlledDrug != null)
+            {
+                $this->em->remove($controlledDrug);
+            }
 
             $this->em->remove($basketItem);
             $this->em->flush();
@@ -203,8 +215,8 @@ class BasketController extends AbstractController
 
         $totals = $this->em->getRepository(BasketItems::class)->getTotalItems($basketId);
 
-        if($basket->getBasketItems()->count() > 0){
-
+        if($basket->getBasketItems()->count() > 0)
+        {
             $basket->setTotal((float) number_format($totals[0]['total'],2));
 
             $this->em->persist($basket);
@@ -227,12 +239,28 @@ class BasketController extends AbstractController
         $basketId = $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $order = $this->em->getRepository(Orders::class)->findOneBy([
+            'basket' => $basketId,
+        ]);
+        $controlledDrugs = $this->em->getRepository(ControlledDrugFiles::class)->findBy([
+            'orders' => $order->getId(),
+        ]);
 
         if($basketItems != null){
 
             foreach($basketItems as $item) {
 
                 $this->em->remove($item);
+            }
+
+            $this->em->flush();
+        }
+
+        if(is_array($controlledDrugs) && count($controlledDrugs) > 0)
+        {
+            foreach($controlledDrugs as $drug)
+            {
+                $this->em->remove($drug);
             }
 
             $this->em->flush();
@@ -267,7 +295,14 @@ class BasketController extends AbstractController
         $basketItems = $this->em->getRepository(BasketItems::class)->find($request->request->get('item-id'));
         $basketId = $basketItems->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrug = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $basket->getOrders()->getId(),
+            'distributor' => $distributor->getId(),
+        ]);
         $create = false;
+
+        // Remove controlled drug file
+        $this->em->remove($controlledDrug);
 
         // Ensure item has not already been saved
         $clinicProducts = $this->em->getRepository(ClinicProducts::class)->findOneBy([
@@ -341,6 +376,21 @@ class BasketController extends AbstractController
         $basketId = $request->request->get('basket-id');
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrugs = $this->em->getRepository(ControlledDrugFiles::class)->findBy([
+            'orders' => $basket->getOrders()->getId(),
+        ]);
+
+        // Remove Controlled drugs
+        if(is_array($controlledDrugs) && count($controlledDrugs) > 0)
+        {
+            foreach($controlledDrugs as $drug)
+            {
+                $this->em->remove($drug);
+            }
+
+            $this->em->flush();
+        }
 
         foreach($basketItems as $item){
 
@@ -865,16 +915,9 @@ class BasketController extends AbstractController
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
-        if(count($basketItems) > 0){
+        $basket->setStatus('closed');
 
-            foreach($basketItems as $item){
-
-                $this->em->remove($item);
-                $this->em->flush();
-            }
-        }
-
-        $this->em->remove($basket);
+        $this->em->persist($basket);
         $this->em->flush();
 
         $response = [
@@ -1169,12 +1212,15 @@ class BasketController extends AbstractController
         $checkoutDisabled = '';
         $checkoutBtnDisabled = '';
         $checkout = true;
+        $dataAction = 'click->orders--clinics#onClickBtnProceed';
 
         if(count($basket->getBasketItems()) > 0) {
 
             foreach ($basket->getBasketItems() as $item) {
 
                 $i++;
+                $controlledBadge = '';
+                $isControlledDrug = $item->getProduct()->getIsControlled() ?? 0;
                 $product = $basket->getBasketItems()[$i]->getProduct();
                 $trackingId = $item->getDistributor()->getTracking()->getId();
                 $shippingPolicy = $item->getDistributor()->getShippingPolicy() ?? $this->encryptor->decrypt($item->getDistributor()->getDistributorName()) ." hasn't updated their shipping policy.";
@@ -1200,6 +1246,24 @@ class BasketController extends AbstractController
 
                         $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
                     }
+                }
+
+                // Controlled drug badge
+                if($isControlledDrug == 1)
+                {
+                    $controlledBadge = '
+                    <span 
+                        class="badge bg-warning ms-0 ms-sm-2 badge-warning-filled-sm"
+                        data-bs-trigger="hover" 
+                        data-bs-container="body" 
+                        data-bs-toggle="popover" 
+                        data-bs-placement="top" 
+                        data-bs-html="true"
+                        data-bs-content="A purchase order is required when ordering a controlled drug."
+                    >
+                        Controlled Drug
+                    </span>';
+                    $dataAction = 'click->orders--clinics#onClickBtnProceedControlled';
                 }
 
                 // Product Image
@@ -1261,13 +1325,21 @@ class BasketController extends AbstractController
                                 '. $stockBadge .'
                                 <!-- Shipping Policy -->
                                 <span
-                                    class="badge bg-dark-grey badge-pending-filled-sm" class="btn btn-secondary" data-bs-trigger="hover"
-                                    data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true"
+                                    class="badge bg-dark-grey badge-pending-filled-sm" 
+                                    class="btn btn-secondary" 
+                                    data-bs-trigger="hover"
+                                    data-bs-container="body" 
+                                    data-bs-toggle="popover" 
+                                    data-bs-placement="top" 
+                                    data-bs-html="true"
                                     data-bs-content="'. $shippingPolicy .'"
                                 >
                                     Shipping Policy
                                 </span>
-                                ';
+                                
+                                <!-- Controlled Drug -->
+                                '. $controlledBadge;
+                                
 
                                     if($basketPermission) {
 
@@ -1379,7 +1451,7 @@ class BasketController extends AbstractController
                                 class="btn btn-primary w-100 '. $checkoutBtnDisabled .'"
                                 id="btn_checkout"
                                 data-basket-id="'. $basketId .'"
-                                data-action="click->orders--clinics#onClickBtnProceed"
+                                data-action="'. $dataAction .'"
                                 '. $checkoutDisabled .'
                             >
                                 PROCEED <i class="fa-solid fa-circle-right ps-2"></i>

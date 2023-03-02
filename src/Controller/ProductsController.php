@@ -209,6 +209,7 @@ class ProductsController extends AbstractController
                     'product' => $product->getId(),
                     'isDefault' => 1
                 ]);
+                $isControlledDrugBage = '';
 
                 // Create Retail List
                 if($retail == null)
@@ -374,6 +375,23 @@ class ProductsController extends AbstractController
                     }
                 }
 
+                // Controlled drug badge
+                if($product->getIsControlled() == 1)
+                {
+                    $isControlledDrugBage = '
+                    <span 
+                        class="badge bg-warning ms-0 ms-sm-2 badge-warning-filled-sm me-sm-3 mt-3" 
+                        data-bs-trigger="hover" 
+                        data-bs-container="body" 
+                        data-bs-toggle="popover" 
+                        data-bs-placement="top" 
+                        data-bs-html="true" 
+                        data-bs-content="A purchase order is required when ordering a controlled drug."
+                    >
+                        Controlled Drug
+                    </span>';
+                }
+
                 $html .= '
                 <div class="row">
                     <div class="col-12 half-border mb-4">
@@ -444,27 +462,34 @@ class ProductsController extends AbstractController
                                             </div>
                                        </div>
                                        
-                                        <!-- Product rating -->
-                                        <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
-                                            <i class="star star-under fa fa-star">
-                                                <i class="star star-over fa fa-star"></i>
-                                            </i>
-                                            <i class="star star-under fa fa-star">
-                                                <i class="star star-over fa fa-star"></i>
-                                            </i>
-                                            <i class="star star-under fa fa-star">
-                                                <i class="star star-over fa fa-star"></i>
-                                            </i>
-                                            <i class="star star-under fa fa-star">
-                                                <i class="star star-over fa fa-star"></i>
-                                            </i>
-                                            <i class="star star-under fa fa-star">
-                                                <i class="star star-over fa fa-star"></i>
-                                            </i>
-                                        </div>
-                                        '. $this->forward('App\Controller\ProductReviewsController::getReviewsOnLoadAction', [
+                                       <div class="row">
+                                            <div class="col-12 col-sm-6">
+                                                <!-- Product rating -->
+                                                <div id="parent_'. $product->getId() .'" class="mb-3 mt-2 d-inline-block">
+                                                    <i class="star star-under fa fa-star">
+                                                        <i class="star star-over fa fa-star"></i>
+                                                    </i>
+                                                    <i class="star star-under fa fa-star">
+                                                        <i class="star star-over fa fa-star"></i>
+                                                    </i>
+                                                    <i class="star star-under fa fa-star">
+                                                        <i class="star star-over fa fa-star"></i>
+                                                    </i>
+                                                    <i class="star star-under fa fa-star">
+                                                        <i class="star star-over fa fa-star"></i>
+                                                    </i>
+                                                    <i class="star star-under fa fa-star">
+                                                        <i class="star star-over fa fa-star"></i>
+                                                    </i>
+                                                </div>
+                                                '. $this->forward('App\Controller\ProductReviewsController::getReviewsOnLoadAction', [
                                             'product_id' => $product->getId()
                                         ])->getContent() .'
+                                            </div>
+                                            <div class="col-12 col-sm-6 text-center text-sm-end me-0">
+                                                '. $isControlledDrugBage .'
+                                            </div>
+                                       </div>
                                     </div>
             
                                     <!-- Collapsable panel buttons -->

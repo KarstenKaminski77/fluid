@@ -152,6 +152,11 @@ class OrderItems
      */
     private $itemId;
 
+    /**
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $distributor_total;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -485,6 +490,18 @@ class OrderItems
     public function setItemId(string $itemId): self
     {
         $this->itemId = $itemId;
+
+        return $this;
+    }
+
+    public function getDistributorTotal(): ?float
+    {
+        return $this->distributor_total;
+    }
+
+    public function setDistributorTotal(?float $distributor_total): self
+    {
+        $this->distributor_total = $distributor_total;
 
         return $this;
     }
