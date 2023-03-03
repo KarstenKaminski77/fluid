@@ -6416,6 +6416,130 @@ class AdminDashboardController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/admin/distributor-search-list', name: 'admin_distributor_search_list')]
+    public function adminDistributorSearchListAction(Request $request): Response
+    {
+        $keywords = strtolower($request->request->get('keywords'));
+        $productId = $request->request->get('product-id');
+        $distributors = $this->em->getRepository(Distributors::class)->findAll();
+        $select = '';
+
+        // Decrypt distributors
+        if(is_array($distributors) && count($distributors) > 0)
+        {
+            $select .= '<ul id="distributor_list">';
+
+            foreach ($distributors as $distributor)
+            {
+                $distributorName = $this->encryptor->decrypt($distributor->getDistributorName());
+
+                if(strstr(strtolower($distributorName), $keywords))
+                {
+                    $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+                        'product' => $productId,
+                        'distributor' => $distributor->getId(),
+                    ]);
+                    $price = '';
+
+                    if($distributorProducts != null)
+                    {
+                        $price = $distributorProducts->getUnitPrice() ?? '';
+                    }
+
+                    $select .= '
+                    <li class="search-item">
+                        <div class="row">
+                            <div class="col-12 col-sm-8">
+                                '. $distributorName .'
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-sm form-control-bg-grey price-field"
+                                        placeholder="price"
+                                        data-action="keyup->admin--products#onKeyUpDistributorPriceField"
+                                        value="'. $price .'"
+                                    >
+                                    <button 
+                                        class="btn btn-sm btn-primary hidden save-distributor-product"
+                                        data-product-id="'. $productId .'"
+                                        data-distributor-id="'. $distributor->getId() .'"
+                                        data-action="click->admin--products#onClickSaveDistributorProduct"
+                                    >
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>';
+                }
+            }
+
+            $select .= '</ul>';
+        }
+
+        return new Response($select);
+    }
+
+    #[Route('/admin/create-distributor-product', name: 'admin_create_distributor_product')]
+    public function AdminCreateDistributorProductAction(Request $request, MailerInterface $mailer): Response
+    {
+        $data = $request->request;
+        $productId = $data->get('product-id');
+        $distributorId = $data->get('distributor-id');
+        $unitPrice = $data->get('price') ?? 0.00;
+        $product = $this->em->getRepository(Products::class)->find($productId);
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findOneBy(
+            [
+                'product' => $productId,
+                'distributor' => $distributorId,
+            ]
+        );
+
+        if($distributorProducts == null)
+        {
+            $distributorProducts = new DistributorProducts();
+        }
+
+        if(!empty($productId) && !empty($distributorId))
+        {
+            $distributorProducts->setDistributor($distributor);
+            $distributorProducts->setProduct($product);
+            $distributorProducts->setIsActive(1);
+            $distributorProducts->setUnitPrice($unitPrice);
+            $distributorProducts->setStockCount(0);
+            $distributorProducts->setTaxExempt(0);
+            $distributorProducts->setSku('');
+            $distributorProducts->setItemId(0);
+
+            $this->em->persist($distributorProducts);
+            $this->em->flush();
+
+            // Update parent stock level
+            $stockCount = $this->em->getRepository(DistributorProducts::class)->getProductStockCount($product->getId());
+
+            $product->setStockCount($stockCount[0][1]);
+
+            // Get the lowest price
+            $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($product->getId());
+
+            $product->setUnitPrice($lowestPrice[0]['unitPrice'] ?? 0.00);
+
+            $this->em->persist($product);
+            $this->em->flush();
+
+            $response['flash'] = '<b><i class="fa-solid fa-circle-check"></i></i></b> '. $product->getName() .' successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        } else {
+
+            $response['flash'] = 'An error occurred';
+        }
+
+        return new JsonResponse($response);
+    }
+
     private function generatePassword(): string
     {
         $sets = [];

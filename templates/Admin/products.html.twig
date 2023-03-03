@@ -607,6 +607,37 @@
                         </div>
                     </div>
                 </div>
+
+                {# Distributors #}
+                <div class="col-12 col-md-6">
+                    <label for="active_ingredient" class="text-primary mb-2">Distributors</label>
+                    <div class="position-relative">
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="search_distributor_field"
+                                class="form-control"
+                                placeholder="Search Distributors"
+                                autocomplete="off"
+                                data-action="keyup->admin--products#onKeyUpDistributorSearchField"
+                                data-product-id="{{ product.id }}"
+                                tabindex="16"
+                            >
+                            <span class="input-group-text">
+                                <a
+                                    href=""
+                                    class="text-primary"
+                                    data-action="click->admin--products#onClickResetDistributorList"
+                                >
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="suggestion_field" class="nav-z-index hidden">
+
+                    </div>
+                </div>
             </div>
 
             {# Images #}
