@@ -204,7 +204,7 @@ class OrdersController extends AbstractController
 
             foreach($distributorTotals as $total)
             {
-                $distributorTotal += $total->getTotal();
+                $distributorTotal += $total->getTotal() * $total->getQuantity();
             }
 
             foreach($distributorTotals as $total)
@@ -551,7 +551,7 @@ class OrdersController extends AbstractController
 
             foreach($distributorTotals as $total)
             {
-                $distributorTotal += $total->getTotal();
+                $distributorTotal += $total->getTotal() * $total->getQuantity();
             }
 
             foreach($distributorTotals as $total)
