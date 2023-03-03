@@ -268,7 +268,12 @@ class AddressesController extends AbstractController
             <div class="modal fade" id="modal_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
-                        <form name="form_addresses" id="form_addresses" method="post">
+                        <form 
+                            name="form_addresses" 
+                            id="form_addresses" 
+                            method="post"
+                            data-action="submit->clinics--addresses#onSubmitAddressForm"
+                        >
                             ' . $this->getAddressModal($module)->getContent() . '
                         </form>
                     </div>
