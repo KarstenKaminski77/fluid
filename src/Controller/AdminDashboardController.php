@@ -6929,23 +6929,18 @@ class AdminDashboardController extends AbstractController
             'product' => $productId,
         ]);
 
-
-
         if($distributorProduct == null)
         {
-            $flash = '<b><i class="fas fa-check-circle"></i> You have already added this product.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-            $type = 'danger';
+            $distributorProduct = new DistributorProducts();
         }
-        else
-        {
-            $distributorProduct->setUnitPrice($unitPrice);
 
-            $this->em->persist($distributorProduct);
-            $this->em->flush();
+        $distributorProduct->setUnitPrice($unitPrice);
 
-            $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-            $type = 'success';
-        }
+        $this->em->persist($distributorProduct);
+        $this->em->flush();
+
+        $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        $type = 'success';
 
         $response = [
             'flash' => $flash,
