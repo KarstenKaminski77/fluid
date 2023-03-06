@@ -61,7 +61,7 @@ class AdminDashboardController extends AbstractController
     private MailerInterface $mailer;
     private $children;
     private Encryptor $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 4;
 
     public function __construct(
         EntityManagerInterface $em, PaginationManager $page_manager, Encryptor $encryptor,
@@ -6628,5 +6628,431 @@ class AdminDashboardController extends AbstractController
         }
 
         return $html;
+    }
+
+    #[Route('/admin/get-distributor-products', name: 'admin_get_distributor_products')]
+    public function getDistributorInventory(Request $request)
+    {
+        $pageId = $request->request->get('page-id') ?? 1;
+        $distributorId = $request->request->get('distributor-id');
+        $manufacturerId = (int) $request->request->get('manufacturer-id') ?? 0;
+        $speciesId = (int) $request->request->get('species-id') ?? 0;
+        $dataAction = 'data-action="click->admin--distributors#onClickPagination"';
+        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,$manufacturerId,$speciesId);
+        $distributorProducts = $this->page_manager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
+        $distributorProductsPagination = $this->getPagination($pageId, $distributorProducts, $distributorId, $dataAction);
+        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
+        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
+
+        $html = '
+        <div class="col-12">
+            <div class="row">
+                <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
+                    <h4 class="text-primary text-truncate">Inventory</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-end mb-2">
+                    <a 
+                        href="" 
+                        class="toggle-search"
+                        data-action="click->admin--distributors#onClickToggleSearch"
+                    >
+                        <i class="fal fa-magnifying-glass-plus"></i>
+                        <span class="ms-1">Search Inventory</span>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div 
+                    class="col-12 bg-light border-top border-left border-right search-row" style="display: none"
+                >
+                    <div class="input-group py-2">
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            data-action="keyup->admin--distributors#onKeyupSearchField"
+                        >
+                        <span class="input-group-text">
+                            <a href="/clinics/manage-inventory" class="text-primary" id="inventory_clear" data-action="click->admin--distributors#onClickResetProductsList">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        </span>
+                    </div>
+                    <div id="suggestion_field"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 bg-light border-top border-left border-right">
+                    <div class="row">
+                        <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
+                            <select
+                                class="form-control"
+                                name="manufacturer-id"
+                                id="manufacturer_id"
+                                data-action="change->admin--distributors#onChangeFilterSelect"
+                            >
+                                <option value="0">
+                                    Select a Manufacturer
+                                </option>';
+
+                                foreach($manufacturers as $manufacturer)
+                                {
+                                    $selected = '';
+
+                                    if($manufacturerId == $manufacturer->getManufacturers()->getId())
+                                    {
+                                        $selected = 'selected';
+                                    }
+
+                                    $html .= '
+                                    <option value="'. $manufacturer->getManufacturers()->getId() .'" '. $selected .'>
+                                        '. $this->encryptor->decrypt($manufacturer->getManufacturers()->getName()) .'
+                                    </option>';
+                                }
+
+                            $html .= '
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3 py-3">
+                            <select
+                                class="form-control"
+                                name="species-id"
+                                id="species_id"
+                                data-action="change->admin--distributors#onChangeFilterSelect"
+                            >
+                                <option value="0">
+                                    Select a Species
+                                </option>';
+
+                                foreach($species as $specie)
+                                {
+                                    $selected = '';
+
+                                    if($speciesId == $specie['species']['id'])
+                                    {
+                                        $selected = 'selected';
+                                    }
+
+                                    $html .= '
+                                    <option value="'. $specie['species']['id'] .'" '. $selected .'>
+                                        '. $specie['species']['name'] .'
+                                    </option>';
+                                }
+
+                            $html .= '
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 d-none d-xl-block">
+                    <div class="row">
+                        <div class="col-md-3 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-left border-top">
+                            Name
+                        </div>
+                        <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Active Ingredient
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Dosage
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Size
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Unit
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Stock
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Price
+                        </div>
+                        <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-right border-top">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12" id="inventory_list">';
+
+                    foreach($distributorProducts as $distributorProduct)
+                    {
+                        $html .= '
+                        <div 
+                            class="row border-left border-right border-bottom bg-white" 
+                            id="distributor_product_'. $distributorProduct->getDistributorProducts()[0]->getId() .'"
+                        >
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Name:
+                            </div>
+                            <div
+                                class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                                data-bs-trigger="hover"
+                                data-bs-container="body"
+                                data-bs-toggle="popover"
+                                data-bs-placement="top"
+                                data-bs-html="true"
+                                data-bs-content="'. $distributorProduct->getName() .'"
+                            >
+                                '. $distributorProduct->getName() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Active Ingredient:
+                            </div>
+                            <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getActiveIngredient() .'
+                            </div>
+                            <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Dosage:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getDosage() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Size:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getSize() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Unit:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getUnit() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Stock:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getDistributorProducts()[0]->getStockCount() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Price:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 border-list pt-3 pb-3">
+                                <span class="unit-price">'. $distributorProduct->getDistributorProducts()[0]->getUnitPrice() .'</span>
+                                <input 
+                                    type="text" 
+                                    class="form-control form-control-sm unit-price-field hidden" 
+                                    value="'. $distributorProduct->getDistributorProducts()[0]->getUnitPrice() .'"
+                                    data-product-name="'. $distributorProduct->getName() .'"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                >
+                                <div class="hidden_msg">
+                                    Required Field
+                                </div>
+                            </div>
+                            <div class="col-md-2 t-cell text-truncate border-list pt-3 pb-3 save-col">
+                                <a
+                                    href=""
+                                    class="float-end update-product"
+                                    data-product-name="'. $distributorProduct->getName() .'"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                    data-action="click->admin--distributors#onClickUpdateProduct"
+                                >
+                                    <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                                </a>
+                                <a 
+                                    href="" 
+                                    class="float-end save-product hidden"
+                                    data-action="click->admin--distributors#onClickSaveProduct"
+                                >
+                                    <i class="fas fa-save" style="margin-right: 16px"></i>
+                                </a>
+                                <a
+                                    href=""
+                                    class="delete-icon float-end delete-distributor-product"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modal_product_delete"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                    data-action="click->admin--distributors#onClickDeleteProductIcon"
+                                >
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>
+                            </div>
+                        </div>';
+                    }
+
+                    $html .= '
+                    <div id="distributor_products_pagination">'. $distributorProductsPagination .'</div>
+                    <div 
+                        class="modal fade" 
+                        id="modal_product_delete" 
+                        tabindex="-1" 
+                        aria-labelledby="product_delete_label" 
+                        aria-hidden="true"
+                    >
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="product_delete_label">Delete Product</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-12 mb-0">
+                                            Are you sure you would like to delete this product? This action cannot be undone.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-danger btn-sm" 
+                                        id="delete_product"
+                                        data-action="click->admin--distributors#onClickDeleteProduct"
+                                    >DELETE</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>';
+
+        return new JsonResponse($html);
+    }
+
+    #[Route('/admin/save-distributor-product', name: 'admin_save_distributor_product')]
+    public function saveDistributorProduct(Request $request)
+    {
+        $data = $request->request;
+        $distributorId = $data->get('distributor-id');
+        $productId = $data->get('product-id');
+        $unitPrice = $data->get('unit-price');
+
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+            'distributor' => $distributorId,
+            'product' => $productId,
+        ]);
+
+        $flash = '<b><i class="fas fa-check-circle"></i> An Error Occurred.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        $type = 'danger';
+
+        if($distributorProduct != null)
+        {
+            $distributorProduct->setUnitPrice($unitPrice);
+
+            $this->em->persist($distributorProduct);
+            $this->em->flush();
+
+            $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $type = 'success';
+        }
+
+        $response = [
+            'flash' => $flash,
+            'type' => $type,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/delete-distributor-product', name: 'admin_delete_distributor_product')]
+    public function deleteDistributorProduct(Request $request)
+    {
+        $data = $request->request;
+        $distributorId = $data->get('distributor-id');
+        $productId = $data->get('product-id');
+
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+            'distributor' => $distributorId,
+            'product' => $productId,
+        ]);
+
+        $flash = '<b><i class="fas fa-check-circle"></i> An Error Occurred.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        $type = 'danger';
+
+        if($distributorProduct != null)
+        {
+            $this->em->remove($distributorProduct);
+            $this->em->flush();
+
+            $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $type = 'success';
+        }
+
+        $response = [
+            'flash' => $flash,
+            'type' => $type,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/distributors-inventory-search', name: 'admin_distributor_inventory_search')]
+    public function adminDistributorInventorySearchAction(Request $request): Response
+    {
+        $distributorId = $request->request->get('distributor-id');
+        $pageId = $request->request->get('page-id');
+        $products = $this->em->getRepository(Products::class)->findBySearch($request->request->get('keyword'));
+        $select = '<ul id="product_list">';
+
+        foreach($products as $product){
+
+            $id = $product->getId();
+            $name = $product->getName();
+            $dosage = '';
+            $size = '';
+
+            if(!empty($product->getDosage())) {
+
+                $unit = '';
+
+                if(!empty($product->getUnit())) {
+
+                    $unit = $product->getUnit();
+                }
+
+                $dosage = ' | '. $product->getDosage() . $unit;
+            }
+
+            if(!empty($product->getSize())) {
+
+                $size = ' | '. $product->getSize();
+            }
+
+            $select .= "
+            <li 
+                class=\"search-item\"
+                data-product-id=\"$id\"
+                data-product-name=\"$name\"
+                data-action='click->products--distributor-products#onclickEditIcon'
+            >
+                <div class='row'>
+                    <div class='col-12 col-sm-10'>
+                        $name$dosage$size
+                    </div>
+                    <div class='col-12 col-sm-2'>
+                        <div class='input-group'>
+                            <input 
+                                type='text' 
+                                class='form-control form-control-sm form-control-bg-grey price-field'
+                                placeholder='price'
+                                data-action='keyup->admin--distributors#onKeyUpProductPriceField'
+                                value=''
+                                    >
+                            <button 
+                                class='btn btn-sm btn-primary hidden save-distributor-product'
+                                data-product-id='$id'
+                                data-distributor-id='$distributorId'
+                                data-page-id='$pageId'
+                                data-action='click->admin--distributors#onClickCreateDistributorProduct'
+                                    >
+                                <i class='fas fa-save'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            ";
+        }
+
+        $select .= '</ul>';
+
+        return new Response($select);
     }
 }

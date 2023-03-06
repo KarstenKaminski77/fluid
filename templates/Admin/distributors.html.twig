@@ -7,7 +7,14 @@
 {% endblock %}
 
 {% block content %}
-    <form name="distributors_form" id="distributors_form" method="post" enctype="multipart/form-data">
+    <form
+        name="distributors_form"
+        id="distributors_form"
+        method="post"
+        enctype="multipart/form-data"
+        data-controller="admin--distributors"
+        data-distributor-id="{{ app.request.get('distributorId') }}"
+    >
         <input type="hidden" name="distributor_id" id="distributor_id" value="{{ distributor.id ? distributor.id : 0 }}">
         <section class="content-header border-bottom ps-4 py-4 admin-header">
             <div class="row w-100">
@@ -470,6 +477,10 @@
                 </div>
             </div>
 
+            {# Inventory #}
+            <div class="row mt-4" id="inventory_list_container">
+            </div>
+
         </section>
     </form>
 {% endblock %}
@@ -478,8 +489,8 @@
 
     <script>
 
-        $(document).ready(function (){
-
+        $(document).ready(function ()
+        {
             {# Save Products #}
             $(document).on('submit', '#distributors_form', function (e){
 
@@ -614,7 +625,7 @@
 
                 let user_id = $(this).data('user-id');
 
-                $('#user_row_'+ user_id).toggle(700);
+                $('#user_row_'+ user_id).slideToggle(700);
 
                 $('.distributor-users').each(function (){
 
@@ -627,6 +638,5 @@
             });
             {# End User Accounts #}
         });
-
     </script>
 {% endblock %}

@@ -70,12 +70,12 @@
             }
         }
 
-        function getFlash(flash){
-            $('#flash').addClass('alert-success').removeClass('alert-danger').addClass('alert').addClass('text-center');
+        function getFlash(flash, type = 'success'){
+            $('#flash').addClass('alert-'+ type).addClass('alert').addClass('text-center');
             $('#flash').removeClass('users-flash').addClass('users-flash').empty().append(flash).removeClass('hidden');
 
             setTimeout(function() {
-                $('#flash').removeClass('alert-success').removeClass('alert').removeClass('text-center');
+                $('#flash').removeClass('alert-'+ type).removeClass('alert').removeClass('text-center');
                 $('#flash').removeClass('users-flash').empty().addClass('hidden');
             }, 5000);
         }
