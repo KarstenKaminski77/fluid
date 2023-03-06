@@ -294,9 +294,14 @@ export default class extends Controller
                 'manufacturer-id': manufacturerId,
                 'species-id': speciesId,
             },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
             success: function (response)
             {
                 $('#inventory_list_container').empty().append(response);
+                self.isLoading(false);
                 self.popOver();
             }
         });
