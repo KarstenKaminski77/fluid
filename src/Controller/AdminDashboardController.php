@@ -6225,8 +6225,8 @@ class AdminDashboardController extends AbstractController
             //$currentPage, $pageId, $lastPage, count($results));
             if ($lastPage > 1) {
 
-                $previousPage_no = $currentPage - 1;
-                $previousPage = $url;
+                $previousPageNo = $currentPage - 1;
+                $previousPage = $url . $previousPageNo;
 
                 $pagination .= '
                 <nav class="custom-pagination">
@@ -6279,7 +6279,7 @@ class AdminDashboardController extends AbstractController
                         <a 
                             class="address-pagination" 
                             data-page-id="' . $i . '" 
-                            href="' . $url . '"
+                            href="' . $url . $i . '"
                             '. $dataAction .'
                         >' . $i . '</a>
                     </li>';
@@ -6300,7 +6300,7 @@ class AdminDashboardController extends AbstractController
                         class="address-pagination"  
                         aria-disabled="' . $dataDisabled . '" 
                         data-page-id="' . $currentPage + 1 . '" 
-                        href="' . $url . '"
+                        href="' . $url . $currentPage + 1 . '"
                         '. $dataAction .'
                     >
                         <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
