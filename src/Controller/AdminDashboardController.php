@@ -6929,10 +6929,14 @@ class AdminDashboardController extends AbstractController
             'product' => $productId,
         ]);
 
-        $flash = '<b><i class="fas fa-check-circle"></i> An Error Occurred.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-        $type = 'danger';
 
-        if($distributorProduct != null)
+
+        if($distributorProduct == null)
+        {
+            $flash = '<b><i class="fas fa-check-circle"></i> You have already added this product.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $type = 'danger';
+        }
+        else
         {
             $distributorProduct->setUnitPrice($unitPrice);
 
