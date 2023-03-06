@@ -6213,11 +6213,13 @@ class AdminDashboardController extends AbstractController
     public function getPagination($pageId, $results, $url, $dataAction = ''): string
     {
         $currentPage = $pageId;
+        $totalPages = ceil(count($results) / 10);
+        $limit = 5;
         $lastPage = $this->page_manager->lastPage($results);
         $pagination = '';
 
-        if(count($results) > 0) {
-
+        if(count($results) > 0)
+        {
             $pagination .= '
             <!-- Pagination -->
             <div class="row mt-3">
@@ -6243,23 +6245,31 @@ class AdminDashboardController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination" 
-                        aria-disabled="' . $dataDisabled . '" 
-                        data-page-id="' . $currentPage - 1 . '" 
-                        href="' . $previousPage . '"
-                        '. $dataAction .'
-                    >
-                        <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
-                    </a>
-                </li>';
+                if ($totalPages >= 1 && $pageId <= $totalPages && $currentPage != 1)
+                {
+                    $pagination .= '
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination" 
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage - 1 . '" 
+                            href="' . $previousPage . '"
+                            ' . $dataAction . '
+                        >
+                            <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
+                        </a>
+                    </li>
+                    <li class="page-item ">
+                        <a class="address-pagination" data-page-id="12" href="'. $url.'1">First</a>
+                    </li>';
+                }
 
+                $i = max(1, $currentPage - $limit);
+                $forLimit = min($currentPage + $limit, $totalPages);
                 $isActive = false;
 
-                for ($i = 1; $i <= $lastPage; $i++) {
-
+                for (; $i <= $forLimit; $i++)
+                {
                     $active = '';
 
                     if ($i == (int)$currentPage) {
@@ -6269,7 +6279,7 @@ class AdminDashboardController extends AbstractController
                     }
 
                     // Go to previous page if all records for a page have been deleted
-                    if(!$isActive && $i == count($results)){
+                    if (!$isActive && $i == count($results)) {
 
                         $active = 'active';
                     }
@@ -6280,7 +6290,7 @@ class AdminDashboardController extends AbstractController
                             class="address-pagination" 
                             data-page-id="' . $i . '" 
                             href="' . $url . $i . '"
-                            '. $dataAction .'
+                            ' . $dataAction . '
                         >' . $i . '</a>
                     </li>';
                 }
@@ -6294,22 +6304,23 @@ class AdminDashboardController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination"  
-                        aria-disabled="' . $dataDisabled . '" 
-                        data-page-id="' . $currentPage + 1 . '" 
-                        href="' . $url . $currentPage + 1 . '"
-                        '. $dataAction .'
-                    >
-                        <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>';
-
-                if(count($results) < $currentPage){
-
-                    //$currentPage = count($results);
+                if ($currentPage < $lastPage)
+                {
+                    $pagination .= '
+                    <li class="page-item ">
+                        <a class="address-pagination" data-page-id="12" href="'. $url . $lastPage .'">Last</a>
+                    </li>
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination"  
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage + 1 . '" 
+                            href="' . $url . $currentPage + 1 . '"
+                            '. $dataAction .'
+                        >
+                            <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>';
                 }
 
                 $pagination .= '
