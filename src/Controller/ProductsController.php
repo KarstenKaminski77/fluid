@@ -1075,7 +1075,7 @@ class ProductsController extends AbstractController
                         'itemId' => $itemId,
                     ])->getContent(), true);
 
-                    If($priceStockLevels != null && is_array($priceStockLevels))
+                    If($priceStockLevels != null && is_array($priceStockLevels) && count($priceStockLevels) > 0)
                     {
                         $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                             'distributor' => $distributorId,
@@ -2324,7 +2324,7 @@ class ProductsController extends AbstractController
             curl_close($curl);
         }
 
-        return $response;
+        return new JsonResponse($response);
     }
 
     private function zohoRetrieveItemsByIds($distributorId, $itemIds)
