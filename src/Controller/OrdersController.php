@@ -1342,7 +1342,7 @@ class OrdersController extends AbstractController
         }
 
         // Controlled drugs
-        $isControlledDrug = true;
+        $isControlledDrug = false;
         $isControlledDrugBtn = '';
 
         foreach($orders as $order)
