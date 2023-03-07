@@ -12,7 +12,7 @@
 /public/media/
 /public/csv/
 /public/pdf/
-/public/images/
+/public/images/products/
 /public/zoho.log
 ###< symfony/framework-bundle ###
 
