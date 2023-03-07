@@ -384,7 +384,7 @@ export default class extends Controller
 
                     } else
                     {
-                        errorEmail.empty().append('This email address is already in us').show();
+                        errorEmail.empty().append('This email address is already in use').show();
                     }
                 }
             }

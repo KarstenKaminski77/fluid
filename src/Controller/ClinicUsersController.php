@@ -261,6 +261,7 @@ class ClinicUsersController extends AbstractController
                                             placeholder="Email Address*"
                                             class="form-control"
                                             value=""
+                                            data-action="blur->clinics--users#onBlurEmail"
                                         >
                                         <div class="hidden_msg" id="error_user_email">
                                             Required Field
