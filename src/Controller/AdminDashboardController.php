@@ -3643,7 +3643,7 @@ class AdminDashboardController extends AbstractController
             $category1 = '';
             $category2 = '';
 
-            if($result->getIsActive() == 1){
+            if($result->getIsPublished() == 1){
 
                 $checked = 'checked';
             }
