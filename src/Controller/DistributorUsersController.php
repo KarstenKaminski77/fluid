@@ -480,6 +480,7 @@ class DistributorUsersController extends AbstractController
                                         name="distributor_users_form[email]" 
                                         class="form-control" 
                                         placeholder="Email Address"
+                                        data-action="blur->distributors--users#onBlurEmail"
                                     >
                                     <div class="hidden_msg" id="error_user_email">
                                         Required Field

@@ -352,6 +352,45 @@ export default class extends Controller
         return iti;
     }
 
+    onBlurEmail(e)
+    {
+        let self = this;
+        let email = $('#user_email').val();
+        let errorEmail = $('#error_user_email');
+
+        errorEmail.hide();
+
+        $.ajax({
+            url: "/distributors/user/check-email",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                'email': email,
+            },
+            complete: function(e)
+            {
+                if(e.status === 500)
+                {
+                    window.location.href = self.errorPage;
+                }
+            },
+            success: function (response)
+            {
+                if(!response.response)
+                {
+                    if(response.restricted)
+                    {
+                        errorEmail.empty().append('Domain name is not allowed').show();
+
+                    } else
+                    {
+                        errorEmail.empty().append('This email address is already in us').show();
+                    }
+                }
+            }
+        });
+    }
+
     isLoading(status)
     {
         if(status)
