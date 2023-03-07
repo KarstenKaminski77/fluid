@@ -39,7 +39,7 @@ class OrdersController extends AbstractController
     private $pageManager;
     private $requestStack;
     private $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 4;
 
     public function __construct(
         EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor ,
@@ -2270,10 +2270,13 @@ class OrdersController extends AbstractController
         </div>';
 
         // Pagination
-        $pagination = $this->getPagination(
-            $request->request->get('page-id'), $results, '/distributors/orders/',
-            $distributorId, 'distributor'
-        );
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/distributors/orders/',
+            'dataAction' => 'data-action="click->orders--distributors#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
 
         $response = [
             'html' => $html,
