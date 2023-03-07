@@ -402,12 +402,16 @@ export default class extends Controller
                 {
                     if(response.restricted)
                     {
-                        errorEmail.empty().append('Domain name is not allowed').show();
+                        let domain = email.split('@');
+
+                        errorEmail.empty().append('The domain name '+ domain[1] +' is not allowed').show();
 
                     } else
                     {
-                        errorEmail.empty().append('This email address is already in use').show();
+                        errorEmail.empty().append(email +' is already in use').show();
                     }
+
+                    $('#user_email').val('');
                 }
             }
         });
