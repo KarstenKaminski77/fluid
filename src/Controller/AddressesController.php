@@ -19,7 +19,7 @@ class AddressesController extends AbstractController
     private $em;
     private $pageManager;
     private $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pageManager, Encryptor $encryptor)
     {
@@ -620,7 +620,16 @@ class AddressesController extends AbstractController
         $clinic = $this->getUser()->getClinic();
         $addresses = $this->em->getRepository(Addresses::class)->getAddresses($clinic->getId());
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page-id'), $results);
+        $pageId = $request->request->get('page-id');
+
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $pageId,
+            'results' => $results,
+            'url' => '/clinics/addresses/',
+            'dataAction' => 'data-action="click->clinics--addresses#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+
+        ])->getContent();
         $html = $this->getAddresses($results, 'clinic');
 
         $response = [
@@ -737,7 +746,14 @@ class AddressesController extends AbstractController
         $module = 'clinic';
 
         $results = $this->pageManager->paginate($addresses[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page_id'), $results);
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page_id'),
+            'results' => $results,
+            'url' => '/clinics/addresses/',
+            'dataAction' => 'data-action="click->clinics--addresses#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+
+        ])->getContent();
 
         $addresses = $this->getAddresses($results, $module);
 

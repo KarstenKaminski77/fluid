@@ -3066,7 +3066,7 @@ class OrdersController extends AbstractController
         $orders = $this->em->getRepository(OrderItems::class)->findClinicOrders(
             $clinic->getId(),$request->request->get('distributor-id'),
             $request->request->get('date'), $request->request->get('status')
-        );
+        );;
         $results = $this->pageManager->paginate($orders[0], $request, self::ITEMS_PER_PAGE);
         $distributors = $this->em->getRepository(OrderItems::class)->findDistributorsByClinicOrders($clinic->getId());
         $statuses = $this->em->getRepository(Status::class)->findAll();
@@ -3300,10 +3300,13 @@ class OrdersController extends AbstractController
         </div>';
 
         // Pagination
-        $pagination = $this->getPagination(
-            $request->request->get('page-id'), $results, '/clinics/orders/',
-            $request->request->get('clinic-id'), 'clinic'
-        );
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/clinics/orders/',
+            'dataAction' => 'data-action="click->orders--clinics#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
 
         $response = [
             'pagination' => $pagination,

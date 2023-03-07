@@ -6224,7 +6224,7 @@ class AdminDashboardController extends AbstractController
             <!-- Pagination -->
             <div class="row mt-3">
                 <div class="col-12">';
-            //$currentPage, $pageId, $lastPage, count($results));
+
             if ($lastPage > 1) {
 
                 $previousPageNo = $currentPage - 1;

@@ -25,7 +25,7 @@ class ClinicUsersController extends AbstractController
     private $page_manager;
     private $mailer;
     private $encryptor;
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $page_manager, MailerInterface $mailer, Encryptor $encryptor)
     {
@@ -69,7 +69,13 @@ class ClinicUsersController extends AbstractController
         $clinic = $this->getUser()->getClinic();
         $clinic_users = $this->em->getRepository(ClinicUsers::class)->findClinicUsers($clinic->getId());
         $results = $this->page_manager->paginate($clinic_users[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->request->get('page-id'), $results);
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/clinics/users/',
+            'dataAction' => 'data-action="click->clinics--users#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
         $user_permissions = $this->em->getRepository(UserPermissions::class)->findBy([
             'isClinic' => 1
         ]);
@@ -464,7 +470,16 @@ class ClinicUsersController extends AbstractController
     public function clinicRefreshUsersAction(Request $request): Response
     {
         $clinic_id = $this->getUser()->getClinic()->getId();
-        $users = $this->em->getRepository(Clinics::class)->getClinicUsers($clinic_id);
+        $users = $this->em->getRepository(ClinicUsers::class)->findClinicUsers($clinic_id);
+        $results = $this->page_manager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/clinics/users/',
+            'dataAction' => 'data-action="click->clinics--users#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
+
 
         $html = '
         <div class="row" id="users">
@@ -513,7 +528,7 @@ class ClinicUsersController extends AbstractController
             </div>
         </div>';
 
-        foreach($users[0]->getClinicUsers() as $user){
+        foreach($results as $user){
 
             $html .= '
             <div>
@@ -558,6 +573,8 @@ class ClinicUsersController extends AbstractController
                </div>
            </div>';
         }
+
+        $html .= $pagination;
 
         return new JsonResponse($html);
     }

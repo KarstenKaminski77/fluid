@@ -980,7 +980,7 @@ class DistributorProductsController extends AbstractController
         if ($lastPage > 1)
         {
             $previousPageNo = $currentPage - 1;
-            $url = '/distributors/users';
+            $url = '/distributors/inventory/list';
             $previousPage = $url . $previousPageNo;
 
             $pagination .= '

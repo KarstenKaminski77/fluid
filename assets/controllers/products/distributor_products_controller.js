@@ -31,6 +31,8 @@ export default class extends Controller
 
     onClickPagination(e)
     {
+        e.preventDefault();
+
         let clickedElement = e.currentTarget;
         let pageId = $(clickedElement).attr('data-page-id');
 

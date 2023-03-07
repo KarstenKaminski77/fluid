@@ -30,7 +30,7 @@ class ListsController extends AbstractController
     private $em;
     private $encryptor;
     private $pageManager;
-    const ITEMS_PER_PAGE = 4;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, Encryptor $encryptor, PaginationManager $pageManager) {
 
@@ -537,6 +537,13 @@ class ListsController extends AbstractController
             {
                 $products = $this->em->getRepository(ListItems::class)->findByListId($listId);
                 $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+                $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+                    'pageId'  => 1,
+                    'results' => $results,
+                    'url' => '/clinics/manage-inventory/',
+                    'dataAction' => 'data-action="click->clinics--inventory#onClickPagination"',
+                    'itemsPerPage' => self::ITEMS_PER_PAGE,
+                ])->getContent();
 
                 if(count($results) > 0)
                 {
@@ -610,6 +617,8 @@ class ListsController extends AbstractController
                             </div>
                         </div>';
                     }
+
+                    $retailLists .= $pagination;
                 }
                 else
                 {
