@@ -22,10 +22,7 @@
 
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
-        <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/style.min.css') }}">
         <link rel="stylesheet" href="{{ asset('css/fontawesome-pro/css/all.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/style.min.css') }}">
         <link rel="stylesheet" href="{{ asset('css/intlTelInput.min.css') }}">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <style>
@@ -41,9 +38,7 @@
 {% block javascripts %}
 
     <!-- jQuery -->
-    <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
-    <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('js/jquery.session.min.js') }}"></script>
+    {{ encore_entry_script_tags('app') }}
     <script src="{{ asset('js/jquery.session.min.js') }}"></script>
     <script src="{{ asset('js/intlTelInput.min.js') }}"></script>
     <script type="text/javascript" src="https://unpkg.com/default-passive-events"></script>
@@ -72,12 +67,12 @@
             }
         }
 
-        function getFlash(flash){
-            $('#flash').addClass('alert-success').removeClass('alert-danger').addClass('alert').addClass('text-center');
+        function getFlash(flash, type = 'success'){
+            $('#flash').addClass('alert-'+ type).addClass('alert').addClass('text-center');
             $('#flash').removeClass('users-flash').addClass('users-flash').empty().append(flash).removeClass('hidden');
 
             setTimeout(function() {
-                $('#flash').removeClass('alert-success').removeClass('alert').removeClass('text-center');
+                $('#flash').removeClass('alert-'+ type).removeClass('alert').removeClass('text-center');
                 $('#flash').removeClass('users-flash').empty().addClass('hidden');
             }, 5000);
         }

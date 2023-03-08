@@ -79,16 +79,16 @@ class ProductReviewsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('clinics/get-reviews/{product_id}', name: 'get_reviews')]
+    #[Route('/clinics/get-reviews/{product_id}', name: 'get_reviews')]
     public function getReviewsAction(Request $request): Response
     {
-        $productId = $request->get('product_id');
+        $productId = $request->get('product-id');
 
         $review = $this->em->getRepository(ProductReviews::class)->getAverageRating($productId);
 
         $response = [
-            'review_count' => $review[0][2],
-            'review_average' => number_format($review[0][1],1)
+            'reviewCount' => $review[0][2],
+            'reviewAverage' => number_format($review[0][1],1)
         ];
 
         return new JsonResponse($response);
@@ -107,22 +107,22 @@ class ProductReviewsController extends AbstractController
         return new Response($response);
     }
 
-    #[Route('clinics/get-review-details/{product_id}', name: 'get_review_details')]
+    #[Route('/clinics/get-review-details/{product_id}', name: 'get_review_details')]
     public function getReviewDetailsAction(Request $request): Response
     {
         $viewAll = false;
 
-        if($request->request->get('product_id') == null) {
+        if($request->request->get('product-id') == null) {
 
             $productId = $request->get('product_id');
             $limit = 3;
 
         } else {
 
-            $productId = $request->get('product_id');
+            $productId = $request->request->get('product-id');
             $limit = 100;
             $viewAll = true;
-        }
+        };
         $productReview = $this->em->getRepository(ProductReviews::class)->findBy([
             'product' => $productId,
             'clinicUser' => $this->getUser()->getId(),
@@ -287,8 +287,11 @@ class ProductReviewsController extends AbstractController
                     <a 
                         href="" 
                         class="btn btn-primary btn_create_review w-sm-100 '. $writeReview .'" 
-                        data-bs-toggle="modal" data-product-id="'. $productId .'" 
-                        data-bs-target="#modal_review">
+                        data-bs-toggle="modal" 
+                        data-product-id="'. $productId .'" 
+                        data-bs-target="#modal_review"
+                        data-action="click->products--reviews#onClickBtnCreateReview"
+                    >
                         WRITE A REVIEW
                     </a>
                 </div>
@@ -303,7 +306,8 @@ class ProductReviewsController extends AbstractController
                     $c++;
 
                     $productReviewComments = $this->em->getRepository(ProductReviewComments::class)->findBy([
-                        'review' => $review->getId()
+                        'review' => $review->getId(),
+                        'isApproved' => 1,
                     ]);
                     $productReviewLikes = $this->em->getRepository(ProductReviewLikes::class)->findBy([
                         'productReview' => $review->getId(),
@@ -357,6 +361,7 @@ class ProductReviewsController extends AbstractController
                         <button 
                             class="btn btn-sm btn-white float-end info btn-view-all-reviews"
                             data-product-id="' . $productId . '"
+                            data-action="click->products--reviews#onClickViewAllReviews"
                         >
                             View All Reviews
                         </button>';
@@ -382,6 +387,7 @@ class ProductReviewsController extends AbstractController
                                 class="btn btn-sm btn-white review-like me-3 ' . $likeIcon . '" 
                                 id="like_' . $review->getId() . '" 
                                 data-review-id="' . $review->getId() . '"
+                                data-action="click->products--reviews#onClickLike"
                             >
                                 <i class="fa-solid fa-thumbs-up review-icon me-2 ' . $likeIcon . '"></i> ' . count($likeCount) . '
                             </button>';
@@ -406,6 +412,7 @@ class ProductReviewsController extends AbstractController
                                         class="btn btn-sm btn-white btn-comment me-3" 
                                         data-review-id="' . $review->getId() . '"
                                         id="btn_comment_' . $review->getId() . '"
+                                        data-action="click->products--reviews#onClickBtnComment"
                                     >
                                         <i 
                                             class="fa-solid fa-comment review-icon me-2 list-icon-unchecked"
@@ -423,6 +430,7 @@ class ProductReviewsController extends AbstractController
                                 class="btn btn-sm btn-white btn-leave-comment me-3" 
                                 data-review-id="' . $review->getId() . '"
                                 id="btn_leave_comment_' . $review->getId() . '"
+                                data-action="click->products--reviews#onClickLeaveComment"
                             >
                                 <i 
                                     class="fa-solid fa-comment-plus review-icon leave-comment me-2 list-icon-unchecked"
@@ -479,7 +487,13 @@ class ProductReviewsController extends AbstractController
                     <div class="row comment-container hidden" id="leave_comment_container_' . $review->getId() . '">
                         <div class="col-12">
                             <div class="mb-5">
-                                <form name="form-comment" class="form-comment" data-review-id="' . $review->getId() . '" method="post">
+                                <form 
+                                    name="form-comment" 
+                                    class="form-comment" 
+                                    data-review-id="' . $review->getId() . '" 
+                                    method="post"
+                                    data-action="submit->products--reviews#onSubmitCommentForm"
+                                >
                                     <input type="hidden" name="review_id" value="' . $review->getId() . '">
                                     <div class="row">
                                         <div class="col-12 col-sm-10">
@@ -520,8 +534,11 @@ class ProductReviewsController extends AbstractController
                     <a 
                         href="" 
                         class="btn btn-primary btn_create_review w-sm-100 '. $writeReview .'" 
-                        data-bs-toggle="modal" data-product-id="'. $productId .'" 
-                        data-bs-target="#modal_review">
+                        data-bs-toggle="modal" 
+                        data-product-id="'. $productId .'" 
+                        data-bs-target="#modal_review"
+                        data-action="click->products--reviews#onClickBtnCreateReview"
+                    >
                         WRITE A REVIEW
                     </a>
                 </div>
@@ -542,7 +559,12 @@ class ProductReviewsController extends AbstractController
                         <div class="modal-header basket-modal-header">
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form name="form_review" id="form_review" method="post">
+                        <form 
+                            name="form_review" 
+                            id="form_review" 
+                            method="post"
+                            data-action="submit->products--reviews#onSubmitReview"
+                        >
                             <input type="hidden" name="review_product_id" id="review_product_id" value="0">
                             <input type="hidden" name="rating" id="rating" value="0">
                             <div class="modal-body">
@@ -652,7 +674,7 @@ class ProductReviewsController extends AbstractController
     public function likeReviewAction(Request $request): Response
     {
         $data = $request->request;
-        $reviewId = $data->get('review_id');
+        $reviewId = $data->get('review-id');
 
         $user = $this->getUser()->getId();
         $productReview = $this->em->getRepository(ProductReviews::class)->find($reviewId);
@@ -662,8 +684,8 @@ class ProductReviewsController extends AbstractController
         ]);
         $prc = $productReviewLikes;
 
-        if(count($productReviewLikes) == 0){
-
+        if(count($productReviewLikes) == 0)
+        {
             $productReviewLikes = new ProductReviewLikes();
 
             $productReviewLikes->setClinicUser($this->getUser());
@@ -672,9 +694,9 @@ class ProductReviewsController extends AbstractController
             $this->em->persist($productReviewLikes);
 
             $response = '<i class="fa-solid fa-thumbs-up text-secondary review-icon me-2"></i>';
-
-        } else {
-
+        }
+        else
+        {
             $productReviewLikes = $this->em->getRepository(ProductReviewLikes::class)->find($productReviewLikes[0]->getId());
             $this->em->remove($productReviewLikes);
 
@@ -687,12 +709,12 @@ class ProductReviewsController extends AbstractController
             'productReview' => $reviewId
         ]);
 
-        if(count($prc) == 0){
-
+        if(count($prc) == 0)
+        {
             $response .= '<span class="text-secondary">'. (int) count($likeCount) .'</span>';
-
-        } else {
-
+        }
+        else
+        {
             $response .= '<span class="list-icon-unchecked">'. (int) count($likeCount) .'</span>';
         }
 
@@ -780,13 +802,14 @@ class ProductReviewsController extends AbstractController
     public function clinicsGetCommentCountAction(Request $request): Response
     {
         $data = $request->request;
-        $reviewId = $data->get('review_id');
+        $reviewId = $data->get('review-id');
         $response = '';
 
         if($reviewId > 0) {
 
             $reviewComments = $this->em->getRepository(ProductReviewComments::class)->findBy([
-                'review' => $reviewId
+                'review' => $reviewId,
+                'isApproved' => 1,
             ]);
 
             if(count($reviewComments) > 0) {

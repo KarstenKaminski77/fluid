@@ -104,11 +104,6 @@ class Addresses
      */
     private $intlCode;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=RetailUsers::class, inversedBy="addresses")
-     */
-    private $retail;
-
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -342,18 +337,6 @@ class Addresses
     public function setIntlCode(?string $intlCode): self
     {
         $this->intlCode = $intlCode;
-
-        return $this;
-    }
-
-    public function getRetail(): ?RetailUsers
-    {
-        return $this->retail;
-    }
-
-    public function setRetail(?RetailUsers $retail): self
-    {
-        $this->retail = $retail;
 
         return $this;
     }

@@ -7,12 +7,12 @@ use App\Entity\Baskets;
 use App\Entity\ClinicProducts;
 use App\Entity\Clinics;
 use App\Entity\ClinicUsers;
+use App\Entity\ControlledDrugFiles;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
-use App\Entity\ListItems;
+use App\Entity\Orders;
 use App\Entity\ProductImages;
 use App\Entity\Products;
-use App\Entity\RetailUsers;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
@@ -60,7 +60,6 @@ class BasketController extends AbstractController
         }
 
         $basket->setClinic($clinic);
-        $basket->setDistributor($distributor);
         $basket->setStatus($request->get('status'));
         $basket->setIsDefault($isDefault);
         $basket->setSavedBy($this->encryptor->encrypt($this->getUser()->getFirstName() .' '. $this->getUser()->getLastName()));
@@ -191,15 +190,24 @@ class BasketController extends AbstractController
     }
 
     #[Route('/clinics/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item')]
-    #[Route('/retail/inventory/inventory-remove-basket-item', name: 'inventory_remove_basket_item_retail')]
     public function removeBasketItemAction(Request $request): Response
     {
         $basketItemId = $request->request->get('item-id');
         $basketItem = $this->em->getRepository(BasketItems::class)->find($basketItemId);
         $basketId = $basketItem->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrug = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $basket->getOrders()->getId(),
+            'distributor' => $basketItem->getDistributor()->getId(),
+        ]);
 
-        if($basketItem != null){
+        if($basketItem != null)
+        {
+            // Check for controlled drugs and remove
+            if($controlledDrug != null)
+            {
+                $this->em->remove($controlledDrug);
+            }
 
             $this->em->remove($basketItem);
             $this->em->flush();
@@ -207,8 +215,8 @@ class BasketController extends AbstractController
 
         $totals = $this->em->getRepository(BasketItems::class)->getTotalItems($basketId);
 
-        if($basket->getBasketItems()->count() > 0){
-
+        if($basket->getBasketItems()->count() > 0)
+        {
             $basket->setTotal((float) number_format($totals[0]['total'],2));
 
             $this->em->persist($basket);
@@ -231,12 +239,28 @@ class BasketController extends AbstractController
         $basketId = $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $order = $this->em->getRepository(Orders::class)->findOneBy([
+            'basket' => $basketId,
+        ]);
+        $controlledDrugs = $this->em->getRepository(ControlledDrugFiles::class)->findBy([
+            'orders' => $order->getId(),
+        ]);
 
         if($basketItems != null){
 
             foreach($basketItems as $item) {
 
                 $this->em->remove($item);
+            }
+
+            $this->em->flush();
+        }
+
+        if(is_array($controlledDrugs) && count($controlledDrugs) > 0)
+        {
+            foreach($controlledDrugs as $drug)
+            {
+                $this->em->remove($drug);
             }
 
             $this->em->flush();
@@ -271,7 +295,14 @@ class BasketController extends AbstractController
         $basketItems = $this->em->getRepository(BasketItems::class)->find($request->request->get('item-id'));
         $basketId = $basketItems->getBasket()->getId();
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrug = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $basket->getOrders()->getId(),
+            'distributor' => $distributor->getId(),
+        ]);
         $create = false;
+
+        // Remove controlled drug file
+        $this->em->remove($controlledDrug);
 
         // Ensure item has not already been saved
         $clinicProducts = $this->em->getRepository(ClinicProducts::class)->findOneBy([
@@ -345,6 +376,21 @@ class BasketController extends AbstractController
         $basketId = $request->request->get('basket-id');
         $clinic = $this->em->getRepository(Clinics::class)->find($this->getUser()->getClinic()->getId());
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $controlledDrugs = $this->em->getRepository(ControlledDrugFiles::class)->findBy([
+            'orders' => $basket->getOrders()->getId(),
+        ]);
+
+        // Remove Controlled drugs
+        if(is_array($controlledDrugs) && count($controlledDrugs) > 0)
+        {
+            foreach($controlledDrugs as $drug)
+            {
+                $this->em->remove($drug);
+            }
+
+            $this->em->flush();
+        }
 
         foreach($basketItems as $item){
 
@@ -445,7 +491,7 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/restore-all-items', name: 'restore_all_items')]
     public function restoreAllItemsAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
         $clinicProducts = $this->em->getRepository(ClinicProducts::class)->findBy([
             'clinic' => $this->getUser()->getClinic()
@@ -492,7 +538,7 @@ class BasketController extends AbstractController
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i></b> All saved items moved to basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basket_id' => $basketId
+            'basketId' => $basketId
         ];
 
         return new JsonResponse($response);
@@ -508,15 +554,13 @@ class BasketController extends AbstractController
         $this->em->remove($item);
         $this->em->flush();
 
-        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
-            'clinic' => $clinic,
-            'name' => 'Fluid Commerce',
-            'status' => 'active'
+        $items = $this->em->getRepository(ClinicProducts::class)->findBy([
+            'clinic' => $this->getUser()->getClinic()->getId(),
         ]);
 
         $response = [
             'message' => '<b><i class="fas fa-check-circle"></i> '. $product .'</b> removed.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>',
-            'basketId' => $basket->getId(),
+            'count' => count($items),
         ];
 
         return new JsonResponse($response);
@@ -683,11 +727,11 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/update-saved-baskets', name: 'update_saved_baskets')]
     public function updateSavedBasketsAction(Request $request): Response
     {
-        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket_id'));
-        $firstName = $this->getUser()->getFirstName();
-        $lastName = $this->getUser()->getLastName();
+        $basket = $this->em->getRepository(Baskets::class)->find($request->request->get('basket-id'));
+        $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+        $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
-        $basket->setName($request->request->get('basket_name'));
+        $basket->setName($request->request->get('basket-name'));
         $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
 
         $this->em->persist($basket);
@@ -698,7 +742,7 @@ class BasketController extends AbstractController
         return new JsonResponse($response);
     }
 
-    private function getSavedbasketsRightColumn()
+    private function getSavedbasketsRightColumn():string
     {
         $savedBaskets = $this->em->getRepository(Baskets::class)->findBy([
             'clinic' => $this->getUser()->getClinic()->getId(),
@@ -708,7 +752,7 @@ class BasketController extends AbstractController
 
         if(count($savedBaskets) > 1)
         {
-            $response .= '
+            $response = '
             <!-- Basket Items -->
             <div class="row border-bottom bg-secondary d-none d-sm-flex">
                 <div class="col-3 pt-3 pb-3">
@@ -750,10 +794,20 @@ class BasketController extends AbstractController
                         ' . $basket->getBasketItems()->count() . '
                     </div>
                     <div class="col-3 pt-3 pb-3">
-                        <a href="" class="basket-edit" data-basket-id="' . $basket->getId() . '">
+                        <a 
+                            href="" 
+                            class="basket-edit" 
+                            data-basket-id="' . $basket->getId() . '" 
+                            data-action="click->basket--basket#onClickEditBasket"
+                        >
                             <i class="fa-solid fa-pencil float-end me-0 me-sm-3"></i>
                         </a>
-                        <a href="" class="basket-delete" data-basket-id="' . $basket->getId() . '">
+                        <a 
+                            href="" 
+                            class="basket-delete" 
+                            data-basket-id="' . $basket->getId() . '"
+                            data-action="click->basket--basket#onClickDeleteBasket"
+                        >
                             <i class="fa-solid fa-trash-can text-danger float-end me-4 me-sm-4"></i>
                         </a>
                     </div>
@@ -790,6 +844,7 @@ class BasketController extends AbstractController
         $clinicTotals = $this->em->getRepository(Baskets::class)->getClinicTotalItems($clinicId);
         $totalClinic = number_format($clinicTotals[0]['total'] ?? 0,2);
         $countClinic = $clinicTotals[0]['item_count'] ?? 0;
+        $currency = $this->getUser()->getClinic()->getCountry()->getCurrency();
 
         $response = '
         <div class="row border-bottom text-center pt-2 pb-2">
@@ -801,7 +856,7 @@ class BasketController extends AbstractController
                 <span class="d-block text-truncate">Items</span>
             </div>
             <div class="col-6 border-bottom pt-1 pb-1 text-center">
-                <span class="d-block text-primary">$'. number_format($totalClinic,2) .'</span>
+                <span class="d-block text-primary">'. $currency .' '. $totalClinic .'</span>
                 <span class="d-block text-truncate">Subtotal</span>
             </div>
         </div>';
@@ -824,7 +879,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $basket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $basket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline">'. $basket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $background .'">
                             '. $basket->getBasketItems()->count() .'
@@ -851,23 +911,13 @@ class BasketController extends AbstractController
     #[Route('/clinics/inventory/delete-saved-basket', name: 'delete_saved_basket')]
     public function deleteBasketAction(Request $request): Response
     {
-        $basketId = $request->request->get('basket_id');
+        $basketId = $request->request->get('basket-id');
         $basketItems = $this->em->getRepository(BasketItems::class)->findBy(['basket' => $basketId]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
-        $baskets= $this->em->getRepository(Baskets::class)->findBy([
-            'clinic' => $this->getUser()->getClinic()->getId()
-        ]);
 
-        if(count($basketItems) > 0){
+        $basket->setStatus('closed');
 
-            foreach($basketItems as $item){
-
-                $this->em->remove($item);
-                $this->em->flush();
-            }
-        }
-
-        $this->em->remove($basket);
+        $this->em->persist($basket);
         $this->em->flush();
 
         $response = [
@@ -895,7 +945,7 @@ class BasketController extends AbstractController
         $countClinic = $clinicTotals[0]['item_count'] ?? 0;
 
         // Permissions
-        $permissions = json_decode($request->request->get('permissions'), true);
+        $permissions = json_decode(trim($request->request->get('permissions'), '&quot;'), true);
 
         $basketPermission = true;
         $disabled = '';
@@ -909,7 +959,7 @@ class BasketController extends AbstractController
         $response = '
         <!-- Basket Name -->
         <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="basket_header">
+            <div class="col-12 text-center pb-3 form-control-bg-grey" id="basket_header">
                 <h4 class="text-primary">'. $basket->getName() .' Basket</h4>
                 <span class="text-primary">
                     Manage All Your Shopping Carts In One Place
@@ -920,7 +970,7 @@ class BasketController extends AbstractController
         $response .= '
         <div class="row">
             <div class="col-12 half-border">
-                <div class="row border-xy">
+                <div class="row border-xy bg-white">
                     <!-- Left Column -->
                     <div class="col-12 col-md-2 col-100" id="basket_left_col">
                         <div class="row border-bottom text-center py-3">
@@ -956,7 +1006,12 @@ class BasketController extends AbstractController
                             $response .= '
                             <div class="row">
                                 <div class="col-12 border-bottom '. $active .'">
-                                    <a href="#" data-basket-id="'. $individualBasket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                                    <a 
+                                        href="#" 
+                                        data-basket-id="'. $individualBasket->getId() .'" 
+                                        class=" pt-3 pb-3 d-block basket-link"
+                                        data-action="click->basket--basket#onClickBasketLink"
+                                    >
                                         <div class="row">
                                             <div class="col-10 text-truncate pe-0">
                                                 <span class="align-baseline">'. $individualBasket->getName() .'</span>
@@ -988,7 +1043,12 @@ class BasketController extends AbstractController
                         $response .= '
                         <div class="row border-bottom">
                             <div class="col-12 h-100">
-                                <'. $individualBasket .' href="#" class="saved_baskets_link" data-basket-id="'. $basketId .'">
+                                <'. $individualBasket .' 
+                                    href="#" 
+                                    class="saved_baskets_link" 
+                                    data-basket-id="'. $basketId .'"
+                                    data-action="basket--basket#onClickSavedBaskets"
+                                >
                                     <div class="row align-items-center">
                                         <div class="d-block d-md-none d-lg-block col-4 pt-3 pb-3 saved-baskets text-truncate '. $textDisabled .'">
                                             <i class="fa-regular fa-basket-shopping"></i>
@@ -1012,7 +1072,7 @@ class BasketController extends AbstractController
                             <div class="col-12 d-flex justify-content-center border-bottom pt-3 pb-3">';
 
                             $response .= '
-                            <a href="#" id="print_basket">
+                            <a href="#" id="print_basket" data-action="click->basket--basket#onClickPrintBasket">
                                 <i class="fa-regular fa-print me-5 me-md-2"></i>
                                 <span class=" d-none d-md-inline-block pe-4">Print</span>
                             </a>';
@@ -1039,8 +1099,14 @@ class BasketController extends AbstractController
                             }
 
                             $response .= '
-                            <a href="#" id="return_to_search" data-basket-id="">
-                                <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Back To Search</span>
+                            <a 
+                                href="#" 
+                                id="return_to_search" 
+                                data-basket-id=""
+                                data-action="click->basket--basket#onClickBackToSearch"
+                            >
+                                <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                                <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
                             </a>
                         </div>
                     </div>';
@@ -1055,7 +1121,12 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" class="save-all-items" data-basket-id="' . $basketId . '">
+                        <a 
+                            href="#" 
+                            class="save-all-items" 
+                            data-basket-id="' . $basketId . '"
+                            data-action="click->basket--basket#onClickSaveAllItems"
+                        >
                             <i class="fa-regular fa-bookmark me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Save All For Later</span>
                         </a>';
@@ -1072,7 +1143,7 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '">
+                        <a href="#" class="clear-basket" data-basket-id="' . $basketId . '" data-action="click->basket--basket#onClickClearBasket">
                             <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
                         </a>';
@@ -1087,7 +1158,11 @@ class BasketController extends AbstractController
                     }
 
                     $response .= '
-                    <a href="#" class="refresh-basket" data-basket-id="'. $basketId .'">
+                    <a 
+                        href="#" class="refresh-basket" 
+                        data-basket-id="'. $basketId .'"
+                        data-action="click->basket--basket#onClickRefreshBasket"
+                    >
                         <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
                         <span class=" d-none d-md-inline-block pe-4">Refresh Basket</span>
                     </a>';
@@ -1095,7 +1170,12 @@ class BasketController extends AbstractController
                     if($basketPermission){
 
                         $response .= '
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#modal_save_basket">
+                        <a 
+                            href="#" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#modal_save_basket"
+                            data-action="basket--basket#onClickSaveBasket"
+                        >
                             <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-0">Save Basket</span>
                         </a>';
@@ -1132,12 +1212,15 @@ class BasketController extends AbstractController
         $checkoutDisabled = '';
         $checkoutBtnDisabled = '';
         $checkout = true;
+        $dataAction = 'click->orders--clinics#onClickBtnProceed';
 
         if(count($basket->getBasketItems()) > 0) {
 
             foreach ($basket->getBasketItems() as $item) {
 
                 $i++;
+                $controlledBadge = '';
+                $isControlledDrug = $item->getProduct()->getIsControlled() ?? 0;
                 $product = $basket->getBasketItems()[$i]->getProduct();
                 $trackingId = $item->getDistributor()->getTracking()->getId();
                 $shippingPolicy = $item->getDistributor()->getShippingPolicy() ?? $this->encryptor->decrypt($item->getDistributor()->getDistributorName()) ." hasn't updated their shipping policy.";
@@ -1163,6 +1246,24 @@ class BasketController extends AbstractController
 
                         $stockBadge = '<span class="badge bg-success me-0 me-sm-2 badge-success-filled-sm">In Stock</span>';
                     }
+                }
+
+                // Controlled drug badge
+                if($isControlledDrug == 1)
+                {
+                    $controlledBadge = '
+                    <span 
+                        class="badge bg-warning ms-0 ms-sm-2 badge-warning-filled-sm"
+                        data-bs-trigger="hover" 
+                        data-bs-container="body" 
+                        data-bs-toggle="popover" 
+                        data-bs-placement="top" 
+                        data-bs-html="true"
+                        data-bs-content="A purchase order is required when ordering a controlled drug."
+                    >
+                        Controlled Drug
+                    </span>';
+                    $dataAction = 'click->orders--clinics#onClickBtnProceedControlled';
                 }
 
                 // Product Image
@@ -1204,12 +1305,11 @@ class BasketController extends AbstractController
                                     <div class="col-4">
                                         <input
                                             type="number"
-                                            list="qty_list_' . $product->getId() . '"
                                             data-basket-item-id="' . $item->getId() . '"
                                             name="qty"
                                             class="form-control form-control-sm basket-qty"
                                             value="' . $item->getQty() . '"
-                                            ng-value="' . $item->getQty() . '"
+                                            data-action="change->basket--basket#onChangeQty"
                                             '. $disabled .'
                                         >
                                         <div class="hidden_msg" id="stock_count_error_'. $item->getId() .'"></div>
@@ -1225,20 +1325,33 @@ class BasketController extends AbstractController
                                 '. $stockBadge .'
                                 <!-- Shipping Policy -->
                                 <span
-                                    class="badge bg-dark-grey badge-pending-filled-sm" class="btn btn-secondary" data-bs-trigger="hover"
-                                    data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-html="true"
+                                    class="badge bg-dark-grey badge-pending-filled-sm" 
+                                    class="btn btn-secondary" 
+                                    data-bs-trigger="hover"
+                                    data-bs-container="body" 
+                                    data-bs-toggle="popover" 
+                                    data-bs-placement="top" 
+                                    data-bs-html="true"
                                     data-bs-content="'. $shippingPolicy .'"
                                 >
                                     Shipping Policy
                                 </span>
-                                ';
+                                
+                                <!-- Controlled Drug -->
+                                '. $controlledBadge;
+                                
 
                                     if($basketPermission) {
 
                                         $response .= '
                                         <!-- Remove Item -->
                                         <span class="badge bg-danger float-end badge-danger-filled-sm">
-                                            <a href="#" class="remove-item text-white" data-item-id="' . $item->getId() . '">Remove</a>
+                                            <a 
+                                                href="#" 
+                                                class="remove-item text-white" 
+                                                data-item-id="' . $item->getId() . '"
+                                                data-action="click->basket--basket#onClickRemoveItem"
+                                            >Remove</a>
                                         </span>
 
                                         <!-- Save Item -->
@@ -1250,6 +1363,7 @@ class BasketController extends AbstractController
                                                 data-product-id="' . $product->getId() . '"
                                                 data-distributor-id="' . $item->getDistributor()->getId() . '"
                                                 data-item-id="' . $item->getId() . '"
+                                                data-action="click->basket--basket#onClickSaveItem"
                                             >
                                                 Save Item For later
                                             </a>
@@ -1337,6 +1451,7 @@ class BasketController extends AbstractController
                                 class="btn btn-primary w-100 '. $checkoutBtnDisabled .'"
                                 id="btn_checkout"
                                 data-basket-id="'. $basketId .'"
+                                data-action="'. $dataAction .'"
                                 '. $checkoutDisabled .'
                             >
                                 PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
@@ -1375,7 +1490,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0" id="saved_items">
                 <div class="col-12 border-bottom border-top pt-3 pb-3 text-center text-sm-start">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">
@@ -1391,6 +1512,7 @@ class BasketController extends AbstractController
                                 class="btn btn-primary btn-sm w-sm-100 float-end restore-all"
                                 id="restore_all"
                                 data-basket-id="'. $basketId .'"
+                                data-action="click->basket--basket#onClickRestoreAllItems"
                             >
                                 Move All To Basket
                             </a>';
@@ -1450,6 +1572,7 @@ class BasketController extends AbstractController
                                             data-basket-id="'. $basketId .'" data-product-id="'. $product->getId() .'"
                                             data-distributor-id="'. $item->getDistributor()->getId() .'"
                                             data-item-id="'. $item->getId() .'"
+                                            data-action="click->basket--basket#onClickRestoreItem"
                                         >
                                             Move To Basket
                                         </a>
@@ -1460,6 +1583,7 @@ class BasketController extends AbstractController
                                             href="#" class="text-white remove-saved-item"
                                             data-basket-id=""
                                             data-item-id="'. $item->getId() .'"
+                                            data-action="click->basket--basket#onClickRemoveSavedItem"
                                         >
                                             Remove
                                         </a>
@@ -1499,7 +1623,12 @@ class BasketController extends AbstractController
         <div class="modal fade" id="modal_save_basket" tabindex="-1" aria-labelledby="save_basket_label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form name="form_save_basket" id="form_save_basket" method="post">
+                    <form 
+                        name="form_save_basket" 
+                        id="form_save_basket" 
+                        method="post"
+                        data-action="submit->basket--basket#onSubmitSaveBasket"
+                    >
                         <input type="hidden" name="basket_id" value="'. $basketId .'">
                         <div class="modal-header basket-modal-header">
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1583,7 +1712,12 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row">
                 <div class="col-12 border-bottom '. $active .'">
-                    <a href="#" data-basket-id="'. $individualBasket->getId() .'" class=" pt-3 pb-3 d-block basket-link">
+                    <a 
+                        href="#" 
+                        data-basket-id="'. $individualBasket->getId() .'" 
+                        class=" pt-3 pb-3 d-block basket-link"
+                        data-action="click->basket--basket#onClickBasketLink"
+                    >
                         <span class="d-inline-block align-baseline text-truncate">'. $individualBasket->getName() .'</span>
                         <span class="float-end basket-item-count-empty '. $bgPrimary .'">
                             '. $count .'
@@ -1627,8 +1761,13 @@ class BasketController extends AbstractController
                     <a href="#" id="saved_baskets_link" data-basket-id="'. $basketId .'">
                         <i class="fa-regular fa-basket-shopping me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-3">Saved Baskets</span>
                     </a>
-                    <a href="#" id="return_to_search">
-                        <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-3">Back To Search</span>
+                    <a 
+                        href="#" 
+                        id="return_to_search"
+                        data-action="click->basket--basket#onClickBackToSearch"
+                    >
+                        <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
+                        <span class=" d-none d-md-inline-block pe-3">Back To Search</span>
                     </a>
                 </div>
             </div>';
@@ -1827,7 +1966,13 @@ class BasketController extends AbstractController
             $response .= '
             <div class="row" style="background: #f4f8fe; position: absolute; left: 12px; right: 0; bottom: 0">
                 <div class="col-12 border-bottom border-top pt-3 pb-3">
-                    <a href="" id="saved_items_link">Items Saved for Later ('. count($savedItems) .' Item'. $plural .')</a>
+                    <a 
+                        href="" 
+                        id="saved_items_link"
+                        data-action="click->basket--basket#onClickSavedItemsLink"
+                    >
+                        Items Saved for Later ('. count($savedItems) .' Item'. $plural .')
+                    </a>
                 </div>
             </div>
             <div class="row" id="saved_items_container">
@@ -1858,7 +2003,7 @@ class BasketController extends AbstractController
                                     <h6 class="fw-bold text-center text-sm-start text-primary lh-base mb-0">
                                         ' . $product->getName() . ': ' . $product->getDosage() . ' ' . $product->getUnit() . ', Each
                                     </h6>
-                                    Saved onxxx '. $item->getModified()->format('M jS Y') .' by '. $this->encryptor->decrypt($item->getSavedBy()) .'<br>
+                                    Saved on '. $item->getModified()->format('M jS Y') .' by '. $this->encryptor->decrypt($item->getSavedBy()) .'<br>
                                     <span class="badge badge-light me-2 mt-2 badge-light-sm">
                                         <a 
                                             href="#" class="link-secondary restore-item" 
@@ -1923,358 +2068,6 @@ class BasketController extends AbstractController
                 </div>
             </div>
         </div>';
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/add-to-basket', name: 'retail_add_to_basket')]
-    public function retailAddToBasketAction(Request $request): Response
-    {
-        $response = [];
-        $data = $request->request;
-        $retailUserId = $this->getUser()->getId();
-        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
-        $firstName = $this->encryptor->decrypt($retailUser->getFirstName());
-        $lastName = $this->encryptor->decrypt($retailUser->getLastName());
-        $clinicId = $data->get('clinic-id');
-        $productId = $data->get('product-id');
-        $price = $data->get('price');
-        $qty = $data->get('qty');
-        $basket = $this->em->getRepository(Baskets::class)->findOneBy([
-            'retailUser' => $retailUserId
-        ]);
-        $product = $this->em->getRepository(Products::class)->find($productId);
-
-        // Create new basket if one doesn't exist
-        if($basket == null)
-        {
-            $basket = new Baskets();
-
-            $basket->setClinic($clinicId);
-            $basket->setDistributor(null);
-            $basket->setRetailUser($retailUser);
-            $basket->setStatus('active');
-            $basket->setName('fluid Commerce');
-            $basket->setIsDefault(1);
-            $basket->setTotal(0.00);
-        }
-
-        $basket->setSavedBy($this->encryptor->encrypt($firstName .' '. $lastName));
-
-        $this->em->persist($basket);
-        $this->em->flush();
-
-        // Add item to basket
-        $basketItem = $this->em->getRepository(BasketItems::class)->findOneBy([
-            'basket' => $basket->getId(),
-            'product' => $productId,
-        ]);
-
-        if($basketItem == null)
-        {
-            $basketItem = new BasketItems();
-        }
-
-        $basketItem->setBasket($basket);
-        $basketItem->setProduct($product);
-        $basketItem->setDistributor(null);
-        $basketItem->setName($product->getName());
-        $basketItem->setQty($qty);
-        $basketItem->setUnitPrice($price);
-        $basketItem->setTotal($price * $qty);
-        $basketItem->setItemId(0);
-
-        $this->em->persist($basketItem);
-        $this->em->flush();
-
-        $basketItems = $this->em->getRepository(BasketItems::class)->findBy([
-            'basket' => $basket->getId(),
-        ]);
-        $basketTotal = 0.00;
-
-        foreach($basketItems as $basketItem)
-        {
-            $basketTotal += $basketItem->getTotal();
-        }
-
-        $basket->setTotal($basketTotal);
-
-        $this->em->persist($basket);
-        $this->em->flush();
-
-        $response['flash'] = '<b><i class="fas fa-check-circle"></i> '. $product->getName() .' added to your basket.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/get-basket', name: 'retail_get_basket')]
-    public function retailGetBasketAction(Request $request): Response
-    {
-        $response = [];
-        $data = $request->request;
-        $retailUserId = $this->getUser()->getId();
-        $basketId = $data->get('basket-id');
-        $retailUser = $this->em->getRepository(RetailUsers::class)->find($retailUserId);
-        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
-        $currency = $retailUser->getCountry()->getCurrency();
-        $subTotal = 0.00;
-        $href = '';
-        $textDisabled = 'text-disabled';
-
-        if($basket->getBasketItems()->count() > 0)
-        {
-            $href = 'href="#"';
-            $textDisabled = '';
-        }
-
-        $response['html'] = '
-        <!-- Basket Name -->
-        <div class="row">
-            <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="basket_header">
-                <h4 class="text-primary">Fluid Commerce Basket</h4>
-                <span class="text-primary">
-                    Manage All Your Shopping Carts In One Place
-                </span>
-            </div>
-        </div>
-        <!-- Basket Actions Row -->
-        <div class="row px-3">
-            <div class="col-12 half-border" id="half_border_row">
-                <div class="row" id="basket_action_row_1">
-                    <div class="col-12 d-flex justify-content-center border-xy bg-white py-3">
-                        <a '. $href .' class="'. $textDisabled .'" 
-                            id="print_basket" 
-                            data-basket-id="'. $basketId .'"
-                            data-action="click->retail-basket#onClickPrintBasket"
-                        >
-                            <i class="fa-regular fa-print me-5 me-md-2"></i>
-                            <span class=" d-none d-md-inline-block pe-4">Print</span>
-                        </a>
-                        <a 
-                            '. $href .' 
-                            class="clear-basket 
-                            '. $textDisabled .'" 
-                            data-basket-id="'. $basketId .'"
-                            data-action="click->retail-basket#onClickClearBasket"
-                        >
-                            <i class="fa-regular fa-trash-can me-5 me-md-2"></i>
-                            <span class=" d-none d-md-inline-block pe-4">Clear Basket</span>
-                        </a>
-                        <a 
-                            href="#" 
-                            id="return_to_search" 
-                            data-basket-id="'. $basketId .'"
-                            data-action="click->retail-basket#onClickBackToSearch"
-                        >
-                            <i class="fa-solid fa-magnifying-glass me-0 me-md-2"></i>
-                            <span class=" d-none d-md-inline-block pe-4">Back To Search</span>
-                        </a>
-                    </div>
-                </div>';
-
-                if($basket->getBasketItems()->count() > 0)
-                {
-                    $response['html'] .= '
-                    <div class="row" id="basket_items">
-                        <div class="col-12 col-lg-9 border-right border-left border-right border-bottom bg-white col-cell">';
-
-                    if($basket->getBasketItems()->count() > 0)
-                    {
-                        foreach ($basket->getBasketItems() as $basketItem)
-                        {
-                            $total = number_format($basketItem->getQty() * $basketItem->getUnitPrice(), 2);
-                            $firstImage = $this->em->getRepository(ProductImages::class)->findOneBy([
-                                'product' => $basketItem->getProduct()->getId(),
-                                'isDefault' => 1
-                            ]);
-
-                            if($firstImage == null){
-
-                                $firstImage = 'image-not-found.jpg';
-
-                            } else {
-
-                                $firstImage = $firstImage->getImage();
-                            }
-
-                            $response['html'] .= '
-                            <div class="col-12">
-                                <div class="row">
-                                    <!-- Thumbnail -->
-                                    <div class="col-12 col-sm-2 text-center pt-3 pb-3 mt-3">
-                                        <img class="img-fluid basket-img" src="/images/products/'. $firstImage .'">
-                                    </div>
-                                    <div class="col-12 col-sm-10 pt-3 pb-3">
-                                        <!-- Product Name and Qty -->
-                                        <div class="row">
-                                            <!-- Product Name -->
-                                            <div class="col-12 col-sm-6 col-md-12 col-lg-7 pt-3 pb-3 text-center text-sm-start">
-                                                <span class="info">
-                                                    '. $this->encryptor->decrypt($basketItem->getBasket()->getClinic()->getClinicName()) .'
-                                                </span>
-                                                <h6 class="fw-bold text-primary lh-base my-0">
-                                                    '. $basketItem->getProduct()->getName() .'
-                                                </h6>
-                                            </div>
-                                            <!-- Product Quantity -->
-                                            <div class="col-12 col-sm-6 col-md-12 col-lg-5 pt-3 pb-3 d-table">
-                                                <div class="row d-table-row">
-                                                    <div class="col-3 text-center text-sm-end text-md-start text-lg-start d-table-cell align-bottom">
-                                                        '. number_format($basketItem->getUnitPrice(), 2) .'
-                                                    </div>
-                                                    <div class="col-4 d-table-cell align-bottom">
-                                                        <input 
-                                                            type="number" 
-                                                            name="qty" 
-                                                            class="form-control form-control-sm basket-qty" 
-                                                            value="'. $basketItem->getQty() .'"
-                                                            data-basket-item-id="'. $basketItem->getId() .'"
-                                                            data-action="change->retail-basket#onChangeQty"
-                                                        >
-                                                        <div class="hidden_msg" id="stock_count_error_6"></div>
-                                                    </div>
-                                                    <div class="col-5 text-center text-sm-start text-md-end fw-bold text-truncate d-table-cell align-bottom">
-                                                        '. $currency .' '. $total .'
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Item Actions -->
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <!-- Shipping Policy -->
-                                                <span 
-                                                    class="badge bg-dark-grey badge-pending-filled-sm" 
-                                                    data-bs-trigger="hover" 
-                                                    data-bs-container="body" 
-                                                    data-bs-toggle="popover" 
-                                                    data-bs-placement="top" 
-                                                    data-bs-html="true" 
-                                                    data-bs-content=""
-                                                >
-                                                    Shipping Policy
-                                                </span>
-                                                <!-- Remove Item -->
-                                                <span class="badge bg-danger float-end badge-danger-filled-sm">
-                                                    <a 
-                                                        href="#" 
-                                                        class="remove-item text-white" 
-                                                        data-item-id="'. $basketItem->getId() .'"
-                                                        data-action="retail-basket#onClickRemoveItem"
-                                                    >Remove</a>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>';
-                        }
-                    }
-
-                    $response['html'] .= '
-                        <!-- Basket Summary -->
-                        </div>
-                        <div class="col-12 col-lg-3 py-3 px-sm-3 bg-white border-right border-bottom" id="basket_summary">
-                            <div class="row">
-                                <div class="col-12 text-truncate ps-sm-2">
-                                    <span class="info">Subtotal:</span>
-                                    <h5 class="d-inline-block text-primary float-end pe-2">'. $currency .' '. number_format($basket->getTotal(),2) .'</h5>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12 text-truncate ps-sm-2">
-                                    <span class="info">Shipping:</span> 
-                                    <span class="float-end fw-bold pe-2">AED 0.00</span>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12 pt-4 text-center ps-2">
-                                    <a 
-                                        href="" 
-                                        class="btn btn-primary w-100 " 
-                                        id="btn_checkout" 
-                                        data-basket-id="'. $basketId .'"
-                                        data-action="click->retail-checkout#onClickProceedToCheckout"
-                                    >
-                                        PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>';
-                }
-                else
-                {
-                    $response['html'] .= '
-                    <!-- Basket Items -->
-                    <div class="row">
-                        <div class="col-12 text-center pt-4 border-left border-right border-bottom bg-white">
-                            <p>
-                            </p><h5>Your basket at Fluid Commerce is currently empty </h5><br>
-                            Were you expecting to see items here? View copies of the items most recently added<br>
-                            to your basket and restore a basket if needed.
-                            <p></p>
-                        </div>
-                    </div>';
-                }
-
-        $response['html'] .= '
-                </div>
-            </div>';
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/update-basket', name: 'retail_update_basket')]
-    public function retailUpdateBasketAction(Request $request): Response
-    {
-        $itemId = $request->request->get('item-id');
-        $basketItem = $this->em->getRepository(BasketItems::class)->find($itemId);
-        $productName = $basketItem->getProduct()->getName();
-        $basketId = $basketItem->getBasket()->getId();
-        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
-        $currency = $this->getUser()->getCountry()->getCurrency();
-        $subTotal = 0.00;
-        $total = 0.00;
-
-        if($basketItem != null){
-
-            $qty = (int) $request->request->get('qty');
-            $basketItem = $this->em->getRepository(BasketItems::class)->find($itemId);
-            $total = $basketItem->getUnitPrice() * $qty;
-
-            $basketItem->setQty($qty);
-            $basketItem->setTotal($total);
-
-            $this->em->persist($basketItem);
-            $this->em->flush();
-        }
-
-        $basketItems = $this->em->getRepository(BasketItems::class)->findBy([
-            'basket' => $basketId
-        ]);
-
-        foreach($basketItems as $basketItem)
-        {
-            $subTotal += $basketItem->getTotal();
-        }
-
-        if($basket != null){
-
-            $subTotal = number_format((float) $subTotal,2, '.','') ?? 0.00;
-
-            $basket->setTotal($subTotal);
-
-            $this->em->persist($basket);
-            $this->em->flush();
-
-        }
-
-        $response = [
-            'total' => $currency .' '. $total,
-            'subTotal' => $currency .' '. $subTotal,
-            'flash' => '<b><i class="fas fa-check-circle"></i> '. $productName .' updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>'
-        ];
 
         return new JsonResponse($response);
     }

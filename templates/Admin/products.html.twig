@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    <form name="products_form" id="products_form" method="post" enctype="multipart/form-data">
+    <form name="products_form" id="products_form" method="post" enctype="multipart/form-data" data-controller="admin--products">
         <input type="hidden" name="product_id" id="product_id" value="{{ product_id ? product.id : 0 }}">
         <input
             type="hidden"
@@ -53,7 +53,6 @@
                         name="save_return"
                     >
                         <span class="btn-label">
-
                             Save and exit
                         </span>
                     </button>
@@ -75,7 +74,7 @@
             <div class="row mt-4">
 
                 {# Is Published #}
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-4">
                     <div class="form-check form-switch">
                         {% set is_published = '' %}
                         {% if product.isPublished == 1 %}
@@ -98,24 +97,53 @@
                 </div>
 
                 {# Expiry Date #}
-                <div class="col-12 col-md-6">
-                    <div class="form-check form-switch">
-                        {% set expiry_date = '' %}
-                        {% if product.expiryDateRequired == 1 %}
-                            {% set expiry_date = 'checked' %}
+                <div class="col-12 col-md-4">
+                    <table class="w-100">
+                        <tr>
+                            <td class="text-start text-sm-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    {% set expiry_date = '' %}
+                                    {% if product.expiryDateRequired == 1 %}
+                                        {% set expiry_date = 'checked' %}
+                                    {% endif %}
+                                    <input
+                                        name="expiry-date"
+                                        id="expiry_date"
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        value="1"
+                                        tabindex="2"
+                                        {{ expiry_date }}
+                                    >
+                                    <label class="ms-2 text-primary" for="expiry_date">
+                                        Requires Expiry Date
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                {# Controlled Drug #}
+                <div class="col-12 col-md-4">
+                    <div class="form-check form-switch float-start float-sm-end">
+                        {% set isControlled = '' %}
+                        {% if product.isControlled == 1 %}
+                            {% set isControlled = 'checked' %}
                         {% endif %}
                         <input
-                            name="expiry-date"
-                            id="expiry_date"
+                            name="is-controlled"
+                            id="is_controlled"
                             class="form-check-input"
                             type="checkbox"
                             role="switch"
                             value="1"
-                            tabindex="2"
-                            {{ expiry_date }}
+                            tabindex="3"
+                            {{ isControlled }}
                         >
-                        <label class="ms-2 text-primary" for="expiry_date">
-                            Expiry Date
+                        <label class="ms-2 text-primary" for="is_controlled">
+                            Is a Controlled Drug
                         </label>
                     </div>
                 </div>
@@ -578,35 +606,78 @@
                         </div>
                     </div>
                 </div>
+
+                {# Distributors #}
+                <div class="col-12 col-md-6">
+                    <label for="active_ingredient" class="text-primary mb-2">Distributors</label>
+                    <div class="position-relative">
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="search_distributor_field"
+                                class="form-control"
+                                placeholder="Search Distributors"
+                                autocomplete="off"
+                                data-action="keyup->admin--products#onKeyUpDistributorSearchField"
+                                data-product-id="{{ product.id }}"
+                                tabindex="16"
+                            >
+                            <span class="input-group-text">
+                                <a
+                                    href=""
+                                    class="text-primary"
+                                    data-action="click->admin--products#onClickResetDistributorList"
+                                >
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="suggestion_field" class="nav-z-index hidden">
+
+                    </div>
+                </div>
             </div>
 
             {# Images #}
             <div class="row mt-4">
 
                 {# Image #}
-                <div class="col-11 col-md-5">
-                    <label for="video" class="text-primary mb-2">Image</label>
-                    <input
-                        type="file"
-                        class="form-control"
-                        name="image"
-                        id="image"
-                        tabindex="15"
-                    >
-                    <input
-                        type="text"
-                        class="form-control"
-                        name="video"
-                        id="video"
-                        style="display: none"
-                        placeholder="Video Link eg: https://www.youtube.com/embed/4pb5HUYgh-E"
-                    >
-                </div>
-                <div class="col-1">
-                    <label class="mb-3 w-100">&nbsp;</label>
-                    <a href="" id="gallery_toggle" style="display: none">
-                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                    </a>
+                <div class="col-12 col-md-6" id="image_upload_container">
+                    <div class="row image-upload-row">
+                        <div class="col-10">
+                            <label for="video" class="text-primary mb-2">Image</label>
+                            <input
+                                type="file"
+                                class="form-control image-field"
+                                name="image[]"
+                                tabindex="15"
+                            >
+                            <input
+                                type="text"
+                                class="form-control video-field"
+                                name="video[]"
+                                style="display: none"
+                                placeholder="Video Link eg: https://www.youtube.com/embed/4pb5HUYgh-E"
+                            >
+                        </div>
+                        <div class="col-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="mb-3 w-100">&nbsp;</label>
+                                    <a href="" class="gallery-toggle">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <label class="mb-3 w-100">&nbsp;</label>
+                                    <a href="" data-action="click->admin--products#onClickAddImageIcon">
+                                        <i class="far fa-plus-square"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-6" id="images_container">
@@ -718,7 +789,9 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let uri = window.location.pathname;
 
             // Set is published as active element
             $('#is_published').focus();
@@ -727,7 +800,7 @@
             {% set productId = app.request.get('productId') %}
             if('{{ productId }}' > 0){
 
-                $('#gallery_toggle').show();
+                $('.gallery-toggle').show();
             }
 
             $(document).on('submit', '#products_form', function (e){
@@ -842,12 +915,51 @@
                             $('#image').val('');
                             $('.content-header-title').empty().append('<h4>Editing '+ response.product +'</h4>');
                             $('#images_container').empty().append(response.images);
-                            $('#gallery_toggle').show();
+                            $('.gallery-toggle').show();
 
-                            if(btn == 'save_return'){
+                            let imageUploadContainer = '' +
+                                '<div class="row image-upload-row">\n' +
+                                '    <div class="col-10">\n' +
+                                '        <label for="video" class="text-primary mb-2">Image</label>\n' +
+                                '        <input\n' +
+                                '            type="file"\n' +
+                                '            class="form-control image-field"\n' +
+                                '            name="image[]"\n' +
+                                '            tabindex="15"\n' +
+                                '        >\n' +
+                                '        <input\n' +
+                                '            type="text"\n' +
+                                '            class="form-control video-field"\n' +
+                                '            name="video[]"\n' +
+                                '            style="display: none"\n' +
+                                '            placeholder="Video Link eg: https://www.youtube.com/embed/4pb5HUYgh-E"\n' +
+                                '        >\n' +
+                                '</div>\n' +
+                                '<div class="col-2">\n' +
+                                    '<div class="row">\n' +
+                                        '<div class="col-6">\n' +
+                                            '<label class="mb-3 w-100">&nbsp;</label>\n' +
+                                            '<a href="" class="gallery-toggle">\n' +
+                                                '<i class="fa-solid fa-arrow-right-arrow-left"></i>\n' +
+                                            '</a>\n' +
+                                        '</div>\n' +
+                                        '<div class="col-6">\n' +
+                                            '<label class="mb-3 w-100">&nbsp;</label>\n' +
+                                            '<a href="" data-action="click->admin--products#onClickAddImageIcon">\n' +
+                                                '<i class="far fa-plus-square"></i>\n' +
+                                            '</a>\n' +
+                                        '</div>\n' +
+                                    '</div>\n' +
+                                '</div>\n' +
+                            '</div>\n';
 
-                                window.location.assign('{{ path('products_list',{ 'page_id':1 }) }}');
+                            $('#image_upload_container').empty().append(imageUploadContainer);
+
+                            if($("button[type=submit]:focus").hasClass('action-saveAndReturn'))
+                            {
+                                window.location.assign('/admin/products/'+ $.session.get('page-no'));
                             }
+
                         }
                     });
                 }
@@ -872,12 +984,12 @@
                     }
                 });
             });
-            $(document).on('click', '#gallery_toggle', function (e){
+            $(document).on('click', '.gallery-toggle', function (e){
 
                 e.preventDefault();
 
-                $('#image').val('').toggle();
-                $('#video').val('').toggle();
+                $(this).closest('.image-upload-row').find('.image-field').val('').toggle();
+                $(this).closest('.image-upload-row').find('.video-field').val('').toggle();
             });
             $(document).on('click', '#clone', function (e) {
 
@@ -3563,6 +3675,7 @@
             {# End Active Ingredient Dropdown #}
 
             {# Product Images #}
+            let images = [];
             $(document).on('click', '.delete-image', function (){
 
                 let imageId = $(this).attr('data-image-id');

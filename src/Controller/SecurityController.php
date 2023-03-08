@@ -111,34 +111,6 @@ class SecurityController extends AbstractController
     }
 
     /**
-     * @Route("/retail/login", name="retail_login")
-     */
-    public function retailLogin(AuthenticationUtils $authenticationUtils, Request $request, AuthorizationChecker $checker): Response
-    {
-        if (true === $checker->isGranted('ROLE_RETAIL')) {
-
-            header('Location: '. $this->getParameter('app.base_url') . '/retail/search');
-
-            die();
-        }
-
-        $uri = explode('/', $request->getPathInfo());
-
-        // get the login error if there is one
-        $error = $authenticationUtils->getLastAuthenticationError();
-        // last username entered by the user
-        $lastUsername = $authenticationUtils->getLastUsername();
-
-        return $this->render('security/login.html.twig', [
-            'last_username' => $lastUsername,
-            'error' => $error,
-            'csrf_token_intention' => 'authenticate',
-            'user_type' => $uri[1],
-
-        ]);
-    }
-
-    /**
      * @Route("/admin/login", name="admin_login")
      */
     public function adminLogin(AuthenticationUtils $authenticationUtils, Request $request, AuthorizationChecker $checker): Response
@@ -194,14 +166,6 @@ class SecurityController extends AbstractController
      * @Route("/manufacturers/logout", name="manufacturers_logout")
      */
     public function manufacturerLogout(): void
-    {
-        throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
-    }
-
-    /**
-     * @Route("/retail/logout", name="retail_logout")
-     */
-    public function retailLogout(): void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }

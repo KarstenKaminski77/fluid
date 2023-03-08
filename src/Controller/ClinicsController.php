@@ -316,6 +316,61 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/clinics/user/check-email', name: 'clinic_user_check_email')]
+    public function clinicsUserCheckEmailAction(Request $request): Response
+    {
+        $email = $request->request->get('email');
+        $domainName = explode('@', $email);
+        $response['response'] = true;
+        $restrictedDomains = $this->em->getRepository(RestrictedDomains::class)->arrayFindAll();
+        $firstName = '';
+
+        foreach($restrictedDomains as $restrictedDomain)
+        {
+            if(md5($domainName[1]) == md5($restrictedDomain->getName()))
+            {
+                $response['response'] = false;
+                $response['restricted'] = true;
+
+                return new JsonResponse($response);
+            }
+        }
+
+        $distributor = $this->em->getRepository(Distributors::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $distributorDomain = $this->em->getRepository(Distributors::class)->findOneBy([
+            'domainName' => md5($domainName[1]),
+        ]);
+
+        $distributorUsers = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $clinicUsers = $this->em->getRepository(ClinicUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        if($distributorDomain != null)
+        {
+            $user = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+                'distributor' => $distributorDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        $response['firstName'] = $firstName;
+
+        if($distributor != null || $distributorUsers != null || $clinicUsers != null || $distributorDomain != null){
+
+            $response['response'] = false;
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/clinics/update/personal-information', name: 'clinic_update_personal_information')]
     public function clinicsUpdatePersonalInformationAction(Request $request): Response
     {
@@ -356,7 +411,7 @@ class ClinicsController extends AbstractController
 
         // Account approval required if reg docs change
         if(
-            !empty($tradeLicense) || $tradeLicenseNo != $clinics->getTradeLicenseNo() ||
+            !empty($tradeLicense) || $tradeLicenseNo != $this->encryptor->decrypt($clinics->getTradeLicenseNo()) ||
             $tradeLicenseExpDate != $clinics->getTradeLicenseExpDate()->format('Y-m-d')
         )
         {
@@ -463,11 +518,11 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/get-company-information', name: 'get_company_information')]
+    #[Route('/clinics/get-company-information', name: 'get_clinic_company_information')]
     public function clinicsGetCompanyInformationAction(Request $request): Response
     {
         $species = $this->em->getRepository(Species::class)->findByNameAsc();
-        $permissions = json_decode($request->get('permissions'), true);
+        $permissions = json_decode($request->request->get('permissions'), true);
         $countries = $this->em->getRepository(Countries::class)->findBy([
             'isActive' => 1,
         ]);
@@ -476,7 +531,7 @@ class ClinicsController extends AbstractController
         if(!in_array(10, $permissions))
         {
             $response = '
-            <div class="row mt-3 mt-md-5">
+            <div class="row mt-3 mt-md-0">
                 <div class="col-12 text-center">
                     <i class="fa-solid fa-ban pe-2" style="font-size: 30vh; margin-bottom: 30px; color: #CCC;text-align: center"></i>
                 </div>
@@ -528,43 +583,73 @@ class ClinicsController extends AbstractController
 
         $response = '
         <div class="row position-relative" id="account_settings">
-            <div class="col-12 text-center pt-3 pb-3" id="order_header">
+            <div class="col-12 text-center pb-3" id="order_header">
                 <h4 class="text-primary text-truncate">Account & Settings</h4>
             </div>
             
             <!-- Tabs -->
             <div class="col-12 nav nav-tabs">
-                <div class="nav-item" role="button" id="company_information_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="company_information_tab"
+                    data-action="click->clinics--account-settings#onClickTabCompanyInformation"
+                >
                     <span class="nav-link text-primary active">
                         <i class="fa-regular fa-circle-info fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Company Information</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="about_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="about_tab"
+                    data-action="click->clinics--account-settings#onClickTabAbout"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-circle-question fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">About</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="operating_hours_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="operating_hours_tab"
+                    data-action="click->clinics--account-settings#onClickTabOperatingHours"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-clock fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Operating Hours</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="refund_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="refund_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabRefundPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-rotate-left fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Refund Policy</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="sales_tax_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="sales_tax_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabSalesTaxPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-scale-unbalanced fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Sales Tax Policy</span>
                     </span>
                 </div>
-                <div class="nav-item" role="button" id="shipping_policy_tab">
+                <div 
+                    class="nav-item" 
+                    role="button" 
+                    id="shipping_policy_tab"
+                    data-action="click->clinics--account-settings#onClickTabShippingPolicy"
+                >
                     <span class="nav-link text-primary">
                         <i class="fa-regular fa-truck-ramp-box fa-fw d-inline d-lg-none"></i>
                         <span class="d-none d-lg-block">Shipping Policy</span>
@@ -574,7 +659,12 @@ class ClinicsController extends AbstractController
             
             <!-- Company Information -->
             <div class="col-12" id="company_information_panel">
-                <form name="form_clinic_information" id="form_clinic_information" method="post">
+                <form 
+                    name="form_clinic_information" 
+                    id="form_clinic_information" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitClinicInformation"
+                >
                     <div class="row pt-0 pt-sm-3 border-left border-right bg-light border-top">
                         <!-- Clinic name -->
                         <div class="col-12 col-sm-6 pt-3 pt-sm-0">
@@ -866,7 +956,12 @@ class ClinicsController extends AbstractController
                             <!-- '. $specie->getName() .' -->
                             <div class="col-6 col-sm-4 col-md-2 text-center">
                                 <div class="custom-control custom-checkbox image-checkbox" style="position: relative">
-                                    <input type="checkbox" class="custom-control-input species-checkbox" id="species_'. strtolower($specie->getName()) .'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="custom-control-input species-checkbox" 
+                                        id="species_'. strtolower($specie->getName()) .'"
+                                        data-action="click->clinics--account-settings#onSubmitShippingPolicy"
+                                    >
                                     <label class="custom-control-label" for="species_'. strtolower($specie->getName()) .'">
                                         <i class="'. $specie->getIcon() .' species-icon" id="icon_'. strtolower($specie->getName()) .'"></i>
                                     </label>
@@ -887,7 +982,12 @@ class ClinicsController extends AbstractController
             
             <!-- About -->
             <div class="col-12 hidden" id="about_panel">
-                <form name="form_about" id="form_about" method="post">
+                <form 
+                    name="form_about" 
+                    id="form_about" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitFormAbout"
+                >
                     <input type="hidden" name="method" value="setAbout">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -912,7 +1012,12 @@ class ClinicsController extends AbstractController
             
             <!-- Operating Hours -->
             <div class="col-12 hidden" id="operating_hours_panel">
-                <form name="form_operating_hours" id="form_operating_hours" method="post">
+                <form 
+                    name="form_operating_hours" 
+                    id="form_operating_hours" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitOperatingHours"
+                >
                     <input type="hidden" name="method" value="setOperatingHours">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -937,7 +1042,12 @@ class ClinicsController extends AbstractController
             
             <!-- Refund Policy -->
             <div class="col-12 hidden" id="refund_policy_panel">
-                <form name="form_refund_policy" id="form_refund_policy" method="post">
+                <form 
+                    name="form_refund_policy" 
+                    id="form_refund_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitRefundPolicy"
+                >
                     <input type="hidden" name="method" value="setRefundPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -962,7 +1072,12 @@ class ClinicsController extends AbstractController
             
             <!-- Sales Tax Policy -->
             <div class="col-12 hidden" id="sales_tax_policy_panel">
-                <form name="form_sales_tax_policy" id="form_sales_tax_policy" method="post">
+                <form 
+                    name="form_sales_tax_policy" 
+                    id="form_sales_tax_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitSalesTaxPolicy"
+                    >
                     <input type="hidden" name="method" value="setSalesTaxPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">
@@ -987,7 +1102,12 @@ class ClinicsController extends AbstractController
             
             <!-- Shipping Policy -->
             <div class="col-12 hidden" id="shipping_policy_panel">
-                <form name="form_shipping_policy" id="form_shipping_policy" method="post">
+                <form 
+                    name="form_shipping_policy" 
+                    id="form_shipping_policy" 
+                    method="post"
+                    data-action="submit->clinics--account-settings#onSubmitShippingPolicy"
+                >
                     <input type="hidden" name="method" value="setShippingPolicy">
                     <div class="row pt-0 border-left border-right bg-light border-bottom">
                         <div class="col-12 py-3">

@@ -61,7 +61,7 @@ class DistributorClinicsController extends AbstractController
 
             $distributorClinics->setClinic($clinic);
             $distributorClinics->setDistributor($distributor);
-            $distributorClinics->setIsActive(0);
+            $distributorClinics->setIsActive(1);
             $distributorClinics->setIsIgnored(0);
 
             $this->em->persist($distributorClinics);
@@ -156,6 +156,7 @@ class DistributorClinicsController extends AbstractController
                             data-customer-id="'. $result->getClientId() .'"
                             data-bs-toggle="modal" 
                             data-bs-target="#modal_connect_customer"
+                            data-action="click->distributors--distributor-clinics#onClickModalCustomerConnect"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
@@ -197,6 +198,7 @@ class DistributorClinicsController extends AbstractController
                                 type="submit" 
                                 id="btn_save_customer_connect" 
                                 class="btn btn-primary"
+                                data-action="distributors--distributor-clinics#onClickSaveCustomerConnect"
                             >
                                 SAVE
                             </button>
@@ -215,82 +217,112 @@ class DistributorClinicsController extends AbstractController
             </div>';
         }
 
-        $currentPage = $request->request->get('page_id');
+        $currentPage = $request->request->get('page-id');
         $lastPage = $this->pageManager->lastPage($results);
 
-        $html .= '
-        <!-- Pagination -->
-        <div class="row mt-3">
-            <div class="col-12">';
-
-        if($lastPage > 1) {
-
-            $previousPageNo = $currentPage - 1;
-            $url = '/distributors/customers/';
-            $previousPage = $url . $previousPageNo;
-
+        if(count($results) > 0)
+        {
             $html .= '
-            <nav class="custom-pagination">
-                <ul class="pagination justify-content-center">
-            ';
+            <!-- Pagination -->
+            <div class="row mt-3">
+                <div class="col-12">';
 
-            $disabled = 'disabled';
-            $dataDisabled = 'true';
+            if($lastPage > 1)
+            {
+                $previousPage_no = $currentPage - 1;
+                $url = '/distributors/customers';
+                $previousPage = $url;
 
-            // Previous Link
-            if($currentPage > 1){
+                $html .= '
+                <nav class="custom-pagination">
+                    <ul class="pagination justify-content-center">
+                ';
 
-                $disabled = '';
-                $dataDisabled = 'false';
-            }
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
 
-            $html .= '
-            <li class="page-item '. $disabled .'">
-                <a 
-                    class="customer-link" 
-                    aria-disabled="'. $dataDisabled .'" 
-                    data-page-id="'. $currentPage - 1 .'" 
-                    href="'. $previousPage .'"
-                >
-                    <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
-                </a>
-            </li>';
-
-            for($i = 1; $i <= $lastPage; $i++) {
-
-                $active = '';
-
-                if($i == (int) $currentPage){
-
-                    $active = 'active';
+                // Previous Link
+                if ($currentPage > 1)
+                {
+                    $disabled = '';
+                    $dataDisabled = 'false';
                 }
 
                 $html .= '
-                <li class="page-item '. $active .'">
-                    <a class="customer-link" data-page-id="'. $i .'" href="'. $url .'">'. $i .'</a>
+                <li class="page-item ' . $disabled . '">
+                    <a 
+                        class="address-pagination" 
+                        aria-disabled="' . $dataDisabled . '" 
+                        data-page-id="' . $currentPage - 1 . '" 
+                        href="' . $previousPage . '"
+                        data-action="click->distributors--distributor-clinics#onClickPagination"
+                    >
+                        <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
+                    </a>
                 </li>';
+
+                $isActive = false;
+
+                for ($i = 1; $i <= $lastPage; $i++)
+                {
+                    $active = '';
+
+                    if ($i == (int)$currentPage)
+                    {
+                        $active = 'active';
+                        $isActive = true;
+                    }
+
+                    // Go to previous page if all records for a page have been deleted
+                    if(!$isActive && $i == count($results)){
+
+                        $active = 'active';
+                    }
+
+                    $html .= '
+                    <li class="page-item ' . $active . '">
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="' . $i . '" 
+                            href="' . $url . '"
+                            data-action="click->distributors--distributor-clinics#onClickPagination"
+                        >' . $i . '</a>
+                    </li>';
+                }
+
+                $disabled = 'disabled';
+                $dataDisabled = 'true';
+
+                if ($currentPage < $lastPage)
+                {
+                    $disabled = '';
+                    $dataDisabled = 'false';
+                }
+
+                $html .= '
+                <li class="page-item ' . $disabled . '">
+                    <a 
+                        class="address-pagination"  
+                        aria-disabled="' . $dataDisabled . '" 
+                        data-page-id="' . $currentPage + 1 . '" 
+                        href="' . $url . '"
+                        data-action="click->distributors--distributor-clinics#onClickPagination"
+                    >
+                        <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>';
+
+                if(count($results) < $currentPage)
+                {
+                    $currentPage = count($results);
+                }
+
+                $html .= '
+                        </ul>
+                    </nav>
+                    <input type="hidden" id="page_no" value="' . $currentPage . '">
+                </div>';
             }
-
-            $disabled = 'disabled';
-            $dataDisabled = 'true';
-
-            if($currentPage < $lastPage) {
-
-                $disabled = '';
-                $dataDisabled = 'false';
-            }
-
-            $html .= '
-            <li class="page-item '. $disabled .'">
-                <a class="customer-link" aria-disabled="'. $dataDisabled .'" data-page-id="'. $currentPage + 1 .'" href="'. $url . $currentPage + 1 .'">
-                    <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>';
-
-            $html .= '
-                    </ul>
-                </nav>
-            </div>';
         }
 
         return new JsonResponse($html);

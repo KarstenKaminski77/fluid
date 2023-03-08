@@ -31,7 +31,7 @@ class AvailabilityTrackerController extends AbstractController
     {
         $data = $request->request;
         $clinicId = $this->getUser()->getClinic()->getId();
-        $productId = $data->get('product_id');
+        $productId = $data->get('product-id');
 
         $products = $this->em->getRepository(DistributorProducts::class)->findBy([
             'product' => $productId,
@@ -56,7 +56,12 @@ class AvailabilityTrackerController extends AbstractController
         }
 
         $html = '
-        <form id="form_availability_tracker" name="form_availability_tracker" method="post">
+        <form 
+            id="form_availability_tracker" 
+            name="form_availability_tracker" 
+            method="post"
+            data-action="submit->products--tracking#onSubmitTrackingForm"
+        >
             <input type="hidden" name="product_id" value="'. $productId .'">
             <input type="hidden" name="availability_tracker_id" value="0">
             <h5 class="pb-3 pt-3">Availability Tracker</h5>';
@@ -97,7 +102,7 @@ class AvailabilityTrackerController extends AbstractController
 
                     } else {
 
-                        $notification = $method->getSendTo();
+                        $notification = $this->encryptor->decrypt($method->getSendTo());
                     }
 
                     $html .= '
@@ -111,7 +116,7 @@ class AvailabilityTrackerController extends AbstractController
                             autocomplete="off"
                         >
                         <label class="btn btn-sm btn-outline-primary w-100 text-truncate" for="method_'. $i .'">
-                            '. $this->encryptor->decrypt($notification) .'
+                            '. $notification .'
                         </label>
                     </div>';
 
@@ -260,7 +265,7 @@ class AvailabilityTrackerController extends AbstractController
     #[Route('/clinics/delete-availability-tracker', name: 'delete_availability_tracker')]
     public function deleteAvailabilityTrackerAction(Request $request): Response
     {
-        $trackerId = $request->request->get('tracker_id');
+        $trackerId = $request->request->get('tracker-id');
         $tracker = $this->em->getRepository(AvailabilityTracker::class)->find($trackerId);
         $productId = $tracker->getProduct()->getId();
         $flash = '';
@@ -326,12 +331,13 @@ class AvailabilityTrackerController extends AbstractController
                 }
 
                 $col = 3;
-                $sendTo = $tracker->getCommunication()->getCommunicationMethod()->getClinicCommunicationMethods()[0]->getSendTo();
+                $to = $tracker->getCommunication()->getCommunicationMethod()->getClinicCommunicationMethods()[0]->getSendTo();
+                $sendTo = $this->encryptor->decrypt($to);
                 $communicationMethod = $tracker->getCommunication()->getId();
 
-                if (empty($sendTo)) {
+                if(empty($to)) {
 
-                    $col = 6;
+                    $col = 5;
                 }
 
                 if ($communicationMethod == 1) {
@@ -347,25 +353,23 @@ class AvailabilityTrackerController extends AbstractController
                     </div>
                     <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary border-list text-truncate">Distributor</div>
                     <div class="col-8 col-sm-10 col-xl-' . $col . ' t-cell text-truncate border-list">
-                        ' . $tracker->getDistributor()->getDistributorName() . '
+                        ' . $this->encryptor->decrypt($tracker->getDistributor()->getDistributorName()) . '
                     </div>';
-
-                if (!empty($sendTo)) {
 
                     $response .= '
                     <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary border-list text-truncate">Send To</div>
                     <div class="col-8 col-sm-10 col-xl-3 t-cell text-truncate border-list">
                         ' . $sendTo . '
                     </div>';
-                }
 
-                $response .= '
+                    $response .= '
                     <div class="col-12 col-xl-2 t-cell text-truncate">
                         <a 
                             href="" 
                             class="delete-icon float-start float-sm-end availability-tracker-delete-icon" 
                             data-bs-toggle="modal" data-availability-tracker-id="' . $tracker->getId() . '" 
                             data-bs-target="#modal_availability_tracker_delete"
+                            data-action="click->products--tracking#onClickDeleteIcon"
                         >
                             <i class="fa-solid fa-trash-can"></i>
                         </a>
@@ -403,7 +407,9 @@ class AvailabilityTrackerController extends AbstractController
                                     <button 
                                         type="button" 
                                         class="btn btn-danger btn-sm communication-method-delete" 
-                                        id="delete_tracker">DELETE</button>
+                                        id="delete_tracker"
+                                        data-action="click->products--tracking#onClickDelete"
+                                    >DELETE</button>
                                 </div>
                             </div>
                         </div>

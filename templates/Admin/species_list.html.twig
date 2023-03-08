@@ -38,61 +38,63 @@
                 Created
             </div>
         </div>
+        <div id="species_list_container">
         {% for specie in species %}
-        <div class="row py-3 border-bottom-dashed" id="row_{{ specie.id }}">
-            <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
-                #ID
+            <div class="row py-3 border-bottom-dashed" id="row_{{ specie.id }}">
+                <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                    #ID
+                </div>
+                <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #{{ specie.id }}
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Species
+                </div>
+                <div class="col-8 col-md-3 text-truncate">
+                    {{ specie.name }}
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Icon
+                </div>
+                <div class="col-8 col-md-3 text-truncate">
+                    {% if specie.icon|length > 0 %}
+                        <i class="{{ specie.icon }} fs-5"></i>
+                    {% endif %}
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Modified
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    {{ specie.modified|date('Y-m-d H:i:s') }}
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Created
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    {{ specie.created|date('Y-m-d') }}
+                </div>
+                <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                    <a
+                        href="{{ path('species', {'speciesId':specie.id} ) }}"
+                        class="float-start float-md-end open-user-modal ms-5 ms-md-0"
+                    >
+                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                    </a>
+                    <a
+                        href=""
+                        class="delete-icon float-end open-delete-species-modal"
+                        data-bs-toggle="modal"
+                        data-species-id="{{ specie.id }}"
+                        data-bs-target="#modal_delete_species"
+                    >
+                        <i class="fa-solid fa-trash-can"></i>
+                    </a>
+                </div>
             </div>
-            <div class="col-8 col-md-1 ps-4 text-truncate">
-                #{{ specie.id }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Species
-            </div>
-            <div class="col-8 col-md-3 text-truncate">
-                {{ specie.name }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Icon
-            </div>
-            <div class="col-8 col-md-3 text-truncate">
-                {% if specie.icon|length > 0 %}
-                    <i class="{{ specie.icon }} fs-5"></i>
-                {% endif %}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Modified
-            </div>
-            <div class="col-8 col-md-2 text-truncate">
-                {{ specie.modified|date('Y-m-d H:i:s') }}
-            </div>
-            <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                Created
-            </div>
-            <div class="col-8 col-md-2 text-truncate">
-                {{ specie.created|date('Y-m-d') }}
-            </div>
-            <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
-                <a
-                    href="{{ path('species', {'speciesId':specie.id} ) }}"
-                    class="float-start float-md-end open-user-modal ms-5 ms-md-0"
-                >
-                    <i class="fa-solid fa-pen-to-square edit-icon"></i>
-                </a>
-                <a
-                    href=""
-                    class="delete-icon float-end open-delete-species-modal"
-                    data-bs-toggle="modal"
-                    data-species-id="{{ specie.id }}"
-                    data-bs-target="#modal_delete_species"
-                >
-                    <i class="fa-solid fa-trash-can"></i>
-                </a>
-            </div>
-        </div>
         {% endfor %}
+        </div>
         <div class="row py-3">
-            <div class="col-12">
+            <div class="col-12" id="species_list_pagination">
                 {{ pagination|raw }}
             </div>
         </div>
@@ -128,8 +130,37 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            $(document).on('click', '.address-pagination', function (e)
+            {
+                e.preventDefault();
 
+                let clickedElement = e.currentTarget;
+                let pageId = $(clickedElement).attr('data-page-id');
+
+                if(!$(clickedElement).closest('.page-item').hasClass('disabled'))
+                {
+                    $.ajax({
+                        url: "{{ path('species_list_paginate') }}",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'page-id': pageId,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        success: function (response)
+                        {
+                            $('#species_list_container').empty().append(response.html);
+                            $('#species_list_pagination').empty().append(response.pagination);
+                            isLoading(false);
+                        }
+                    });
+                }
+            });
             $(document).on('click', '.delete-icon', function (e){
 
                 $('#delete_user').attr('data-species-id', $(this).data('species-id'));

@@ -85,11 +85,6 @@ class Distributors
     private $created;
 
     /**
-     * @ORM\OneToMany(targetEntity=Baskets::class, mappedBy="distributor")
-     */
-    private $baskets;
-
-    /**
      * @ORM\OneToMany(targetEntity=DistributorClinicPrices::class, mappedBy="distributor")
      */
     private $distributorClinicPrices;
@@ -270,6 +265,11 @@ class Distributors
      */
     private $managerIdExpDate;
 
+    /**
+     * @ORM\OneToMany(targetEntity=ControlledDrugFiles::class, mappedBy="distributor")
+     */
+    private $controlledDrugFiles;
+
     public function __construct()
     {
         $this->setModified(new \DateTime());
@@ -278,7 +278,6 @@ class Distributors
         }
 
         $this->distributors = new ArrayCollection();
-        $this->baskets = new ArrayCollection();
         $this->distributorClinicPrices = new ArrayCollection();
         $this->distributorProducts = new ArrayCollection();
         $this->distributorUsers = new ArrayCollection();
@@ -295,6 +294,7 @@ class Distributors
         $this->distributorUserPermissions = new ArrayCollection();
         $this->refreshTokens = new ArrayCollection();
         $this->distributorClinics = new ArrayCollection();
+        $this->controlledDrugFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -454,36 +454,6 @@ class Distributors
     public function setCreated(\DateTimeInterface $created): self
     {
         $this->created = $created;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Baskets[]
-     */
-    public function getBaskets(): Collection
-    {
-        return $this->baskets;
-    }
-
-    public function addBasket(Baskets $basket): self
-    {
-        if (!$this->baskets->contains($basket)) {
-            $this->baskets[] = $basket;
-            $basket->setDistributor($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBasket(Baskets $basket): self
-    {
-        if ($this->baskets->removeElement($basket)) {
-            // set the owning side to null (unless already changed)
-            if ($basket->getDistributor() === $this) {
-                $basket->setDistributor(null);
-            }
-        }
 
         return $this;
     }
@@ -1191,6 +1161,36 @@ class Distributors
     public function setManagerIdExpDate(?\DateTimeInterface $managerIdExpDate): self
     {
         $this->managerIdExpDate = $managerIdExpDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ControlledDrugFiles>
+     */
+    public function getControlledDrugFiles(): Collection
+    {
+        return $this->controlledDrugFiles;
+    }
+
+    public function addControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if (!$this->controlledDrugFiles->contains($controlledDrugFile)) {
+            $this->controlledDrugFiles[] = $controlledDrugFile;
+            $controlledDrugFile->setDistributor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if ($this->controlledDrugFiles->removeElement($controlledDrugFile)) {
+            // set the owning side to null (unless already changed)
+            if ($controlledDrugFile->getDistributor() === $this) {
+                $controlledDrugFile->setDistributor(null);
+            }
+        }
 
         return $this;
     }

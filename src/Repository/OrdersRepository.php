@@ -119,6 +119,22 @@ class OrdersRepository extends ServiceEntityRepository
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
 
+    public function findByControlledDrug($orderId)
+    {
+        return $this->createQueryBuilder('o')
+            ->select('o', 'oi', 'p', 'd')
+            ->join('o.orderItems', 'oi')
+            ->join('oi.product', 'p')
+            ->join('oi.distributor', 'd')
+            ->andWhere('p.isControlled = :isControlled')
+            ->setParameter('isControlled', 1)
+            ->andWhere('o.id = :orderId')
+            ->setParameter('orderId', $orderId)
+            ->groupBy('oi.distributor')
+            ->getQuery()
+            ->getResult();
+    }
+
     /*
     public function findOneBySomeField($value): ?Orders
     {

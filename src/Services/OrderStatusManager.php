@@ -114,6 +114,8 @@ class OrderStatusManager
                                     data-distributor-id="'. $distributor->getId() .'"
                                     data-clinic-id="'. $clinic->getId() .'"
                                     class="order_notification_alert"
+                                    data-action="click->distributors--notifications#onClickNotification"
+                                    
                                 >
                                     <span class="badge bg-success me-3">Order Shipped</span>
                                 </a>
@@ -125,6 +127,7 @@ class OrderStatusManager
                                     data-distributor-id="'. $distributor->getId() .'"
                                     data-clinic-id="'. $clinic->getId() .'"
                                     class="order_notification_alert"
+                                    data-action="click->distributors--notifications#onClickNotification"
                                 >
                                     PO No. '. $distributor->getPoNumberPrefix() .'-'. $order->getId() .'
                                 </a>
@@ -135,6 +138,7 @@ class OrderStatusManager
                                     data-notification-id="'. $notification->getId() .'"
                                     data-order-id="'. $order->getId() .'"
                                     data-distributor-id="'. $distributor->getId() .'"
+                                    data-action="click->clinics--notifications#onClickDeleteNotification"
                                 >
                                     <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
                                 </a>

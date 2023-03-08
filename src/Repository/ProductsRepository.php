@@ -65,11 +65,29 @@ class ProductsRepository extends ServiceEntityRepository
     /**
      * @return Products[] Returns an array of Products objects
      */
-    public function findBySearchAdmin($keyword)
+    public function findBySearchAdmin($keyword, $manufacturer)
     {
         $queryBuilder = $this->createQueryBuilder('p')
-            ->andWhere('p.name LIKE :keyword')
-            ->setParameter('keyword', '%'. $keyword .'%')
+            ->select('p', 'pm')
+            ->join('p.productManufacturer', 'pm')
+            ->andWhere('p.isActive = :isActive')
+            ->setParameter('isActive', 1);
+
+        if(!empty($keyword))
+        {
+            $queryBuilder
+                ->andWhere('p.name LIKE :keyword')
+                ->setParameter('keyword', '%'. $keyword .'%');
+        }
+
+        if(!empty($manufacturer))
+        {
+            $queryBuilder
+                ->andWhere('pm.id = :manufacturer')
+                ->setParameter('manufacturer', $manufacturer);
+        }
+
+        $queryBuilder
             ->orderBy('p.name', 'ASC');
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
@@ -267,5 +285,33 @@ class ProductsRepository extends ServiceEntityRepository
         ;
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
+    public function findyDistributor($productId)
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "
+        SELECT 
+            p.name,
+            p.id as product_id,
+            p.size,
+            d.id as distributor_id,
+            d.distributor_name,
+            d.tracking_id,
+            d.shipping_policy,
+            d.sales_tax_policy,
+            d.logo,
+            dp.unit_price,
+            dp.stock_count,
+            dp.item_id,
+            dp.sku
+        FROM products p 
+            JOIN distributor_products dp ON p.id = dp.product_id 
+            JOIN distributors d ON dp.distributor_id = d.id 
+        WHERE dp.product_id = :productId";
+        $stmt = $conn->prepare($sql)->executeQuery(['productId' => $productId])->fetchAllAssociative();
+
+        return $stmt;
     }
 }

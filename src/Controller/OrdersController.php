@@ -8,29 +8,26 @@ use App\Entity\Baskets;
 use App\Entity\ChatMessages;
 use App\Entity\ChatParticipants;
 use App\Entity\Clinics;
+use App\Entity\ControlledDrugFiles;
 use App\Entity\DistributorClinics;
 use App\Entity\DistributorProducts;
 use App\Entity\Distributors;
-use App\Entity\ListItems;
 use App\Entity\Notifications;
 use App\Entity\OrderItems;
 use App\Entity\Orders;
 use App\Entity\OrderStatus;
 use App\Entity\ProductImages;
 use App\Entity\Products;
-use App\Entity\RefreshTokens;
 use App\Entity\Status;
 use App\Services\PaginationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Snappy\Pdf;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
@@ -42,7 +39,7 @@ class OrdersController extends AbstractController
     private $pageManager;
     private $requestStack;
     private $encryptor;
-    const ITEMS_PER_PAGE = 6;
+    const ITEMS_PER_PAGE = 4;
 
     public function __construct(
         EntityManagerInterface $em, MailerInterface $mailer, Encryptor $encryptor ,
@@ -55,15 +52,304 @@ class OrdersController extends AbstractController
         $this->encryptor = $encryptor;
     }
 
+    #[Route('/clinics/checkout/controlled-drugs', name: 'checkout_controlled_drugs')]
+    public function getCheckoutControlledDrugsAction(Request $request): Response
+    {
+        $allFilesUploaded = true;
+        $distributorsArray = [];
+        $clinic = $this->getUser()->getClinic();
+        $basketId = $request->request->get('basket-id');
+        $basket = $this->em->getRepository(Baskets::class)->find($basketId);
+        $order = $this->em->getRepository(Orders::class)->findOneBy([
+            'basket' => $basketId,
+        ]);
+
+        // Create / update orders
+        if($order == null)
+        {
+            $order = new Orders();
+        }
+
+        $deliveryFee = 0;
+        $subTotal = $basket->getTotal();
+        $email = $this->encryptor->decrypt($clinic->getEmail());
+        $tax = 0;
+
+        $order->setBasket($basket);
+        $order->setClinic($clinic);
+        $order->setStatus('checkout');
+        $order->setDeliveryFee($deliveryFee);
+        $order->setSubTotal($subTotal);
+        $order->setTax($tax);
+        $order->setTotal($deliveryFee + $subTotal + $tax);
+        $order->setEmail($this->encryptor->encrypt($email));
+
+        $this->em->persist($order);
+        $this->em->flush();
+
+        $orderId = $order->getId();
+        $response['order_id'] = $order->getId();
+        $orderItems = $this->em->getRepository(OrderItems::class)->findBy([
+            'orders' => $order->getId(),
+        ]);
+        $orderStatus = $this->em->getRepository(OrderStatus::class)->findBy([
+            'orders' => $order->getId(),
+
+        ]);
+        $distributorId = '';
+
+        // Remove any previous items
+        if(count($orderItems) > 0)
+        {
+            foreach($orderItems as $orderItem)
+            {
+                $this->em->remove($orderItem);
+            }
+        }
+
+        // Remove previous status
+        if(count($orderStatus) > 0)
+        {
+            foreach($orderStatus as $status)
+            {
+                $this->em->remove($status);
+            }
+        }
+
+        // Create new order items
+        if(count($basket->getBasketItems()) > 0)
+        {
+            foreach($basket->getBasketItems() as $basketItem)
+            {
+                // Generate PO prefix if one isn't yet set
+                $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
+                $prefix = $distributor->getPoNumberPrefix();
+                $name = $distributor->getDistributorName();
+
+                if($prefix == null)
+                {
+                    $words = preg_split("/\s+/", $this->encryptor->decrypt($name));
+                    $prefix = '';
+
+                    foreach($words as $word)
+                    {
+
+                        $prefix .= substr(ucwords($word), 0, 1);
+                    }
+
+                    $distributor->setPoNumberPrefix($prefix);
+                    $this->em->persist($distributor);
+                }
+
+                if(!in_array($basketItem->getDistributor()->getId(), $distributorsArray))
+                {
+                    $distributorsArray[] = $basketItem->getDistributor()->getId();
+                }
+
+                $orderItems = new OrderItems();
+                $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
+                $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
+
+                $orderItems->setOrders($order);
+                $orderItems->setDistributor($distributor);
+                $orderItems->setProduct($basketItem->getProduct());
+                $orderItems->setUnitPrice($basketItem->getUnitPrice());
+                $orderItems->setQuantity($basketItem->getQty());
+                $orderItems->setQuantityDelivered($basketItem->getQty());
+                $orderItems->setTotal($basketItem->getTotal());
+                $orderItems->setName($basketItem->getName());
+                $orderItems->setPoNumber($prefix .'-'. $order->getId());
+                $orderItems->setOrderPlacedBy($this->encryptor->encrypt($firstName .' '. $lastName));
+                $orderItems->setIsAccepted(0);
+                $orderItems->setIsRenegotiate(0);
+                $orderItems->setIsCancelled(0);
+                $orderItems->setIsConfirmedDistributor(0);
+                $orderItems->setIsQuantityCorrect(0);
+                $orderItems->setIsQuantityInCorrect(0);
+                $orderItems->setIsQuantityAdjust(0);
+                $orderItems->setIsAcceptedOnDelivery(1);
+                $orderItems->setIsRejectedOnDelivery(0);
+                $orderItems->setStatus('Pending');
+                $orderItems->setItemId($basketItem->getItemId());
+
+                $this->em->persist($orderItems);
+
+                // Order Status
+                if($distributorId != $basketItem->getDistributor()->getId())
+                {
+                    $distributorId = $basketItem->getDistributor()->getId();
+                    $status = $this->em->getRepository(Status::class)->find(2);
+
+                    $orderStatus = new OrderStatus();
+
+                    $orderStatus->setOrders($order);
+                    $orderStatus->setDistributor($basketItem->getDistributor());
+                    $orderStatus->setStatus($status);
+
+                    $this->em->persist($orderStatus);
+                }
+            }
+
+            $this->em->flush();
+        }
+
+        // Update distributor totals
+        foreach($distributorsArray as $dist)
+        {
+            $distributorTotal = 0;
+            $distributorTotals = $this->em->getRepository(OrderItems::class)->findBy([
+                'distributor' => $dist,
+                'orders' => $orderId,
+            ]);
+
+            foreach($distributorTotals as $total)
+            {
+                $distributorTotal += $total->getTotal() * $total->getQuantity();
+            }
+
+            foreach($distributorTotals as $total)
+            {
+                $total->setDistributorTotal($distributorTotal);
+                $this->em->persist($total);
+            }
+
+            $this->em->flush();
+        }
+
+        $controlledDrugItems = $this->em->getRepository(Orders::class)->findByControlledDrug($order->getId());
+        $orderItems = $controlledDrugItems[0]->getOrderItems();
+
+        $response = '
+        <div class="row mt-4">
+            <div class="col-12 mt-2">
+                <div class="alert alert-secondary">';
+
+                    foreach($orderItems as $item)
+                    {
+                        $distributor = $item->getDistributor();
+                        $controlledDrugFiles = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+                            'orders' => $orderId,
+                            'distributor' => $distributor->getId(),
+                        ]);
+                        $product = $item->getProduct();
+
+                        if($controlledDrugFiles == null)
+                        {
+                            $controlledDrugFiles = new ControlledDrugFiles();
+
+                            $controlledDrugFiles->setOrders($order);
+                            $controlledDrugFiles->setDistributor($distributor);
+
+                            $this->em->persist($controlledDrugFiles);
+                            $this->em->flush();
+                        }
+
+                        if($controlledDrugFiles->getPurchaseOrder() == null)
+                        {
+                            $allFilesUploaded = false;
+                        }
+
+                        $class = 'hidden file-link';
+                        $href = '#';
+
+                        if($controlledDrugFiles->getPurchaseOrder() != null)
+                        {
+                            $class = 'file-link';
+                            $href = $this->getParameter('app.base_url') .'/pdf_controlled_po.php?pdf='. $controlledDrugFiles->getPurchaseOrder();
+                        }
+
+                        $response .= '
+                        <div class="row">
+                        <!-- Thumbnail -->
+                            <div class="col-12 col-sm-2 text-center pt-3">
+                                <img class="img-fluid basket-img" src="/images/logos/'. $distributor->getLogo() .'" style="max-height: 45px">
+                            </div>
+                            <div class="col-12 col-sm-10 pt-3">
+                                <div class="row">
+                                    <!-- Distributor Name -->
+                                    <div class="col-12 col-sm-8 d-table">
+                                        <div class="row d-table-row">
+                                            <div class="col-12 d-table-cell align-middle">
+                                                <h6 class="fw-bold text-center text-sm-start text-primary mb-0">
+                                                    '. $this->encryptor->decrypt($distributor->getDistributorName()) .'
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Product Quantity -->
+                                    <div class="col-12 col-sm-4 d-table text-end">
+                                        <form 
+                                            name="form_po" 
+                                            id="form_po_'. $distributor->getId() .'" 
+                                            enctype="multipart/form-data"
+                                            data-distributor-id="'. $distributor->getId() .'"
+                                            data-action="submit->orders--clinics#onSubmitFormPo"
+                                        >
+                                            <input type="hidden" name="distributor-id" value="'. $distributor->getId() .'">
+                                            <input type="hidden" name="order-id" value="'. $orderId .'">
+                                            <span class="d-inline-block me-3">
+                                                <a
+                                                    href="'. $href .'"
+                                                    class="'. $class .'"
+                                                >
+                                                    <i class="fas fa-download text-primary"></i>
+                                                </a>
+                                            </span>
+                                            <label 
+                                                for="file_upload_'. $distributor->getId() .'" 
+                                                class="file-upload btn btn-sm btn-primary btn-block d-inline-block"
+                                            >
+                                                <i class="fa fa-upload mr-2 me-2"></i>Upload PO
+                                                <input 
+                                                    id="file_upload_'. $distributor->getId() .'" 
+                                                    type="file" 
+                                                    style="display: none"
+                                                    data-action="change->orders--clinics#onChangePoFile"
+                                                    data-distributor-id="'. $distributor->getId() .'"
+                                                >
+                                            </label>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>';
+                    }
+
+                $response .= '
+                </div>
+            </div>
+        </div>';
+
+        $classHidden = 'hidden';
+
+        if($allFilesUploaded)
+        {
+            $classHidden = '';
+        }
+
+        $response .= '
+        <div class="row '. $classHidden .'">
+            <div class="col-12 text-end">
+                <a 
+                    href="" 
+                    class="btn btn-primary"
+                    data-action="click->orders--clinics#onClickBtnProceed"
+                    data-basket-id="'. $basketId .'"
+                >
+                    PROCEED <i class="fa-solid fa-circle-right ps-2"></i>
+                </a>
+            </div>
+        </div>';
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/clinics/checkout/options', name: 'checkout_options')]
-    #[Route('/retail/checkout/options', name: 'checkout_options_retail')]
     public function getCheckoutOptionsAction(Request $request): Response
     {
         $requiresAuth = $request->request->get('require-auth');
-        $clinic = null;
-        $distributor = null;
-        $retail = null;
-        $isRetail = $request->request->get('retail');
+        $distributorsArray = [];
+        $purchaseOrders = null;
 
         if($requiresAuth == null)
         {
@@ -82,56 +368,28 @@ class OrdersController extends AbstractController
         ]);
         $basket = $this->em->getRepository(Baskets::class)->find($basketId);
 
-        if($isRetail)
-        {
-            $user = $this->getUser();
-            $retail = $this->getUser();
+        $user = $this->getUser()->getClinic();
+        $clinic = $this->getUser()->getClinic();
 
-            $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
-                'retail' => $user->getId(),
-                'isActive' => 1,
-                'type' => 2
-            ]);
+        $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
+            'clinic' => $user->getId(),
+            'isActive' => 1,
+            'type' => 2
+        ]);
 
-            $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'retail' => $user->getId(),
-                'isDefault' => 1,
-                'type' => 2,
-                'isActive' => 1,
-            ]);
+        $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'clinic' => $user->getId(),
+            'isDefault' => 1,
+            'type' => 2,
+            'isActive' => 1,
+        ]);
 
-            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'retail' => $user->getId(),
-                'isDefaultBilling' => 1,
-                'type' => 1,
-                'isActive' => 1,
-            ]);
-        }
-        else
-        {
-            $user = $this->getUser()->getClinic();
-            $clinic = $this->getUser()->getClinic();
-
-            $shippingAddresses  = $this->em->getRepository(Addresses::class)->findBy([
-                'clinic' => $user->getId(),
-                'isActive' => 1,
-                'type' => 2
-            ]);
-
-            $defaultAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'clinic' => $user->getId(),
-                'isDefault' => 1,
-                'type' => 2,
-                'isActive' => 1,
-            ]);
-
-            $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
-                'clinic' => $user->getId(),
-                'isDefaultBilling' => 1,
-                'type' => 1,
-                'isActive' => 1,
-            ]);
-        }
+        $defaultBillingAddress = $this->em->getRepository(Addresses::class)->findOneBy([
+            'clinic' => $user->getId(),
+            'isDefaultBilling' => 1,
+            'type' => 1,
+            'isActive' => 1,
+        ]);
 
         if($defaultAddress != null)
         {
@@ -164,7 +422,6 @@ class OrdersController extends AbstractController
 
         $order->setBasket($basket);
         $order->setClinic($clinic);
-        $order->setRetail($retail);
         $order->setStatus('checkout');
         $order->setDeliveryFee($deliveryFee);
         $order->setSubTotal($subTotal);
@@ -209,17 +466,9 @@ class OrdersController extends AbstractController
             foreach($basket->getBasketItems() as $basketItem)
             {
                 // Generate PO prefix if one isn't yet set
-                if($isRetail)
-                {
-                    $prefix = $basket->getClinic()->getPoNumberPrefix();
-                    $name = $basket->getClinic()->getClinicName();
-                }
-                else
-                {
-                    $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
-                    $prefix = $distributor->getPoNumberPrefix();
-                    $name = $distributor->getDistributorName();
-                }
+                $distributor = $this->em->getRepository(Distributors::class)->find($basketItem->getDistributor()->getId());
+                $prefix = $distributor->getPoNumberPrefix();
+                $name = $distributor->getDistributorName();
 
                 if($prefix == null)
                 {
@@ -232,16 +481,13 @@ class OrdersController extends AbstractController
                         $prefix .= substr(ucwords($word), 0, 1);
                     }
 
-                    if($isRetail)
-                    {
-                        $basket->getClinic()->setPoNumberPrefix($prefix);
-                        $this->em->persist($basket);
-                    }
-                    else
-                    {
-                        $distributor->setPoNumberPrefix($prefix);
-                        $this->em->persist($distributor);
-                    }
+                    $distributor->setPoNumberPrefix($prefix);
+                    $this->em->persist($distributor);
+                }
+
+                if(!in_array($basketItem->getDistributor()->getId(), $distributorsArray))
+                {
+                    $distributorsArray[] = $basketItem->getDistributor()->getId();
                 }
 
                 $orderItems = new OrderItems();
@@ -273,49 +519,45 @@ class OrdersController extends AbstractController
                 $this->em->persist($orderItems);
 
                 // Order Status
-                if($isRetail == null)
+                if($distributorId != $basketItem->getDistributor()->getId())
                 {
-                    if($distributorId != $basketItem->getDistributor()->getId())
-                    {
-                        $func = 'getDistributorName';
-                        $distributorId = $basketItem->getDistributor()->getId();
-                        $status = $this->em->getRepository(Status::class)->find(2);
+                    $func = 'getDistributorName';
+                    $distributorId = $basketItem->getDistributor()->getId();
+                    $status = $this->em->getRepository(Status::class)->find(2);
 
-                        $orderStatus = new OrderStatus();
-
-                        $orderStatus->setOrders($order);
-                        $orderStatus->setDistributor($basketItem->getDistributor());
-                        $orderStatus->setStatus($status);
-
-                        $this->em->persist($orderStatus);
-
-                        $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
-                    }
-                }
-                else
-                {
-                    $status = $this->em->getRepository(Status::class)->find(5);
-                    $orderStatus = $this->em->getRepository(OrderStatus::class)->findOneBy([
-                        'orders' => $order->getId(),
-                    ]);
-
-                    if($orderStatus == null)
-                    {
-                        $orderStatus = new OrderStatus();
-                    }
+                    $orderStatus = new OrderStatus();
 
                     $orderStatus->setOrders($order);
-                    $orderStatus->setDistributor(null);
+                    $orderStatus->setDistributor($basketItem->getDistributor());
                     $orderStatus->setStatus($status);
 
                     $this->em->persist($orderStatus);
 
-                    $func = 'getClinicName';
-                    $clinicId = $order->getBasket()->getClinic()->getId();
-                    $purchaseOrders = $this->em->getRepository(Clinics::class)->findBy([
-                        'id' => $clinicId,
-                    ]);
+                    $purchaseOrders = $this->em->getRepository(Distributors::class)->findByOrderId($order->getId());
                 }
+            }
+
+            $this->em->flush();
+        }
+
+        // Update distributor totals
+        foreach($distributorsArray as $dist)
+        {
+            $distributorTotal = 0;
+            $distributorTotals = $this->em->getRepository(OrderItems::class)->findBy([
+                'distributor' => $dist,
+                'orders' => $order->getId(),
+            ]);
+
+            foreach($distributorTotals as $total)
+            {
+                $distributorTotal += $total->getTotal() * $total->getQuantity();
+            }
+
+            foreach($distributorTotals as $total)
+            {
+                $total->setDistributorTotal($distributorTotal);
+                $this->em->persist($total);
             }
 
             $this->em->flush();
@@ -323,7 +565,7 @@ class OrdersController extends AbstractController
 
         $plural = '';
 
-        if(count($purchaseOrders) > 1){
+        if(is_array($purchaseOrders) && count($purchaseOrders) > 1){
 
             $plural = 's';
         }
@@ -339,7 +581,7 @@ class OrdersController extends AbstractController
             id="form_checkout_options" 
             name="form_checkout_options" 
             method="post"
-            data-action="submit->retail-checkout#onSubmitCheckoutOptions"
+            data-action="submit->orders--clinics#onSubmitCheckoutOptions"
         >
             <input type="hidden" name="order-id" value="'. $order->getId() .'">
             <div class="row mt-4">
@@ -429,7 +671,7 @@ class OrdersController extends AbstractController
                                 data-bs-toggle="modal"
                                 data-bs-target="#modal_shipping_address"
                                 id="link_shipping_address_modal"
-                                data-action="click->retail-checkout#onClickModalShippingAddress"
+                                data-action="click->clinics--addresses#onClickShippingModal"
                             >
                                 Change Address
                             </a>
@@ -463,9 +705,10 @@ class OrdersController extends AbstractController
                         <div class="col-6 text-end text-truncate">
                             <a 
                                 href="" class="text-truncate"
-                                data-bs-toggle="modal" data-bs-target="#modal_billing_address"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modal_billing_address"
                                 id="link_billing_address_modal"
-                                data-action="click->retail-checkout#onClickModalBillingAddress"
+                                data-action="click->clinics--addresses#onClickBillingModal"
                             >
                                 Change Address
                             </a>
@@ -520,7 +763,7 @@ class OrdersController extends AbstractController
                         name="form_addresses_shipping_checkout" 
                         id="form_addresses_shipping_checkout" 
                         method="post"
-                        data-action="submit->retail-checkout#onSubmitShippingAddress"
+                        data-action="submit->clinics--addresses#onSubmitCheckoutShipping"
                     >
                         <input type="hidden" value="'. $order->getId() .'" name="checkout">
                         <div id="shipping_address_modal"></div>
@@ -533,7 +776,12 @@ class OrdersController extends AbstractController
         <div class="modal fade" id="modal_billing_address" tabindex="-1" aria-labelledby="address_delete_label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
-                    <form name="form_addresses_billing_checkout" id="form_addresses_billing_checkout" method="post">
+                    <form 
+                        name="form_addresses_billing_checkout" 
+                        id="form_addresses_billing_checkout" 
+                        method="post"
+                        data-action="submit->clinics--addresses#onSubmitCheckoutBilling"
+                    >
                         <input type="hidden" value="'. $order->getId() .'" name="checkout">
                         <div id="billing_address_modal"></div>
                     </form>
@@ -780,209 +1028,12 @@ class OrdersController extends AbstractController
             </div>
             <div class="row mb-2">
                 <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary float-end" id="btn_place_order" data-order-id="'. $order->getId() .'">
-                        PLACE ORDER 
-                        <i class="fa-solid fa-circle-right ps-2"></i>
-                    </button>
-                </div>
-            </div>';
-        }
-
-        return new JsonResponse($response);
-    }
-
-    #[Route('/retail/checkout/save/options', name: 'checkout_save_options_retail')]
-    public function saveCheckoutOptionsRetailAction(Request $request): Response
-    {
-        $data = $request->request;
-        $retail = $this->getUser();
-        $orderId = $data->get('order-id');
-        $order = $this->em->getRepository(Orders::class)->find($orderId);
-        $currency = $retail->getCountry()->getCurrency();
-        $firstName = $this->encryptor->decrypt($retail->getFirstName());
-        $lastName = $this->encryptor->decrypt($retail->getLastName());
-        $response = '';
-
-        if($order != null)
-        {
-            $shippingAddress = $this->em->getRepository(Addresses::class)->find($data->get('shipping_address_id'));
-            $billingAddress = $this->em->getRepository(Addresses::class)->find($data->get('billing_address_id'));
-            $purchaseOrders = $order->getBasket()->getClinic();
-            $basket = $order->getBasket();
-
-            // Update order
-            $order->setEmail($this->encryptor->encrypt($data->get('confirmation_email')));
-            $order->setAddress($shippingAddress);
-            $order->setBillingAddress($billingAddress);
-
-            if($data->get('notes') != null)
-            {
-                $order->setNotes($data->get('notes'));
-            }
-
-            $this->em->persist($order);
-            $this->em->flush();
-
-            // Order Review
-            $response .= '
-            <div class="row">
-                <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey text-truncate" id="basket_header">
-                    <h4 class="text-primary">Fluid Checkout</h4>
-                    <span class="text-primary">
-                        Order conirmation
-                    </span>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light text-truncate">
-                        <b class="text-primary">Account ID:</b> <span class="float-end">'. $retail->getId() .'</span>
-                    </div>
-                </div>
-                <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light text-truncate">
-                        <b class="text-primary">Name:</b> <span class="float-end">'. $firstName .' '. $lastName .'</span>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light">
-                        <b class="text-primary">Telephone:</b> 
-                        <span class="float-end">
-                            '. $this->encryptor->decrypt($retail->getTelephone()) .'
-                        </span>
-                    </div>
-                </div>
-                <div class="col-12 col-sm-6 mt-2 text-truncate">
-                    <div class="alert alert-light text-truncate">
-                        <b class="text-primary">Confirmation Email:</b> 
-                        <span class="float-start float-sm-end">
-                            '. $this->encryptor->decrypt($retail->getEmail()) .'
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-col-12 col-sm-6 mt-2">
-                    <div class="alert alert-light">
-                        <div class="text-primary mb-3 fw-bold">Shipping Address</div>
-                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getClinicName()) .'<br>
-                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getAddress()) .'<br><br>
-                        <span class="fw-bold text-primary">Telephone :</span> 
-                        '. $this->encryptor->decrypt($basket->getOrders()->getAddress()->getTelephone()) .'
-                    </div>
-                </div>
-                <div class="col-12 col-sm-6 mt-2">
-                    <div class="alert alert-light">
-                        <div class="text-primary mb-3 fw-bold">Billing Address</div>
-                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getClinicName()) .'<br>
-                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getAddress()) .'<br><br>
-                        <span class="fw-bold text-primary">Telephone :</span> 
-                        '. $this->encryptor->decrypt($basket->getOrders()->getBillingAddress()->getTelephone()) .'
-                    </div>
-                </div>
-            </div>';
-
-            // Additional notes
-            if(!empty($data->get('notes')))
-            {
-                $response .= '
-                <div class="row">
-                    <div class="col-12 mt-2">
-                        <div class="alert alert-light">
-                            <div class="row">
-                                <div class="col-12 text-truncate">
-                                    <div class="text-primary mb-3 fw-bold">Additional Notes</div>
-                                    '. $data->get('notes') .'
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>';
-            }
-
-            // Purchase orders
-            $response .= '
-            <div class="row">
-                <div class="col-12 mt-2 text-truncate">
-                    <div class="alert alert-light">
-                        <div class="text-primary mb-3 fw-bold border-bottom-dashed border-dark mb-3 pb-3">
-                            PO Number
-                        </div>
-                        <div class="row">
-                            <div class="col-12 col-sm-6 text-truncate">
-                                '. $this->encryptor->decrypt($purchaseOrders->getClinicName()) .'
-                            </div>
-                            <div class="col-12 col-sm-6 text-end text-truncate">
-                                '. $purchaseOrders->getPoNumberPrefix() .'-'. $order->getId() .'
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 mt-2">
-                    <div class="alert alert-light">';
-
-                    foreach($basket->getBasketItems() as $item)
-                    {
-                        // Product Image
-                        $productImages = $item->getProduct()->getProductImages();
-                        $image = 'image-not-found.jpg';
-
-                        if(count($productImages) > 0)
-                        {
-                            $image = $this->em->getRepository(ProductImages::class)->findOneBy([
-                                'product' => $item->getProduct()->getId(),
-                                'isDefault' => 1
-                            ])->getImage();
-                        }
-
-                        $response .= '
-                        <div class="row">
-                            <!-- Thumbnail -->
-                            <div class="col-12 col-sm-2 text-center pt-3">
-                                <img class="img-fluid basket-img" src="/images/products/' . $image . '" style="max-height: 45px">
-                            </div>
-                            <div class="col-12 col-sm-10 pt-3">
-                                <!-- Product Name and Qty -->
-                                <div class="row">
-                                    <!-- Product Name -->
-                                    <div class="col-12 col-sm-6 text-center text-sm-start">
-                                        <span class="info">'. $this->encryptor->decrypt($item->getBasket()->getClinic()->getClinicName()) .'</span>
-                                        <h6 class="fw-bold text-center text-sm-start text-primary mb-0">
-                                            ' . $item->getProduct()->getName() . ': ' . $item->getProduct()->getDosage() . ' ' . $item->getProduct()->getUnit() . '
-                                        </h6>
-                                    </div>
-                                    <!-- Product Quantity -->
-                                    <div class="col-12 col-sm-6 d-table">
-                                        <div class="row d-table-row">
-                                            <div class="col-5 text-center text-sm-start d-table-cell align-bottom text-truncate">
-                                                ' . $currency .' '. number_format($item->getUnitPrice(),2) . '
-                                            </div>
-                                            <div class="col-3 text-center d-table-cell align-bottom">
-                                                ' . $item->getQty() . '
-                                            </div>
-                                            <div class="col-5 text-center text-sm-end fw-bold d-table-cell align-bottom text-truncate">' . $currency .' '. number_format($item->getTotal(),2) . '</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>';
-                    }
-
-            $response .= '
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-12 text-end">
                     <button 
                         type="submit" 
-                        class="btn btn-primary float-end w-sm-100" 
+                        class="btn btn-primary float-end" 
                         id="btn_place_order" 
                         data-order-id="'. $order->getId() .'"
+                        data-action="click->orders--clinics#onClickBtnPlaceOrder"
                     >
                         PLACE ORDER 
                         <i class="fa-solid fa-circle-right ps-2"></i>
@@ -995,7 +1046,7 @@ class OrdersController extends AbstractController
     }
 
     #[Route('/clinics/checkout/place/order', name: 'checkout_place_order')]
-    public function placeOrderAction(Request $request, MailerInterface $mailer): Response
+    public function clinicPlaceOrderAction(Request $request, MailerInterface $mailer): Response
     {
         $permissions = json_decode($request->request->get('permissions'), true);
         $resp = $this->accessDeniedAction($permissions, 3);
@@ -1012,7 +1063,7 @@ class OrdersController extends AbstractController
             return new JsonResponse($response);
         };
 
-        $orderId = $request->request->get('order_id');
+        $orderId = $request->request->get('order-id');
         $orderDistributors = $this->em->getRepository(OrderItems::class)->findOrderDistributors($orderId);
         $order = $this->em->getRepository(Orders::class)->find($orderId);
 
@@ -1111,7 +1162,7 @@ class OrdersController extends AbstractController
             $mailer->send($email);
 
             // Send In App Notification
-            $this->sendNotification(
+            $this->clinicSendNotification(
                 $orderItems[0]->getOrders(),$orderItems[0]->getDistributor(),
                 $orderItems[0]->getOrders()->getClinic(),'New Order',0, 0
             );
@@ -1238,14 +1289,14 @@ class OrdersController extends AbstractController
     public function distributorSendOrderNotificationAction(Request $request, MailerInterface $mailer): Response
     {
         $data = $request->request;
-        $orderId = $data->get('order_id');
-        $distributorId = $data->get('distributor_id');
-        $clinicId = $data->get('clinic_id');
+        $orderId = $data->get('order-id');
+        $distributorId = $data->get('distributor-id');
+        $clinicId = $data->get('clinic-id');
         $order = $this->em->getRepository(Orders::class)->find($orderId);
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
 
         // Clinic in app notification
-        $this->sendNotification($order, $distributor, $order->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $distributor, $order->getClinic(), 'Order Update');
 
         // Send Email Notification
         $this->sendOrderEmail($orderId, $distributorId, $clinicId, 'clinics');
@@ -1255,10 +1306,10 @@ class OrdersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/distributors/order', name: 'distributor_get_order_details')]
+    #[Route('/distributors/get-order', name: 'distributor_get_order_details')]
     public function distributorOrderDetailAction(Request $request): Response
     {
-        $orderId = $request->request->get('order_id');
+        $orderId = $request->request->get('order-id');
         $distributor = $this->getUser()->getDistributor();
         $currency = $distributor->getAddressCountry()->getCurrency();
         $chatMessages = $this->em->getRepository(ChatMessages::class)->findBy([
@@ -1284,14 +1335,50 @@ class OrdersController extends AbstractController
         $isAuthorised = true;
         $disabled = '';
 
-        if(!in_array(5, json_decode($request->request->get('permissions')))){
+        if(!in_array(5, $request->request->get('permissions'))){
 
             $isAuthorised = false;
             $disabled = 'disabled';
         }
 
-        $response = '
-        <form name="form_distributor_orders" id="form_distributor_orders" class="row" method="post">
+        // Controlled drugs
+        $isControlledDrug = false;
+        $isControlledDrugBtn = '';
+
+        foreach($orders as $order)
+        {
+            if($order->getProduct()->getIsControlled() == 1)
+            {
+                $isControlledDrug = true;
+                break;
+            }
+        }
+
+        if($isControlledDrug)
+        {
+            $pdf = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+                'orders' => $orderId,
+                'distributor' => $distributor->getId(),
+            ]);
+            $isControlledDrugBtn = '
+            <a 
+                href="'. $this->getParameter('app.base_url') .'/pdf_controlled_po.php?pdf='. $pdf->getPurchaseOrder() .'" 
+                class="" 
+                data-order-id="'. $orderId .'" 
+                data-distributor-id="'. $distributor->getId() .'"
+            >
+                <i class="fal fa-file-medical me-5 me-md-2"></i>
+                <span class=" d-none d-md-inline-block pe-4">Controlled Drug</span>
+            </a>';
+        }
+
+        $html = '
+        <form 
+            name="form_distributor_orders" 
+            id="form_distributor_orders" 
+            class="row" 
+            method="post" 
+            data-action="submit->orders--distributors#onSubmitOrderForm">
             <input type="hidden" name="order_id" value="'. $orders[0]->getOrders()->getId() .'">
             <div class="col-12">
                 <div class="row">
@@ -1309,6 +1396,7 @@ class OrdersController extends AbstractController
                             href="#" 
                             class="orders_link"
                             data-distributor-id="'. $distributor->getId() .'"
+                            data-action="click->orders--distributors#onClickOrdersLink"
                         >
                             <i class="fa-solid fa-angles-left me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Back To Orders</span>
@@ -1319,6 +1407,7 @@ class OrdersController extends AbstractController
                             data-order-id="'. $orderId .'"
                             data-distributor-id="'. $distributor->getId() .'"
                             data-clinic-id="'. $orders[0]->getOrders()->getClinic()->getId() .'"
+                            data-action="orders--distributors#onClickOpenOrder"
                         >
                             <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Refresh Order</span>
@@ -1327,7 +1416,7 @@ class OrdersController extends AbstractController
                         // Before the oder is shipped
                         if($orderStatusId->getStatus()->getId() > 4){
 
-                            $response .= '
+                            $html .= '
                             <span class="saved_baskets_link info p-0 opacity-50">
                                 <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                 <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1337,7 +1426,9 @@ class OrdersController extends AbstractController
 
                             if($isAuthorised){
 
-                                $response .= '
+                                $html .= $isControlledDrugBtn;
+
+                                $html .= '
                                 <button type="submit" class="saved_baskets_link btn btn-sm btn-light p-0 text-primary">
                                     <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                     <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1349,13 +1440,14 @@ class OrdersController extends AbstractController
                                     data-order-id="'. $orderId .'"
                                     data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
                                     data-clinic-id="'. $orders[0]->getOrders()->getClinic()->getId() .'"
+                                    data-action="click->distributors--notifications#onClickSendNotification"
                                 >
                                     <i class="fa-solid fa-paper-plane me-0 me-md-2"></i><span class=" d-none d-md-inline-block pe-4">Send Notification</span>
                                 </a>';
 
                             } else {
 
-                                $response .= '
+                                $html .= '
                                 <span class="btn btn-sm btn-light p-0 text-primary text-disabled cursor-disabled">
                                     <i class="fa-solid fa-floppy-disk me-5  me-md-2"></i>
                                     <span class=" d-none d-md-inline-block pe-4">Save Order</span>
@@ -1371,7 +1463,7 @@ class OrdersController extends AbstractController
 
                         }
 
-                        $response .= '
+                        $html .= '
                     </div>
                 </div>
                 <!-- Products -->
@@ -1633,6 +1725,7 @@ class OrdersController extends AbstractController
                                                     class="badge float-end ms-2 border-1 badge-pending-outline-only btn_pending badge-pending-sm"
                                                     data-order-id="' . $orderId . '"
                                                     data-item-id="' . $order->getId() . '"
+                                                    data-action="click->orders--distributors#onClickBtnPending"
                                                 >Pending</a>';
 
                                                 $badgeConfirm = '
@@ -1670,6 +1763,7 @@ class OrdersController extends AbstractController
                                             class="badge float-end ms-2 text-success border-1 badge-success-outline-only badge-success-sm btn_confirm"
                                             data-order-id="' . $orderId . '"
                                             data-item-id="' . $order->getId() . '"
+                                            data-action="click->orders--distributors#onClickBtnConfirm"
                                         >Confirm</a>';
 
                                     } else {
@@ -1702,6 +1796,7 @@ class OrdersController extends AbstractController
                                     onfocus="(this.type=\'date\')" 
                                     id="date"
                                     value="' . $expiry . '"
+                                    data-action="change->orders--distributors#onChangeExpDate"
                                      ' . $disabled . '
                                 >';
                             } else {
@@ -1719,6 +1814,7 @@ class OrdersController extends AbstractController
                                 data-item-id="'. $order->getId() .'"
                                 value="'. number_format($order->getUnitPrice(),2) .'"
                                 class="form-control form-control-sm item-price '. $opacity .'"
+                                data-action="change->orders--distributors#onChangeItemPrice"
                                  '. $disabled .'
                             >';
                             $qty = '
@@ -1727,7 +1823,8 @@ class OrdersController extends AbstractController
                                 name="qty[]" 
                                 data-item-id="'. $order->getId() .'"
                                 class="form-control basket-qty form-control-sm text-center item-qty '. $opacity .'" 
-                                value="'. $order->getQuantity() .'" 
+                                value="'. $order->getQuantity() .'"
+                                data-action="change->orders--distributors#onChangeItemQty"
                                  '. $disabled .'
                             />';
 
@@ -1764,7 +1861,7 @@ class OrdersController extends AbstractController
                                 '. $order->getRejectReason();
                             }
 
-                                $response .= '
+                                $html .= '
                                 <!-- Product Name and Qty -->
                                 '. $prdId .'
                                 <div class="row overflow-hidden">
@@ -1863,18 +1960,18 @@ class OrdersController extends AbstractController
                                             ($order->getProduct()->getExpiryDateRequired() == 0)
                                         ) {
 
-                                            $response .=  $badgeConfirm;
+                                            $html .=  $badgeConfirm;
                                         }
 
-                                        $response .= $badgePending . $badgeCancelled . $clinicStatus . $badgeShipped .
+                                        $html .= $badgePending . $badgeCancelled . $clinicStatus . $badgeShipped .
                                         $badgeDeliveredPending . $badgeDeliveredCorrect . $badgeDeliveredIncorrect;
 
-                                        $response .= '
+                                        $html .= '
                                             </div>
                                         </div>';
                         }
 
-                    $response .= '    
+                    $html .= '    
                     </div>
                     <!-- Chat -->
                     <div class="col-12 col-md-3 col-cell p-0 border-bottom border-right">
@@ -1903,6 +2000,7 @@ class OrdersController extends AbstractController
                                             data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
                                             data-order-id="'. $orderId .'"
                                             data-clinic-id="0"
+                                            data-action="click->orders--distributors#onClickChatField blur->orders--distributors#onBlurChatField"
                                         />
                                         <button 
                                             type="button" 
@@ -1910,6 +2008,7 @@ class OrdersController extends AbstractController
                                             id="btn_chat_send"
                                             data-order-id="'. $orderId .'"
                                             data-distributor-id="'. $orders[0]->getDistributor()->getId() .'"
+                                            data-action="click->orders--distributors#onClickSendChat"
                                         >
                                             <i class="fa-solid fa-paper-plane me-0 me-md-2 text-primary"></i>
                                         </button>
@@ -1922,6 +2021,12 @@ class OrdersController extends AbstractController
             </div>
         </form>';
 
+        $response = [
+            'html' => $html,
+            'clinicId' => $orders[0]->getOrders()->getClinic()->getId(),
+            'distributorId' => $distributor->getId(),
+        ];
+
         return new JsonResponse($response);
     }
 
@@ -1933,8 +2038,8 @@ class OrdersController extends AbstractController
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $orders = $this->em->getRepository(Orders::class)->findByDistributor(
             $distributor,
-            $data->get('clinic_id'),
-            $data->get('status_id'),
+            $data->get('clinic-id'),
+            $data->get('status-id'),
             $data->get('date')
         );
         $results = $this->pageManager->paginate($orders[0], $request, self::ITEMS_PER_PAGE);
@@ -1950,41 +2055,47 @@ class OrdersController extends AbstractController
             </div>';
 
         $clinicsSelect = '
-                 <select class="form-control me-2 clinic_select">';
+         <select 
+            class="form-control me-2 clinic_select"
+            data-action="change->orders--distributors#onChangeFilterClinic"
+        >';
 
         $clinicsSelect .= '
-                 <option value = "">Clinic</option>
+        <option value = "">Clinic</option>
                     ';
 
-        foreach ($clinics as $clinic){
-
+        foreach ($clinics as $clinic)
+        {
             $clinicsSelect .= '
-                    <option value = "'. $clinic->getOrders()->getClinic()->getId() .'">
-                        '. $this->encryptor->decrypt($clinic->getOrders()->getClinic()->getClinicName()) .'
-                     </option>';
+            <option value = "'. $clinic->getOrders()->getClinic()->getId() .'">
+                '. $this->encryptor->decrypt($clinic->getOrders()->getClinic()->getClinicName()) .'
+             </option>';
         };
 
         $clinicsSelect .= '
-                </select>';
+        </select>';
 
         $statusSelect = '
-                <select class="form-control me-2 ms-3 status_select">';
+        <select 
+            class="form-control me-2 ms-3 status_select"
+            data-action="click->orders--distributors#onChangeFilterStatus"
+        >';
 
         $statusSelect .= '
-                <option value = "">Status</option>
+        <option value = "">Status</option>
                     ';
 
-        foreach ($statuses as $status){
-
+        foreach ($statuses as $status)
+        {
             $statusSelect .= '
-                    <option value = "'. $status->getId() .'">
-                    '. $status->getStatus() .'
-                    </option>
-                        ';
+            <option value = "'. $status->getId() .'">
+            '. $status->getStatus() .'
+            </option>
+            ';
         };
 
         $statusSelect .= '
-                </select>';
+        </select>';
 
         $html .= '
         <!-- Actions Row -->
@@ -2006,12 +2117,14 @@ class OrdersController extends AbstractController
                 <button 
                     class="btn btn-primary ms-3 clinic_search"
                     data-distributor-id="'. $distributor->getId() .'"
+                    data-action="click->orders--distributors#onClickFilter"
                 >
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
                 <button 
                     class="btn btn-secondary ms-3 clinic_refresh"
                     data-distributor-id="'. $distributor->getId() .'"
+                    data-action="click->orders--distributors#onClickFilterReset"
                 >
                     <i class="fa-solid fa-rotate"></i>
                 </button>
@@ -2019,7 +2132,12 @@ class OrdersController extends AbstractController
             
             <div class="col-12 d-block d-sm-none">
                 <div class="row border-bottom" id="filter_row_toggle">
-                    <div role="button" class="col-12 text-danger pt-3 pb-3" id="filter_orders">
+                    <div 
+                        role="button" 
+                        class="col-12 text-danger pt-3 pb-3" 
+                        id="filter_orders"
+                        data-action="click->orders--distributors#onClickMobileToggleFilter"
+                    >
                         <i class="fa-solid fa-filter me-3"></i>Filter Orders
                     </div>
                 </div>
@@ -2063,8 +2181,8 @@ class OrdersController extends AbstractController
             </div>
         </div>';
 
-        if(count($orders[1]) > 0) {
-
+        if(count($orders[1]) > 0)
+        {
             $html .= '
             <!-- Orders -->
             <div class="row d-none d-xl-block">
@@ -2094,10 +2212,10 @@ class OrdersController extends AbstractController
         <div class="row">
             <div class="col-12 border-right bg-light col-cell border-left border-right border-bottom">';
 
-                if(count($orders[1]) > 0) {
-
-                    foreach ($results as $order) {
-
+                if(count($orders[1]) > 0)
+                {
+                    foreach ($results as $order)
+                    {
                         $html .= '
                         <!-- Orders -->
                         <div class="row border-bottom">
@@ -2111,7 +2229,7 @@ class OrdersController extends AbstractController
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Total: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
-                                AED' . number_format($order->getTotal(),2) . '
+                                AED ' . number_format($order->getOrderItems()[0]->getDistributorTotal(),2) . '
                             </div>
                             <div class="col-4 col-sm-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Date: </div>
                             <div class="col-8 col-sm-10 col-xl-2 pt-3 pb-3 border-list">
@@ -2128,15 +2246,16 @@ class OrdersController extends AbstractController
                                     data-order-id="' . $order->getId() . '"
                                     data-distributor-id="' . $distributor->getId() . '"
                                     data-clinic-id="' . $order->getClinic()->getId() . '"
+                                    data-action="orders--distributors#onClickOpenOrder"
                                 >
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
                             </div>
                         </div>';
                     }
-
-                } else {
-
+                }
+                else
+                {
                     $html .= '
                     <div class="row">
                         <div class="col-12 text-center mt-5 mb-5 pt-3 pb-3 text-center">
@@ -2151,10 +2270,13 @@ class OrdersController extends AbstractController
         </div>';
 
         // Pagination
-        $pagination = $this->getPagination(
-            $request->request->get('page_id'), $results, '/distributors/orders/',
-            $distributorId, 'distributor'
-        );
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/distributors/orders/',
+            'dataAction' => 'data-action="click->orders--distributors#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
 
         $response = [
             'html' => $html,
@@ -2164,7 +2286,7 @@ class OrdersController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('/clinics/order/', name: 'clinic_get_order_details')]
+    #[Route('/clinics/order', name: 'clinic_get_order_details')]
     public function clinicOrderDetailAction(Request $request): Response
     {
         $data = $request->request;
@@ -2178,13 +2300,13 @@ class OrdersController extends AbstractController
             $permissions = json_decode($data->get('permissions'), true);
         }
 
-        $orderId = $data->get('order_id');
-        $distributorId = $data->get('distributor_id');
+        $orderId = $data->get('order-id');
+        $distributorId = $data->get('distributor-id');
 
-        if($data->get('order_id') == null && $data->get('distributor_id') == null){
+        if($data->get('order-id') == null && $data->get('distributor-id') == null){
 
-            $orderId = $request->get('order_id');
-            $distributorId = $request->get('distributor_id');
+            $orderId = $request->get('order-id');
+            $distributorId = $request->get('distributor-id');
         }
 
         $statuses = $this->em->getRepository(Status::class)->findByIds(['6','7','8']);
@@ -2217,7 +2339,7 @@ class OrdersController extends AbstractController
         }
 
         $response = '
-        <form name="form_distributor_orders" class="row" id="form_distributor_orders" method="post">
+        <form name="form_clinic_orders" class="row" id="form_clinic_orders" method="post">
             <input type="hidden" name="order_id" value="'. $orders[0]->getOrders()->getId() .'">
             <div class="col-12">
                 <div class="row">
@@ -2240,6 +2362,7 @@ class OrdersController extends AbstractController
                         data-order-id="' . $orderId . '"
                         data-distributor-id="' . $distributorId . '"
                         data-clinic-id="' . $orders[0]->getOrders()->getClinic()->getId() . '"
+                        data-action="click->orders--clinics#onClickOrdersLink"
                     >
                         <i class="fa-solid fa-angles-left me-5 me-md-2"></i>
                         <span class=" d-none d-md-inline-block pe-4">Back To Orders</span>
@@ -2256,6 +2379,7 @@ class OrdersController extends AbstractController
                             data-order-id="' . $orderId . '"
                             data-distributor-id="' . $distributorId . '"
                             data-clinic-id="' . $orders[0]->getOrders()->getClinic()->getId() . '"
+                            data-action="click->orders--clinics#onClickOrderDetail"
                         >
                             <i class="fa-solid fa-arrow-rotate-right me-5 me-md-2"></i>
                             <span class=" d-none d-md-inline-block pe-4">Refresh Order</span>
@@ -2273,6 +2397,7 @@ class OrdersController extends AbstractController
                                 data-order-id="'. $orderId .'" 
                                 id="order_status" 
                                 class="status-dropdown"
+                                data-action="change->orders--clinics#onChangeStatus"
                             >';
 
                             foreach ($statuses as $status) {
@@ -2284,6 +2409,7 @@ class OrdersController extends AbstractController
                                 $dataDistributorId = '';
                                 $isAccepted = 0;
                                 $isRejected = 0;
+                                $dataAction = '';
                                 $isQuantityAdjust = true;
 
                                 // Disable Close Option
@@ -2335,6 +2461,7 @@ class OrdersController extends AbstractController
                                     $optionId = 'id="close_order" ';
                                     $dataOrderId = 'data-order-id="'. $orderId .'" ';
                                     $dataDistributorId = 'data-distributor-id="'. $distributorId .'" ';
+                                    $dataAction = 'data-action="click->orders--clinics#onClickCloseOrder"';
                                 }
 
                                 if($status->getId() == 8 && !$canClose){
@@ -2351,7 +2478,7 @@ class OrdersController extends AbstractController
                                 <option
                                    
                                     value="' . $status->getId() . '" 
-                                    ' . $selected . $disabled . $optionId . $dataOrderId . $dataDistributorId .'
+                                    ' . $selected . $disabled . $optionId . $dataOrderId . $dataDistributorId . $dataAction .'
                                 >
                                     ' . $status->getStatus() . '
                                 </option>';
@@ -2473,7 +2600,7 @@ class OrdersController extends AbstractController
                                                     class="form-control form-control-sm order-qty-delivered" 
                                                     value="'. $order->getQuantityDelivered() .'"
                                                     data-qty-delivered-id="'. $order->getId() .'"
-                                                    
+                                                    data-action="change->orders--clinics#onChangeQty"
                                                 >
                                             </div>
                                         </div>
@@ -2592,11 +2719,12 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnAccept = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-light border-success 
                                                             bg-success btn-item-accept badge-success-filled-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
+                                                            data-action="click->orders--clinics#onClickAcceptDeliveredItem"
                                                         >Accept</a>';
 
                                                     } else {
@@ -2612,11 +2740,12 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnAccept = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-success border-success 
                                                             badge-success-outline-only btn-item-accept badge-success-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
+                                                            data-action="click->orders--clinics#onClickAcceptDeliveredItem"
                                                         >Accept</a>';
 
                                                     } else {
@@ -2634,13 +2763,12 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnReject = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-light border-danger bg-danger 
                                                             btn-item-reject badge-danger-filled-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#modal_reject_item"
+                                                            data-action="click->orders--clinics#onClickRejectDeliveredItem"
                                                         >Reject</a>';
 
                                                     } else {
@@ -2656,13 +2784,14 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnReject = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-danger border-danger 
                                                             badge-danger-outline-only btn-item-reject badge-danger-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#modal_reject_item"
+                                                            data-action="click->orders--clinics#onClickRejectDeliveredItem"
                                                         >Reject</a>';
 
                                                     } else {
@@ -2680,11 +2809,12 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnQty = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-light border-warning 
                                                             bg-warning btn-item-qty badge-warning-filled-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
+                                                            data-action="click->orders--clinics#onClickAdjustQtyDeliveredItem"
                                                         >Adjust Quantity</a>';
 
                                                     } else {
@@ -2700,11 +2830,12 @@ class OrdersController extends AbstractController
                                                     if($isAuthorised){
 
                                                         $btnQty = '
-                                                        <a href="#" 
+                                                        <a href="" 
                                                             class="badge float-end ms-2 text-warning border-warning 
                                                             badge-warning-outline-only btn-item-qty badge-warning-sm text-truncate"
                                                             data-order-id="' . $orderId . '"
                                                             data-item-id="' . $order->getId() . '"
+                                                            data-action="click->orders--clinics#onClickAdjustQtyDeliveredItem"
                                                         >Adjust Quantity</a>';
 
                                                     } else {
@@ -2734,6 +2865,7 @@ class OrdersController extends AbstractController
                                                         <span 
                                                             class="badge float-end ms-2 text-light border-success 
                                                             bg-success btn-item-accept w-sm-100 p-2 p-sm-1 badge-success-filled-sm text-truncate"
+                                                            data-action="click->orders--clinics#onClickAcceptDeliveredItem"
                                                         >Accepted</span>';
 
                                                     } else {
@@ -2806,18 +2938,21 @@ class OrdersController extends AbstractController
                                                 data-order-id="' . $orderId . '"
                                                 data-item-id="' . $order->getId() . '"
                                                 id="order_item_accept_' . $order->getId() . '"
+                                                data-action="click->orders--clinics#onClickAcceptOrderItem"
                                             >Accept</a>
                                             <a href="#" 
                                                 class="badge float-end ms-2 text-warning border-1 text-light order_item_renegotiate ' . $badgeRenegotiate . '"
                                                 data-order-id="' . $orderId . '"
                                                 data-item-id="' . $order->getId() . '"
                                                 id="order_item_renegotiate_' . $order->getId() . '"
+                                                data-action="click->orders--clinics#onClickRenegotiateOrderItem"
                                             >Renegotiate</a>
                                             <a href="#" 
                                                 class="badge float-end text-light order_item_cancel ' . $badgeCancelled . '"
                                                 data-order-id="' . $orderId . '"
                                                 data-item-id="' . $order->getId() . '"
                                                 id="order_item_cancel_' . $order->getId() . '"
+                                                data-action="click->orders--clinics#onClickCancelOrderItem"
                                             >Cancel</a>';
                                         }
 
@@ -2861,6 +2996,7 @@ class OrdersController extends AbstractController
                                             data-distributor-id="'. $distributorId .'"
                                             data-order-id="'. $orderId .'"
                                             data-clinic-id="'. $orders[0]->getOrders()->getClinic()->getId() .'"
+                                            data-action="click->orders--clinics#onClickChatField blur->orders--clinics#onBlurChatField"
                                         />
                                         <button 
                                             type="button" 
@@ -2868,6 +3004,7 @@ class OrdersController extends AbstractController
                                             id="btn_chat_send"
                                             data-order-id="'. $orderId .'"
                                             data-distributor-id="'. $distributorId .'"
+                                            data-action="click->orders--clinics#onClickChatSend"
                                         >
                                             <i class="fa-solid fa-paper-plane me-0 me-md-2 text-primary"></i>
                                         </button>
@@ -2884,7 +3021,11 @@ class OrdersController extends AbstractController
         <div class="modal fade" id="modal_reject_item" tabindex="-1" aria-labelledby="modal_reject_item" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
-                    <form name="form_reject_item" method="post">
+                    <form 
+                        name="form_reject_item" 
+                        method="post"
+                        data-action="submit->orders--clinics#onSubmitRejectDeliveredForm"
+                    >
                         <input type="hidden" name="reject_item_id" id="reject_item_id">
                         <div class="modal-body">
                             <div class="row mb-3">
@@ -2925,10 +3066,10 @@ class OrdersController extends AbstractController
     {
         $clinic = $this->getUser()->getClinic();
         $currency = $clinic->getCountry()->getCurrency();
-        $orders = $this->em->getRepository(Orders::class)->findClinicOrders(
-            $clinic->getId(),$request->request->get('distributor_id'),
+        $orders = $this->em->getRepository(OrderItems::class)->findClinicOrders(
+            $clinic->getId(),$request->request->get('distributor-id'),
             $request->request->get('date'), $request->request->get('status')
-        );
+        );;
         $results = $this->pageManager->paginate($orders[0], $request, self::ITEMS_PER_PAGE);
         $distributors = $this->em->getRepository(OrderItems::class)->findDistributorsByClinicOrders($clinic->getId());
         $statuses = $this->em->getRepository(Status::class)->findAll();
@@ -2936,7 +3077,7 @@ class OrdersController extends AbstractController
         $html = '
         <div class="col-12">
             <div class="row">
-                <div class="col-12 text-center pt-3 pb-3 form-control-bg-grey" id="order_header">
+                <div class="col-12 text-center pb-3 form-control-bg-grey" id="order_header">
                     <h4 class="text-primary text-truncate">Manage Fluid Orders</h4>
                     <span class="text-primary d-none d-sm-inline">
                         Manage All Your Orders In One Place
@@ -2945,7 +3086,10 @@ class OrdersController extends AbstractController
             </div>';
 
             $distributorsSelect = '
-            <select class="form-control me-2 distributor_select">';
+            <select 
+                class="form-control me-2 distributor_select"
+                data-action="change->orders--clinics#onChangeDistributorSelect"
+            >';
 
             $distributorsSelect .= '
             <option value = "">Distributor</option>
@@ -2964,7 +3108,10 @@ class OrdersController extends AbstractController
             </select>';
 
             $statusSelect = '
-            <select class="form-control me-2 ms-3 status_select">';
+            <select 
+                class="form-control me-2 ms-3 status_select" 
+                data-action="change->orders--clinics#onChangeStatusSelect"
+            >';
 
             $statusSelect .= '
             <option value = "">Status</option>
@@ -3002,12 +3149,14 @@ class OrdersController extends AbstractController
                     <button 
                         class="btn btn-primary ms-3 distributor_search"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-action="click->orders--clinics#onClickSearchList"
                     >
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                     <button 
                         class="btn btn-secondary ms-3 distributor_refresh"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-action="click->orders--clinics#onClickFilterReset"
                     >
                         <i class="fa-solid fa-rotate"></i>
                     </button>
@@ -3015,7 +3164,12 @@ class OrdersController extends AbstractController
                 
                 <div class="col-12 d-block d-sm-none">
                     <div class="row border-bottom">
-                        <div role="button" class="col-12 text-danger pt-3 pb-3" id="filter_orders">
+                        <div 
+                            role="button" 
+                            class="col-12 text-danger pt-3 pb-3" 
+                            id="filter_orders"
+                            data-atcion="click->orders-orders#onClickToggleMobileFilter"
+                        >
                             <i class="fa-solid fa-filter me-3"></i>Filter Orders
                         </div>
                     </div>
@@ -3087,22 +3241,27 @@ class OrdersController extends AbstractController
                 <div class="row">
                     <div class="col-12 border-right bg-light col-cell border-left border-right border-bottom">';
 
-                foreach ($results as $order) {
-
+                foreach ($results as $order)
+                {
+                    $statusId = $order->getOrders()->getOrderStatuses()[0]->getStatus()->getId();
+                    $status = $this->em->getRepository(OrderStatus::class)->findOneBy([
+                        'distributor' => $order->getDistributor()->getId(),
+                        'orders' => $order->getOrders()->getId()
+                    ]);
                     $html .= '
                     <!-- Orders -->
                     <div class="row border-bottom t-row">
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">#Id </div>
                         <div class="col-8 col-md-10 col-xl-1 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $order->getId() . '
+                            ' . $order->getOrders()->getId() .'
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Distributor </div>
                         <div class="col-8 col-md-10 col-xl-4 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $this->encryptor->decrypt($order->getOrderItems()[0]->getDistributor()->getDistributorName()) . '
+                            ' . $this->encryptor->decrypt($order->getDistributor()->getDistributorName()) . '
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Total </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . $currency .' '. number_format($order->getTotal(),2) . '
+                            ' . $currency .' '. number_format($order->getDistributorTotal(),2) . '
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Daste </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
@@ -3110,16 +3269,17 @@ class OrdersController extends AbstractController
                         </div>
                         <div class="col-4 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">Status </div>
                         <div class="col-8 col-md-10 col-xl-2 t-cell text-truncate border-list pt-3 pb-3">
-                            ' . ucfirst($order->getOrderStatuses()[0]->getStatus()->getStatus()) . '
+                            ' . ucfirst($status->getStatus()->getStatus()) . '
                         </div>
                         <div class="col-12 col-sm-1 pt-3 pb-3 text-end border-list">
                             <a 
-                                href="' . $this->getParameter('app.base_url') . '/clinics/order/' . $order->getId() . '/' . $order->getOrderStatuses()[0]->getDistributor()->getId() . '" 
+                                href="'. $order->getOrders()->getOrderStatuses()[0]->getId() .'" 
                                 class="pe-0 pe-sm-3 float-end"
                                 id="order_detail_link"
-                                data-order-id="' . $order->getId() . '"
-                                data-distributor-id="' . $order->getOrderStatuses()[0]->getDistributor()->getId() . '"
-                                data-clinic-id="' . $order->getClinic()->getId() . '"
+                                data-order-id="' . $order->getOrders()->getId() . '"
+                                data-distributor-id="' . $order->getDistributor()->getId() . '"
+                                data-clinic-id="' . $order->getOrders()->getClinic()->getId() . '"
+                                data-action="click->orders--clinics#onClickOrderDetail"
                             >
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
@@ -3143,10 +3303,13 @@ class OrdersController extends AbstractController
         </div>';
 
         // Pagination
-        $pagination = $this->getPagination(
-            $request->request->get('page_id'), $results, '/clinics/orders/',
-            $request->request->get('clinic_id'), 'clinic'
-        );
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/clinics/orders/',
+            'dataAction' => 'data-action="click->orders--clinics#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
 
         $response = [
             'pagination' => $pagination,
@@ -3160,8 +3323,8 @@ class OrdersController extends AbstractController
     public function clinicUpdateOrderItemAction(Request $request): Response
     {
         $data = $request->request;
-        $orderId = $data->get('order_id');
-        $itemId = $data->get('item_id');
+        $orderId = $data->get('order-id');
+        $itemId = $data->get('item-id');
         $link = $data->get('link');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($itemId);
         $distributorId = $orderItem->getDistributor()->getId();
@@ -3194,7 +3357,7 @@ class OrdersController extends AbstractController
 
             $class = 'bg-warning text-light badge-warning-filled-sm';
 
-            //$this->distributorSendNotification($orderId,$distributorId);
+            $this->distributorSendEmailNotification($orderId,$distributorId);
         }
 
         if($link == 'cancelled'){
@@ -3265,7 +3428,7 @@ class OrdersController extends AbstractController
         $this->em->persist($orderStatus);
         $this->em->flush();
 
-        $this->sendNotification(
+        $this->clinicSendNotification(
             $orderItem->getOrders(), $orderItem->getDistributor(),
             $orderItem->getOrders()->getClinic(), 'Order Update', 1, 0
         );
@@ -3283,7 +3446,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-order-item-status', name: 'distributor_update_order_item_status')]
     public function distributorUpdateOrderItemAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $orderId = $orderItem->getOrders()->getId();
         $distributorId = $orderItem->getDistributor()->getId();
         $allItems = $this->em->getRepository(OrderItems::class)->findBy([
@@ -3307,7 +3470,7 @@ class OrdersController extends AbstractController
             }
         }
 
-        $this->sendNotification(
+        $this->distributorSendNotification(
             $orderItem->getOrders(), $orderItem->getDistributor(),
             $orderItem->getOrders()->getClinic(), 'Order Update',0,1
         );
@@ -3327,12 +3490,12 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-expiry-date', name: 'distributor_update_expiry_date')]
     public function distributorUpdateExpiryDateAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
-        $expiryDate = $request->request->get('expiry_date');
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
+        $expiryDate = $request->request->get('expiry-date');
 
         $orderItem->setExpiryDate(\DateTime::createFromFormat('Y-m-d', $expiryDate));
 
-        //$this->sendNotification($orderItem->getOrders(), $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($orderItem->getOrders(), $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $this->em->persist($orderItem);
         $this->em->flush();
@@ -3352,7 +3515,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-item-price', name: 'distributor_update_price')]
     public function distributorUpdatePriceAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $order = $orderItem->getOrders();
         $price = $request->request->get('price');
 
@@ -3373,7 +3536,7 @@ class OrdersController extends AbstractController
         $this->em->persist($order);
         $this->em->flush();
 
-        //$this->sendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $flash = '<b><i class="fas fa-check-circle"></i> Price updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
@@ -3390,7 +3553,7 @@ class OrdersController extends AbstractController
     #[Route('/distributors/update-item-qty', name: 'distributor_update_qty')]
     public function distributorUpdateQtyAction(Request $request): Response
     {
-        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item_id'));
+        $orderItem = $this->em->getRepository(OrderItems::class)->find($request->request->get('item-id'));
         $order = $orderItem->getOrders();
         $qty = $request->request->get('qty');
 
@@ -3412,7 +3575,7 @@ class OrdersController extends AbstractController
         $this->em->persist($order);
         $this->em->flush();
 
-        //$this->sendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
+        $this->distributorSendNotification($order, $orderItem->getDistributor(), $orderItem->getOrders()->getClinic(), 'Order Update');
 
         $flash = '<b><i class="fas fa-check-circle"></i> Quantity updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
 
@@ -3446,10 +3609,10 @@ class OrdersController extends AbstractController
     #[Route('/clinics/confirm_order', name: 'clinic_confirm_order')]
     public function clinicsConfirmOrderAction(Request $request, MailerInterface $mailer): Response{
         $data = $request->request;
-        $orderId = $data->get('order_id');
-        $clinicId = $data->get('clinic_id');
+        $orderId = $data->get('order-id');
+        $clinicId = $data->get('clinic-id');
+        $distributorId = $data->get('distributor-id');
         $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
-        $distributorId = $data->get('distributor_id');
         $order = $this->em->getRepository(OrderItems::class)->findByDistributorOrder($orderId, $distributorId, 'Draft');
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $status = $this->em->getRepository(Status::class)->find(5);
@@ -3590,9 +3753,9 @@ class OrdersController extends AbstractController
     public function clinicsUpdateOrderStatusAction(Request $request): Response{
 
         $data = $request->request;
-        $statusId = (int) $data->get('order_status');
-        $distributorId = (int) $data->get('distributor_id');
-        $orderId = (int) $data->get('order_id');
+        $statusId = (int) $data->get('order-status');
+        $distributorId = (int) $data->get('distributor-id');
+        $orderId = (int) $data->get('order-id');
         $orderStatus = $this->em->getRepository(OrderStatus::class)->findOneBy([
             'distributor' => $distributorId,
             'orders' => $orderId
@@ -3622,7 +3785,7 @@ class OrdersController extends AbstractController
             $badge = 'Order Closed';
         }
 
-        $this->sendNotification(
+        $this->clinicSendNotification(
             $orderStatus->getOrders(),$orderStatus->getDistributor(),$orderStatus->getOrders()->getClinic(),
             $badge,1, 0
         );
@@ -3634,10 +3797,10 @@ class OrdersController extends AbstractController
     public function clinicsUpdateQtyDeliveredAction(Request $request): Response{
 
         $data = $request->request;
-        $orderItemId = $data->get('item_id');
+        $orderItemId = $data->get('item-id');
         $qtyDelivered = $data->get('qty');
-        $distributorId = $data->get('distributor_id');
-        $orderId = $data->get('order_id');
+        $distributorId = $data->get('distributor-id');
+        $orderId = $data->get('order-id');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
         $order = $this->em->getRepository(Orders::class)->find($orderId);
         $stockCount = $this->em->getRepository(DistributorProducts::class)->findByDistributorProductStockCount(
@@ -3680,7 +3843,7 @@ class OrdersController extends AbstractController
             'order_id' => $orderId
         ])->getContent();
 
-        $this->distributorSendNotification($orderId, $distributorId);
+        $this->distributorSendEmailNotification($orderId, $distributorId);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3732,10 +3895,10 @@ class OrdersController extends AbstractController
     #[Route('/clinics/is-delivered-accept', name: 'is_delivered_accept')]
     public function clinicsIsDeliveredAcceptAction(Request $request): Response
     {
-        $orderItemId = $request->request->get('item_id');
+        $orderItemId = $request->request->get('item-id');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
-        $distributorId = $request->request->get('distributor_id');
-        $orderId = $request->request->get('order_id');
+        $distributorId = $request->request->get('distributor-id');
+        $orderId = $request->request->get('order-id');
         $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
         $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
@@ -3778,7 +3941,7 @@ class OrdersController extends AbstractController
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3789,10 +3952,10 @@ class OrdersController extends AbstractController
     #[Route('/clinics/is-delivered-qty', name: 'is_delivered_qty')]
     public function clinicsIsDeliveredQtyAction(Request $request): Response
     {
-        $orderItemId = $request->request->get('item_id');
+        $orderItemId = $request->request->get('item-id');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
-        $distributorId = $request->request->get('distributor_id');
-        $orderId = $request->request->get('order_id');
+        $distributorId = $request->request->get('distributor-id');
+        $orderId = $request->request->get('order-id');
         $firstName = $this->encryptor->decrypt($this->getUser()->getFirstName());
         $lastName = $this->encryptor->decrypt($this->getUser()->getLastName());
 
@@ -3820,7 +3983,7 @@ class OrdersController extends AbstractController
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
         $response['orders'] = json_decode($orders);
         $response['flash'] = '<b><i class="fas fa-check-circle"></i> Quantity delivered updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
@@ -3865,12 +4028,12 @@ class OrdersController extends AbstractController
         }
 
         $orders = $this->forward('App\Controller\OrdersController::clinicOrderDetailAction', [
-            'distributor_id' => (int) $distributorId,
-            'order_id' => (int) $orderId
+            'distributor-id' => (int) $distributorId,
+            'order-id' => (int) $orderId
         ])->getContent();
 
         // Send In App Notification
-        $this->sendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
+        $this->clinicSendNotification($orderItem->getOrders(),$orderItem->getDistributor(),$orderItem->getOrders()->getClinic(),'Order Update',1, 0);
 
 
         $response['orders'] = json_decode($orders);
@@ -3882,32 +4045,46 @@ class OrdersController extends AbstractController
     #[Route('/clinics/get-reject-reason', name: 'clinics_get_reject_reason')]
     public function clinicsGetRejectReasonAction(Request $request): Response
     {
-        $orderItemId = $request->request->get('item_id');
-
+        $orderItemId = $request->request->get('item-id');
         $orderItem = $this->em->getRepository(OrderItems::class)->find($orderItemId);
 
-        if($orderItem->getRejectReason() == null){
-
+        if($orderItem->getRejectReason() == null)
+        {
             $response = '';
 
-        } else {
-
+        }
+        else
+        {
             $response = $orderItem->getRejectReason();
         }
 
         return new JsonResponse($response);
     }
 
-//    #[Route('/zoho/get/access-token', name: 'zoho_get_access_token')]
-//    public function devGetAccessTokenAction(Request $request): Response
-//    {
-//        $refreshToken = $this->em->getRepository(ApiDetails::class)->findOneBy([
-//            'distributor' => '10',
-//        ]);
-//        $accessToken = $this->zohoRefreshToken($refreshToken->getRefreshTokens()->first()->getToken());
-//
-//        return new JsonResponse($accessToken);
-//    }
+    #[Route('/clinics/upload-controlled-po', name: 'clinics_upload_controlled_po')]
+    public function clinicsUploadPoAction(Request $request): Response
+    {
+        $orderId = $request->request->get('order-id');
+        $distributorId = $request->request->get('distributor-id');
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $controlledDrugFile = $this->em->getRepository(ControlledDrugFiles::class)->findOneBy([
+            'orders' => $orderId,
+            'distributor' => $distributor,
+        ]);
+        $extension = pathinfo($_FILES['po-file']['name'], PATHINFO_EXTENSION);
+        $file = $orderId .'-'. $distributorId . '-' . uniqid() . '.' . $extension;
+        $targetFile = __DIR__ . '/../../public/documents/' . $file;
+
+        if(move_uploaded_file($_FILES['po-file']['tmp_name'], $targetFile)) {
+
+            $controlledDrugFile->setPurchaseOrder($file);
+
+            $this->em->persist($controlledDrugFile);
+            $this->em->flush();
+        }
+
+        return new JsonResponse($file);
+    }
 
     public function zohoRefreshToken($refreshToken, $distributorId): string
     {
@@ -3983,8 +4160,8 @@ class OrdersController extends AbstractController
         $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
         $clinic = $this->em->getRepository(Clinics::class)->find($clinicId);
         $orderItems = $this->em->getRepository(OrderItems::class)->findByNotCancelled($orderId,$distributorId);
-        $distributorName = $distributor->getDistributorName();
-        $emailAddress = $clinic->getEmail();
+        $distributorName = $this->encryptor->decrypt($distributor->getDistributorName());
+        $emailAddress = $this->encryptor->decrypt($clinic->getEmail());
         $poNumber = $distributor->getPoNumberPrefix() .'-'. $orderId;
         $subject = 'Fluid Order - PO '. $poNumber;
         $url = $this->getParameter('app.base_url').'/'. $type .'/order/'. $orderId;
@@ -4105,6 +4282,7 @@ class OrdersController extends AbstractController
                     data-order-id="' . $orderId . '"
                     data-clinic-id="' . $orders[0]->getOrders()->getClinic()->getId() . '"
                     data-distributor-id="'. $distributorId .'"
+                    data-action="click->orders--clinics#onClickConfirmOrder"
                 >
                     <i class="fa-regular fa-credit-card me-5 me-md-2"></i>
                     <span class=" d-none d-md-inline-block pe-4">Confirm Order</span>
@@ -4420,7 +4598,7 @@ class OrdersController extends AbstractController
         return $orderStatus->getPoFile();
     }
 
-    public function sendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
+    public function clinicSendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
     {
         // Clinic in app notification
         $notification = new Notifications();
@@ -4447,7 +4625,9 @@ class OrdersController extends AbstractController
                         data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
                     >
                         <span class="badge bg-success me-3">'. $badge .'</span>
                     </a>
@@ -4455,10 +4635,12 @@ class OrdersController extends AbstractController
                 <td>
                     <a 
                         href="#"
-                        data-order-id="'. $order->getId() .'"$notification
+                        data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
                         data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
                         class="order_notification_alert"
+                        data-action="click->distributors--notifications#onClickNotification"
                     >
                         PO No. '. $distributor->getPoNumberPrefix() .'-'. $order->getId() .'
                     </a>
@@ -4469,6 +4651,7 @@ class OrdersController extends AbstractController
                         data-notification-id="'. $notification->getId() .'"
                         data-order-id="'. $order->getId() .'"
                         data-distributor-id="'. $distributor->getId() .'"
+                        data-action="click->distributors--notifications#onClickDeleteNotification"
                     >
                         <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
                     </a>
@@ -4515,7 +4698,107 @@ class OrdersController extends AbstractController
         }
     }
 
-    public function distributorSendNotification($orderId, $distributorId)
+    public function distributorSendNotification($order, $distributor, $clinic, $badge, $isRead = 1, $isReadDistributor = 1)
+    {
+        // Clinic in app notification
+        $notification = new Notifications();
+
+        $notification->setClinic($order->getClinic());
+        $notification->setIsActive(1);
+        $notification->setIsRead($isRead);
+        $notification->setIsReadDistributor($isReadDistributor);
+        $notification->setOrders($order);
+        $notification->setDistributor($distributor);
+        $notification->setIsOrder(1);
+        $notification->setIsTracking(0);
+        $notification->setIsMessage(0);
+
+        $this->em->persist($notification);
+        $this->em->flush();
+
+        $message = '
+        <table class="w-100">
+            <tr>
+                <td>
+                    <a 
+                        href="#"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
+                        class="order_notification_alert"
+                        data-action="click->clinics--notifications#onClickNotificationPanel"
+                    >
+                        <span class="badge bg-success me-3">'. $badge .'</span>
+                    </a>
+                </td>
+                <td>
+                    <a 
+                        href="#"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-clinic-id="'. $clinic->getId() .'"
+                        data-notification-id="'. $notification->getId() .'"
+                        class="order_notification_alert"
+                        data-action="click->clinics--notifications#onClickNotificationPanel"
+                    >
+                        PO No. '. $distributor->getPoNumberPrefix() .'-'. $order->getId() .'
+                    </a>
+                </td>
+                <td>
+                    <a 
+                        href="#" class="delete-notification" 
+                        data-notification-id="'. $notification->getId() .'"
+                        data-order-id="'. $order->getId() .'"
+                        data-distributor-id="'. $distributor->getId() .'"
+                        data-action="click->clinics--notifications#onClickDeleteNotification"
+                    >
+                        <i class="fa-solid fa-xmark text-black-25 ms-3 float-end"></i>
+                    </a>
+                </td>
+            </tr>
+        </table>';
+
+        $notification->setNotification($message);
+
+        $this->em->persist($notification);
+        $this->em->flush();
+
+        // Email Notifications
+        $sendEmailNotification = true;
+
+        foreach ($order->getOrderItems() as $orderItem)
+        {
+            if($orderItem->getIsAccepted() == 0)
+            {
+                $sendEmailNotification = false;
+
+                break;
+            }
+        }
+
+        if ($sendEmailNotification)
+        {
+            $to = $this->encryptor->decrypt($clinic->getEmail());
+            $orderUrl = $this->getParameter('app.base_url') . '/clinics/order/'. $order->getId() .'/'. $distributor->getId();
+
+            $html = '<p>Please <a href="'. $orderUrl .'">click here</a> in order to view the progress of your order</p><br>';
+
+            $html = $this->forward('App\Controller\ResetPasswordController::emailFooter', [
+                'html'  => $html,
+            ]);
+
+            $email = (new Email())
+                ->from($this->getParameter('app.email_from'))
+                ->addTo($to)
+                ->subject('Fluid Order - PO  '. $order->getOrderItems()[0]->getPoNumber())
+                ->html($html->getContent());
+
+            $this->mailer->send($email);
+        }
+    }
+
+    public function distributorSendEmailNotification($orderId, $distributorId)
     {
         // Email Notifications
         $order = $this->em->getRepository(Orders::class)->find($orderId);
@@ -4572,14 +4855,9 @@ class OrdersController extends AbstractController
         $lastPage = $this->pageManager->lastPage($results);
         $margin = '';
 
-        if($type == 'distributor'){
-
-            $margin = 'mt-3';
-        }
-
         $pagination = '
         <!-- Pagination -->
-        <div class="row '. $margin .'">
+        <div class="row mt-3">
             <div class="col-12">';
 
         if($lastPage > 1) {
@@ -4611,6 +4889,7 @@ class OrdersController extends AbstractController
                     data-page-id="'. $currentPage - 1 .'" 
                     data-'. $type .'-id="'. $companyId .'"
                     href="'. $previousPage .'"
+                    data-action="click->orders--'. $type .'s#onClickPagination"
                 >
                     <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline-block">Previous</span>
                 </a>
@@ -4656,7 +4935,8 @@ class OrdersController extends AbstractController
                         class="order-link" 
                         data-page-id="'. $i .'" 
                         href="'. $url .'"
-                        data-'. $type .'-id="'. $companyId .'"    
+                        data-'. $type .'-id="'. $companyId .'"
+                        data-action="click->orders--'. $type .'s#onClickPagination"  
                     >'. $i .'</a>
                 </li>';
 
@@ -4682,6 +4962,7 @@ class OrdersController extends AbstractController
                     data-page-id="'. $currentPage + 1 .'" 
                     href="'. $url . $currentPage + 1 .'"
                     data-'. $type .'-id="'. $companyId .'"
+                    data-action="click->orders--'. $type .'s#onClickPagination"
                 >
                     <span class="d-none d-sm-inline-block">Next</span> <span aria-hidden="true">&raquo;</span>
                 </a>

@@ -27,7 +27,7 @@ class DistributorUsersController extends AbstractController
     private $plainPassword;
     private $encryptor;
 
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pagination, MailerInterface $mailer, Encryptor $encryptor)
     {
@@ -41,11 +41,10 @@ class DistributorUsersController extends AbstractController
     public function distributorGetUserAction(Request $request): Response
     {
         $user = $this->em->getRepository(DistributorUsers::class)->find($request->request->get('id'));
-
         $userPermissions = [];
 
-        foreach($user->getDistributorUserPermissions() as $permission){
-
+        foreach($user->getDistributorUserPermissions() as $permission)
+        {
             $userPermissions[] = $permission->getPermission()->getId();
         }
 
@@ -208,7 +207,7 @@ class DistributorUsersController extends AbstractController
         $distributorId = $this->get('security.token_storage')->getToken()->getUser()->getDistributor()->getId();
         $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $pageId = $request->request->get('page_id');
+        $pageId = $request->request->get('page-id');
         $html = '';
 
         foreach($userResults as $user){
@@ -288,6 +287,341 @@ class DistributorUsersController extends AbstractController
         $pagination = $this->getPagination($pageId, $userResults, $distributorId);
 
         $html .= $pagination;
+
+        return new JsonResponse($html);
+    }
+
+    #[Route('/distributors/get/users-list', name: 'get_distributor_users_list')]
+    public function getDistributorUsersList(Request $request): Response
+    {
+        $distributorId = $this->getUser()->getDistributor()->getId();
+        $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
+        $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
+        $pageId = $request->request->get('page-id') ?? 1;
+        $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy([
+            'isDistributor' => 1,
+        ]);
+
+        $html = '
+        <div class="col-12 text-center pt-3 pb-3 mt-1">
+            <h3 class="text-primary text-truncate">Manage User Accounts</h3>
+        </div>
+        <div class="col-12">
+            <a
+                type="button"
+                class="float-end mb-2"
+                data-bs-toggle="modal"
+                data-bs-target="#modal_user"
+                id="user_new"
+                data-action="click->distributors--users#onClickCreate"
+            >
+                <i class="fa-regular fa-square-plus"></i>
+                Create New
+            </a>
+        </div>
+        <div class="col-12 d-none d-xl-block">
+            <div class="row">
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-left border-top">
+                    First Name
+                </div>
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                    Last Name
+                </div>
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                    Username
+                </div>
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                    Telephone
+                </div>
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                    Position
+                </div>
+                <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-right border-top">
+
+                </div>
+            </div>
+        </div>
+        <div class="col-12" id="users_list">';
+
+        foreach($userResults as $user)
+        {
+            $html .= '
+            <div class="row border-left border-right border-bottom border-md-top-0 bg-light mb-3 mb-lg-0">
+                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                    First Name:
+                </div>
+                <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
+                    '. $this->encryptor->decrypt($user->getFirstName()) .'
+                </div>
+                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                    Last Name:
+                </div>
+                <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
+                    '. $this->encryptor->decrypt($user->getLastName()) .'
+                </div>
+                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                    Email:
+                </div>
+                <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
+                    '. $this->encryptor->decrypt($user->getEmail()) .'
+                </div>
+                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                    Telephone:
+                </div>
+                <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
+                    '. $this->encryptor->decrypt($user->getTelephone()) .'
+                </div>
+                <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                    Position:
+                </div>
+                <div class="col-7 col-md-10 col-xl-2 text-truncate border-list pt-3 pb-3">
+                    '. $this->encryptor->decrypt($user->getPosition()) .'
+                </div>
+                <div class="col-md-2  t-cell text-truncate pt-3 pb-3">
+                    <a 
+                        href="" 
+                        class="float-end update-user" 
+                        data-user-id="'. $user->getId() .'" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modal_user"
+                        data-action="click->distributors--users#onClickEdit"
+                    >
+                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                    </a>';
+
+                    if($user->getIsPrimary() != 1)
+                    {
+                        $html .= '
+                        <a
+                            href="" 
+                            class="delete-icon float-end delete-user" 
+                            data-bs-toggle="modal"
+                            data-user-id="'. $user->getId() .'" 
+                            data-bs-target="#modal_user_delete"
+                            data-action="click->distributors--users#onClickDeleteIcon"
+                        >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>';
+                    }
+
+                $html .= '
+                </div>
+            </div>';
+        }
+
+        $html .= $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $pageId,
+            'results' => $userResults,
+            'url' => '/distributors/users/',
+            'dataAction' => 'data-action="click->distributors--users#onClickPagintion"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
+
+        $html .= '
+        </div>
+
+        <!-- Modal Manage Users -->
+        <div class="modal fade" id="modal_user" tabindex="-1" aria-labelledby="modal_user" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content">
+                    <form 
+                        name="form_users" 
+                        id="form_users" 
+                        method="post"
+                        data-action="submit->distributors--users#onSubmitUser"
+                    >
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="user_modal_label"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+    
+                                <!-- First Name -->
+                                <div class="col-12 col-sm-6">
+                                    <label>First Name <span class="text-danger">*</span></label>
+                                    <input type="hidden" value="" name="distributor_users_form[user_id]" id="user_id">
+                                    <input 
+                                        type="text" 
+                                        id="user_first_name" 
+                                        name="distributor_users_form[firstName]" 
+                                        class="form-control" 
+                                        placeholder="First Name"
+                                    >
+                                    <div class="hidden_msg" id="error_user_first_name">
+                                        Required Field
+                                    </div>
+                                </div>
+    
+                                <!-- Last Name -->
+                                <div class="col-12 col-sm-6">
+                                    <label>Last Name <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="text" 
+                                        id="user_last_name" 
+                                        name="distributor_users_form[lastName]" 
+                                        class="form-control" 
+                                        placeholder="Last Name*"
+                                    >
+                                    <div class="hidden_msg" id="error_user_last_name">
+                                        Required Field
+                                    </div>
+                                </div>
+                            </div>
+    
+                            <div class="row mb-3">
+                            
+                                <!-- Email -->
+                                <div class="col-12 col-sm-6">
+                                    <label>Email <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="email" 
+                                        id="user_email" 
+                                        name="distributor_users_form[email]" 
+                                        class="form-control" 
+                                        placeholder="Email Address"
+                                        data-action="blur->distributors--users#onBlurEmail"
+                                    >
+                                    <div class="hidden_msg" id="error_user_email">
+                                        Required Field
+                                    </div>
+                                </div>
+    
+                                <!-- Telephone Number -->
+                                <div class="col-12 col-sm-6">
+                                    <label>Phone Number <span class="text-danger">*</span></label>
+                                    <span id="telephone_container">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            name="distributor_users_form[mobile]"
+                                            id="user_mobile" value=""
+                                            placeholder="(123) 456-7890*"
+                                            data-action="keyup->distributors--users#onKeyUpMobile"
+                                        >
+                                    </span>
+    
+                                    <div class="hidden_msg" id="error_user_telephone">
+                                        Required Field
+                                    </div>
+                                    <input 
+                                        type="hidden" 
+                                        name="distributor_users_form[telephone]" 
+                                        id="user_telephone" 
+                                        value=""
+                                    >
+                                    <input 
+                                        type="hidden" 
+                                        id="user_iso_code" 
+                                        name="distributor_users_form[isoCode]" 
+                                        value=""
+                                    >
+                                    <input 
+                                        type="hidden" 
+                                        id="user_intl_code" 
+                                        name="distributor_users_form[intlCode]" 
+                                        value=""
+                                    >
+                                </div>
+                            </div>
+    
+                            <div class="row mb-3">
+    
+                                <!-- Position -->
+                                <div class="col-12">
+                                    <label>Position</label>
+                                    <input 
+                                        type="text" 
+                                        id="user_position" 
+                                        name="distributor_users_form[position]" 
+                                        class="form-control" 
+                                        placeholder="Position"
+                                    >
+                                </div>
+                            </div>
+    
+                            <!-- User Permissions -->
+                            <div class="row mb-3">';
+
+                                if(is_array($userPermissions) && count($userPermissions) > 0)
+                                {
+                                    foreach($userPermissions as $permission)
+                                    {
+                                        $html .= '
+                                        <!-- User Permissions -->
+                                        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                                            <div class="btn-sm btn-outline-light border-1 border p-2 my-2">
+                                                <input
+                                                    class="form-check-input me-2"
+                                                    type="checkbox"
+                                                    value="'. $permission->getId() .'"
+                                                    id="permission_'. $permission->getId() .'"
+                                                    data-permission-id="'. $permission->getId() .'"
+                                                    name="distributor_users_form[permission][]"
+                                                >
+                                                <label class="form-check-label info" for="permission_'. $permission->getId() .'">
+                                                    '. $permission->getPermission() .'
+                                                </label>
+                                                <span
+                                                    class="ms-1 float-end text-primary"
+                                                    data-bs-trigger="hover"
+                                                    data-bs-container="body"
+                                                    data-bs-toggle="popover"
+                                                    data-bs-placement="top"
+                                                    data-bs-html="true"
+                                                    data-bs-content="'. $permission->getInfo() .'"
+                                                    role="button"
+                                                >
+                                                <i class="far fa-question-circle"></i>
+                                            </span>
+                                            </div>
+                                        </div>';
+                                    }
+                                }
+
+                            $html .= '
+                            </div>
+    
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                            <button type="submit" class="btn btn-primary" id="create_user">SAVE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Delete User -->
+        <div class="modal fade" id="modal_user_delete" tabindex="-1" aria-labelledby="user_delete_label" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <input type="hidden" value="" name="addresses_form[address_id]" id="address_id">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="user_delete_label">Delete User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-12 mb-0">
+                                Are you sure you would like to delete this user? This action cannot be undone.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
+                        <button 
+                            type="submit" 
+                            class="btn btn-danger btn-sm" 
+                            id="delete_user"
+                            data-action="click->distributors--users#onClickDelete"
+                        >
+                            DELETE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>';
 
         return new JsonResponse($html);
     }
@@ -528,6 +862,7 @@ class DistributorUsersController extends AbstractController
                     data-page-id="'. $currentPage - 1 .'" 
                     data-distributor-id="'. $distributorId .'"
                     href="'. $previousPage .'"
+                    data-action="click->distributors--users#onClickPagintion"
                 >
                     <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
                 </a>
@@ -549,6 +884,7 @@ class DistributorUsersController extends AbstractController
                         data-page-id="'. $i .'" 
                         href="'. $url .'"
                         data-distributor-id="'. $distributorId .'"
+                        data-action="click->distributors--users#onClickPagintion"
                     >'. $i .'</a>
                 </li>';
             }
@@ -570,6 +906,7 @@ class DistributorUsersController extends AbstractController
                     data-page-id="'. $currentPage + 1 .'" 
                     href="'. $url .'"
                     data-distributor-id="'. $distributorId .'"
+                    data-action="click->distributors--users#onClickPagintion"
                 >
                     <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
                 </a>

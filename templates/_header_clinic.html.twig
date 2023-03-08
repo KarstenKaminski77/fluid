@@ -1,6 +1,9 @@
-<header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white position-fixed top-0 start-0 end-0 nav-z-index border-bottom">
-        <div class="container-fluid">
+<header class="nav-z-index position-sticky top-0">
+    <nav
+        class="navbar navbar-expand-lg navbar-light bg-white border-bottom"
+        data-controller="products--search clinics--account-settings clinics--users clinics--addresses orders--clinics clinics--inventory clinics--communication-methods products--lists clinics--analytics clinics--notifications"
+    >
+        <div class="container-fluid" data-controller="lists--lists basket--basket">
             <button class="navbar-toggler" id="btn_navbar_toggle">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -16,15 +19,30 @@
                             <li class="nav-item" style="flex-grow: 100">
                                 <div class="input-group mt-3 mt-md-0 me-2 pe-2">
                                     <input type="text" id="search_field" class="form-control form-control-bg-grey" placeholder="Search by item, sku, manufacturer, ingredient, size..." />
-                                    <button type="submit" class="btn btn-secondary btn-sm" id="search_btn">
+                                    <button
+                                        type="submit"
+                                        class="btn btn-secondary btn-sm"
+                                        id="search_btn"
+                                        data-action="click->products--search#onClickSearch"
+                                    >
                                         <i class="fa-solid fa-magnifying-glass"></i>
                                     </button>
                                 </div>
                             </li>
                             <li class="nav-item dropdown has-megamenu pt-2 pb-1 pt-sm-0 pb-sm-0 hidden">
-                                <a class="nav-link filter-dropdown-toggle" href="#">Filters</a>
+                                <a
+                                    class="nav-link filter-dropdown-toggle"
+                                    href="#"
+                                    data-action="click->products--search#onClickFilterBtn"
+                                >
+                                    Filters
+                                </a>
                                 <div class="dropdown-menu megamenu mega-menu pb-0 pt-sm-3 mt-3 px-0" role="menu" id="megamenu">
-                                <span class="position-absolute close-filter" style="right: 10px; top:10px">
+                                <span
+                                    class="position-absolute close-filter"
+                                    style="right: 10px; top:10px"
+                                    data-action="click->products--search#onClickCloseFilter"
+                                >
                                     <i class="fa-solid fa-xmark"></i>
                                 </span>
                                     <div class="row" id="filter_megamenu">
@@ -59,7 +77,10 @@
                                                             <h6 class="title d-inline">Filters</h6>
                                                         </a>
                                                         <ul class="border-0 px-0 list-unstyled" id="dd_filters">
-                                                            <li class="pb-2 pb-md-0 favourite-select">
+                                                            <li
+                                                                class="pb-2 pb-md-0 favourite-select"
+                                                                data-action="click->products--search#onClickFilterFavourite"
+                                                            >
                                                                 <input
                                                                     class="form-check-input me-2"
                                                                     name="filter[]"
@@ -73,7 +94,10 @@
                                                                     id="favourite_label"
                                                                 >Favourite Items</label>
                                                             </li>
-                                                            <li class="pt-2 pb-2 pt-md-0 pt-md-0 in-stock-select">
+                                                            <li
+                                                                class="pt-2 pb-2 pt-md-0 pt-md-0 in-stock-select"
+                                                                data-action="click->products--search#onClickFilterInStock"
+                                                            >
                                                                 <input
                                                                     class="form-check-input me-2"
                                                                     name="filter[]"
@@ -129,13 +153,23 @@
                 <div class="navbar-nav">
                     <ul class="navbar-nav ms-auto ms-md-auto ms-sm-0">
                         <li class="nav-item pt-1 pb-1 pt-sm-0 pb-sm-0 text-truncate">
-                            <a class="nav-link basket-link" data-basket-id="" id="btn_basket" href="#">
+                            <a
+                                class="nav-link basket-link"
+                                data-basket-id="" id="btn_basket"
+                                href="#"
+                                data-action="click->basket--basket#onClickBasketLink"
+                            >
                                 <i class="fa-light fa-basket-shopping pe-2 fa-width text-primary"></i>
                                 <span class="d-sm-inline-block d-sm-none d-md-inline-block">Basket</span>
                             </a>
                         </li>
                         <li class="nav-item position-relative pt-1 pb-1 pt-sm-0 pb-sm-0">
-                            <a class="nav-link btn-notifications text-truncate" name="notifications" href="#">
+                            <a
+                                class="nav-link btn-notifications text-truncate"
+                                name="notifications"
+                                href="#"
+                                data-action="click->clinics--notifications#onClickNotificationsBtn"
+                            >
                                 <i class="fa-light fa-bell pe-2 fa-width" id="notifications_icon"></i>
                                 <span class="">Notifications</span>
                             </a>
@@ -161,7 +195,12 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag}} class="{{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
+                                    <{{ openingTag}}
+                                        class="{{ class }}"
+                                        data-clinic-id="{{ clinic_id }}"
+                                        id="{{ id }}"
+                                        data-action="click->orders--clinics#onClickOrdersLink"
+                                    >
                                     <i class="fa-light fa-file-invoice pe-2 fa-width"></i>
                                     Orders
                                 </{{ closingTag }}>
@@ -176,7 +215,12 @@
                                     {% set class = 'text-disabled dropdown-item-disabled' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag}} href="#" class="{{ class }}" data-keyword-string="">
+                                    <{{ openingTag}}
+                                        href="#"
+                                        class="{{ class }}"
+                                        data-keyword-string=""
+                                        data-action="click->products--lists#onClickViewManageLists"
+                                    >
                                     <i class="fa-light fa-cart-flatbed-boxes pe-2 fa-width"></i>
                                     Order Lists
                                 </{{ closingTag }}>
@@ -193,7 +237,13 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-0 pb-1 pb-md-0">
-                                    <{{ openingTag}} href="#" class="dropdown-item analytics_link {{ class }}" data-clinic-id="{{ clinic_id }}" id="{{ id }}">
+                                    <{{ openingTag}}
+                                        href="#"
+                                        class="dropdown-item analytics_link {{ class }}"
+                                        data-clinic-id="{{ clinic_id }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--analytics#onClickAnalyticsLink"
+                                    >
                                     <i class="fa-light fa-chart-pie pe-2 fa-width"></i>
                                     Analytics
                                 </{{ closingTag }}>
@@ -217,7 +267,12 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
+                                    <{{ openingTag }}
+                                        href="#"
+                                        class="{{ class }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--account-settings#onClickAccountSettingsLink"
+                                    >
                                     <i class="fa-light fa-screwdriver-wrench pe-2 fa-width"></i>
                                     Company Information
                                 </{{ closingTag }}>
@@ -236,7 +291,12 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
+                                    <{{ openingTag }}
+                                        href="#"
+                                        class="{{ class }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--addresses#onClickAddressesLink"
+                                    >
                                     <i class="fa-light fa-address-book pe-2 fa-width"></i>
                                     Addresses
                                 </{{ closingTag }}>
@@ -255,7 +315,12 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag }} href="#" class="dropdown-item {{ class }}" id="{{ id }}">
+                                    <{{ openingTag }}
+                                        href="#"
+                                        class="dropdown-item {{ class }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--users#onClickUsersLink"
+                                    >
                                     <i class="fa-light fa-user-gear pe-2 fa-width"></i>
                                     Users
                                 </{{ closingTag }}>
@@ -274,7 +339,12 @@
                                     {% set id = '' %}
                                 {% endif %}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <{{ openingTag }} href="#" class="{{ class }}" id="{{ id }}">
+                                    <{{ openingTag }}
+                                        href="#"
+                                        class="{{ class }}"
+                                        id="{{ id }}"
+                                        data-action="clinics--communication-methods#onClickCommunicationMethodsLink"
+                                    >
                                     <i class="fa-light fa-microphone pe-2 fa-width"></i>
                                     Communication Methods
                                 </{{ closingTag }}>
@@ -295,7 +365,12 @@
 
                                 {# Inventory #}
                                 <li class="pt-1 pb-1 pt-md-0 pb-md-0">
-                                    <a href="" class="dropdown-item" data-clinic-id="{{ clinic_id }}" id="inventory_link">
+                                    <a
+                                        href="" class="dropdown-item"
+                                        data-clinic-id="{{ clinic_id }}"
+                                        id="inventory_link"
+                                        data-action="click->clinics--inventory#onClickInventoryLink"
+                                    >
                                         <i class="fa-light fa-cart-flatbed pe-2 fa-width"></i>
                                         Inventory
                                     </a>

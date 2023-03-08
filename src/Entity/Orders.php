@@ -116,9 +116,9 @@ class Orders
     private $orderStatuses;
 
     /**
-     * @ORM\ManyToOne(targetEntity=RetailUsers::class, inversedBy="orders")
+     * @ORM\OneToMany(targetEntity=ControlledDrugFiles::class, mappedBy="orders")
      */
-    private $retail;
+    private $controlledDrugFiles;
 
     public function __construct()
     {
@@ -133,6 +133,7 @@ class Orders
         $this->chatMessages = new ArrayCollection();
         $this->notifications = new ArrayCollection();
         $this->orderStatuses = new ArrayCollection();
+        $this->controlledDrugFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -476,14 +477,32 @@ class Orders
         return $this;
     }
 
-    public function getRetail(): ?RetailUsers
+    /**
+     * @return Collection<int, ControlledDrugFiles>
+     */
+    public function getControlledDrugFiles(): Collection
     {
-        return $this->retail;
+        return $this->controlledDrugFiles;
     }
 
-    public function setRetail(?RetailUsers $retail): self
+    public function addControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
     {
-        $this->retail = $retail;
+        if (!$this->controlledDrugFiles->contains($controlledDrugFile)) {
+            $this->controlledDrugFiles[] = $controlledDrugFile;
+            $controlledDrugFile->setOrders($this);
+        }
+
+        return $this;
+    }
+
+    public function removeControlledDrugFile(ControlledDrugFiles $controlledDrugFile): self
+    {
+        if ($this->controlledDrugFiles->removeElement($controlledDrugFile)) {
+            // set the owning side to null (unless already changed)
+            if ($controlledDrugFile->getOrders() === $this) {
+                $controlledDrugFile->setOrders(null);
+            }
+        }
 
         return $this;
     }

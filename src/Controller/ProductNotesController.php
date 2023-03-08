@@ -27,23 +27,29 @@ class ProductNotesController extends AbstractController
     private function noteCreateNew($productId)
     {
         return '
-            <div class="row mt-4">
-                <div class="col-12">
-                    <form name="form_note_'. $productId .'" class="form_note" id="form_note_'. $productId .'" method="post"  data-product-id="'. $productId .'">
-                        <input type="hidden" name="product_id" value="'. $productId .'">
-                        <input type="hidden" name="note_id" id="note_id_'. $productId .'" value="0">
+            <div 
+                class="row hidden create-new-note"
+            >
+                <div class="col-12 mb-4">
+                    <form 
+                        name="form_note_'. $productId .'" 
+                        class="form_note" id="form_note_'. $productId .'" 
+                        method="post"  data-product-id="'. $productId .'"
+                        data-action="submit->products--notes#onSubmitNotesForm"
+                    >
+                        <input type="hidden" name="product-id" value="'. $productId .'">
+                        <input type="hidden" name="note-id" id="note_id_'. $productId .'" value="0">
                         <div class="row">
-                            <div class="col-12 col-sm-10 mb-3 mb-sm-0">
-                                <input type="text" name="note" id="note_'. $productId .'" class="form-control">
+                            <div class="col-12 mb-3 mb-sm-0">
+                                <div class="input-group">
+                                    <input type="text" name="note" id="note_'. $productId .'" class="form-control">
+                                    <button type="submit" class="btn btn-primary">
+                                        ADD NEW NOTE
+                                    </button>
+                                </div>
                                 <div class="hidden_msg" id="error_note_'. $productId .'">
                                     Required Field
                                 </div>
-                            </div>
-                            <div class="col-12 col-sm-2">
-                                <button type="submit" class="btn btn-primary float-end w-100">
-                                    <i class="fa-solid fa-circle-plus"></i>
-                                    &nbsp;ADD NEW NOTE
-                                </button>
                             </div>
                         </div>
                     </form>
@@ -66,7 +72,14 @@ class ProductNotesController extends AbstractController
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
-                            <button type="submit" class="btn btn-danger btn-sm" id="delete_note" data-delete-note-id="" data-delete-product-id="">DELETE</button>
+                            <button 
+                                type="submit" 
+                                class="btn btn-danger btn-sm" 
+                                id="delete_note" 
+                                data-delete-note-id="" 
+                                data-delete-product-id=""
+                                data-action="click->products--notes#onClickDelete"
+                            >DELETE</button>
                         </div>
                     </div>
                 </div>
@@ -84,32 +97,69 @@ class ProductNotesController extends AbstractController
             'product' => $product,
         ]);
 
-        $response = '<h5 class="pb-3 pt-3">Item Notes</h5>';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Item Notes</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end">
+                <a 
+                    href="" 
+                    class="text-primary pt-3 d-inline-block"
+                    data-action="click->products--notes#onClickCreateNewLink"
+                >
+                    <i class="far fa-square-plus fa-plus-square"></i>
+                    &nbsp;Add New Note
+                </a>
+            </div>
+        </div>';
 
-        foreach($productNotes as $note){
+        $response .= $this->noteCreateNew($productId);
+        $i = 0;
+
+        foreach($productNotes as $note)
+        {
+            $i++;
+            $marginBottom = 'mb-4';
+
+            if($i == count($productNotes))
+            {
+                $marginBottom = '';
+            }
 
             $response .= '
-            <div class="row">
+            <div class="row note_'. $note->getId() .'">
                 <div class="col-9">
                     <h6>'. $note->getNote() .'</h6>
                 </div>
                 <div class="col-3">
-                    <a href="" class="float-end note_update" data-id="'. $note->getId() .'">
+                    <a 
+                        href="" 
+                        class="float-end note_update" 
+                        data-id="'. $note->getId() .'"
+                        data-action="click->products--notes#onClickUpdateNote"
+                    >
                         <i class="fa-solid fa-pencil"></i>
                     </a>
-                    <a href="" class="delete-icon float-end" data-bs-toggle="modal" data-note-id="'. $note->getId() .'" data-product-id="'. $product->getId() .'" data-bs-target="#modal_note_delete" id="note_delete_'. $note->getId() .'">
+                    <a 
+                        href="" 
+                        class="delete-icon float-end" 
+                        data-bs-toggle="modal" data-note-id="'. $note->getId() .'" 
+                        data-product-id="'. $product->getId() .'" 
+                        data-bs-target="#modal_note_delete" 
+                        id="note_delete_'. $note->getId() .'"
+                        data-action="click->products--notes#onClickDeleteIcon"
+                    >
                         <i class="fa-solid fa-trash-can"></i>
                     </a>
                 </div>
             </div>
-            <div class="row mb-4">
+            <div class="row '. $marginBottom .' note_'. $note->getId() .'">
                 <div class="col-12 info-sm">
                     '. $this->encryptor->decrypt($note->getClinicUser()->getFirstName()) .' '. $this->encryptor->decrypt($note->getClinicUser()->getLastName()) .' . '. $note->getCreated()->format('M d Y H:i') .'
                 </div>
             </div>';
         }
-
-        $response .= $this->noteCreateNew($productId);
 
         return new JsonResponse($response);
     }
@@ -119,31 +169,31 @@ class ProductNotesController extends AbstractController
     {
         $data = $request->request;
         $clinic = $this->get('security.token_storage')->getToken()->getUser()->getClinic();
-        $product = $this->em->getRepository(Products::class)->find($data->get('product_id'));
-        $delete = $data->get('delete_id');
-        $noteId = (int)$data->get('note_id');
+        $product = $this->em->getRepository(Products::class)->find($data->get('product-id'));
+        $delete = $data->get('delete-id');
+        $noteId = (int) $data->get('note-id');
 
-        if($delete){
-
+        if($delete)
+        {
             $note = $this->em->getRepository(ProductNotes::class)->find($noteId);
 
             $this->em->remove($note);
             $this->em->flush();
-
-        } else {
-
+        }
+        else
+        {
             $userName = $this->get('security.token_storage')->getToken()->getUser()->getUserIdentifier();
             $clinicUser = $this->em->getRepository(ClinicUsers::class)->findBy(['email' => $userName]);
 
             $noteString = $data->get('note');
 
             // List
-            if ($noteId == 0) {
-
+            if ($noteId == 0)
+            {
                 $note = new ProductNotes();
-
-            } else {
-
+            }
+            else
+            {
                 $note = $this->em->getRepository(ProductNotes::class)->find($noteId);
             }
 
@@ -161,9 +211,35 @@ class ProductNotesController extends AbstractController
             'clinic' => $clinic,
             'product' => $product,
         ]);
-        $response = '';
+        $response = '
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <h5 class="pb-3 pt-3">Item Notes</h5>
+            </div>
+            <div class="col-12 col-sm-6 text-end">
+                <a 
+                    href="" 
+                    class="text-primary pt-3 d-inline-block"
+                    data-action="click->products--notes#onClickCreateNewLink"
+                >
+                    <i class="far fa-square-plus fa-plus-square"></i>
+                    &nbsp;Add New Note
+                </a>
+            </div>
+        </div>';
 
-        foreach($productNotes as $note){
+        $response .= $this->noteCreateNew($product->getId());
+        $i = 0;
+
+        foreach($productNotes as $note)
+        {
+            $i++;
+            $marginBottom = 'mb-4';
+
+            if($i == count($productNotes))
+            {
+                $marginBottom = '';
+            }
 
             $response .= '
             <div class="row">
@@ -171,22 +247,34 @@ class ProductNotesController extends AbstractController
                     <h6>'. $note->getNote() .'</h6>
                 </div>
                 <div class="col-2">
-                    <a href="" class="float-end note_update" data-id="'. $note->getId() .'">
+                    <a 
+                        href="" 
+                        class="float-end note_update" 
+                        data-id="'. $note->getId() .'"
+                        data-action="click->products--notes#onClickUpdateNote"
+                    >
                         <i class="fa-solid fa-pencil"></i>
                     </a>
-                    <a href="" class="delete-icon float-end" data-bs-toggle="modal" data-note-id="'. $note->getId() .'" data-product-id="'. $product->getId() .'" data-bs-target="#modal_note_delete" id="note_delete_'. $note->getId() .'">
+                    <a 
+                        href="" 
+                        class="delete-icon float-end" 
+                        data-bs-toggle="modal" 
+                        data-note-id="'. $note->getId() .'" 
+                        data-product-id="'. $product->getId() .'" 
+                        data-bs-target="#modal_note_delete" 
+                        id="note_delete_'. $note->getId() .'"
+                        data-action="click->products--notes#onClickDeleteIcon"
+                    >
                         <i class="fa-solid fa-trash-can"></i>
                     </a>
                 </div>
             </div>
-            <div class="row mb-4">
+            <div class="row '. $marginBottom .'">
                 <div class="col-12 info-sm">
                     '. $this->encryptor->decrypt($note->getClinicUser()->getFirstName()) .' '. $this->encryptor->decrypt($note->getClinicUser()->getLastName()) .' . '. $note->getCreated()->format('M d Y H:i') .'
                 </div>
             </div>';
         }
-
-        $response .= $this->noteCreateNew($product->getId());
 
         return new JsonResponse($response);
     }
@@ -198,7 +286,7 @@ class ProductNotesController extends AbstractController
 
         $response = [
             'note' => $note->getNote(),
-            'product_id' => $note->getProduct()->getId(),
+            'productId' => $note->getProduct()->getId(),
         ];
 
         return new JsonResponse($response);
@@ -207,7 +295,7 @@ class ProductNotesController extends AbstractController
     #[Route('/clinics/get-product-notes', name: 'clinic_get_product_notes')]
     public function clinicGetProductNotes(Request $request): Response
     {
-        $productId = $request->request->get('product_id');
+        $productId = $request->request->get('product-id');
         $clinicId = $this->get('security.token_storage')->getToken()->getUser()->getClinic()->getId();
         $notes = $this->em->getRepository(ProductNotes::class)->findNotes($productId, $clinicId);
         $noteCount = $this->em->getRepository(ProductNotes::class)->findBy([
@@ -222,7 +310,7 @@ class ProductNotesController extends AbstractController
             $response = [
                 'note' => $notes[0]->getNote(),
                 'from' => $this->encryptor->decrypt($notes[0]->getClinicUser()->getFirstName()) .' '. $this->encryptor->decrypt($notes[0]->getClinicUser()->getLastName()),
-                'note_count' => count($noteCount),
+                'noteCount' => count($noteCount),
             ];
         }
 

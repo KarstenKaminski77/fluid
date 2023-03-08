@@ -122,7 +122,7 @@ class ResetPasswordController extends AbstractController
             );
 
             $user->setPassword($encodedPassword);
-            $user->setEmail($this->encryptor->encrypt($user->getEmail()));
+            $user->setPassword($encodedPassword);
             $this->entityManager->flush();
 
             // The session is cleaned up after the password has been changed.
@@ -148,7 +148,6 @@ class ResetPasswordController extends AbstractController
         }
 
         $emailTo = $this->encryptor->decrypt($user->getEmail());
-        $user->setEmail($this->encryptor->decrypt($user->getEmail()));
 
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);

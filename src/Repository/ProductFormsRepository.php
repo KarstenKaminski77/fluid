@@ -39,6 +39,13 @@ class ProductFormsRepository extends ServiceEntityRepository
         }
     }
 
+    public function findAllAsc()
+    {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->orderBy('p.name', 'ASC');
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
 //    /**
 //     * @return ProductForms[] Returns an array of ProductForms objects
 //     */

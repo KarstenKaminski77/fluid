@@ -1,4 +1,4 @@
-
+@charset "UTF-8";
 @import "~bootstrap";
 @import "~bootstrap-icons";
 @import "~slick-carousel/slick/slick.css";
@@ -12,6 +12,7 @@ html {
     box-sizing: unset !important;
     overflow-x: hidden;
     background-color: #f4f4f4 !important;
+    overflow: visible !important;
 }
 
 body, html {
@@ -24,8 +25,8 @@ body {
     font-family: 'Montserrat', Serif !important;
 }
 
-body, form-control {
-    font-size: 0.9rem;
+body, .form-control {
+    font-size: 0.9rem !important;
 }
 
 .body-pt {
@@ -40,9 +41,21 @@ body, form-control {
     padding-top: 140px;
 }
 
+.show.bs.modal {
+    overflow: visible !important;
+}
+
+.modal{
+    overflow: auto !important;
+}
+
 a, a:hover {
     text-decoration: none;
     color: #b3b4b2;
+}
+
+.btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show{
+    border-color: transparent !important;
 }
 
 .eye{
@@ -128,6 +141,35 @@ a {
     display: none;
 }
 
+.input-group-border, .input-group-border:focus-visible {
+    outline: none !important;
+}
+
+.input-group-border {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100% !important;
+    padding-left: 8px;
+    padding-right: 24px;
+    border: none !important;
+}
+
+.select-wrapper {
+    position: relative;
+    border: 1px solid #ced4da;
+    border-radius: 2px;
+    border: solid 1px #ced4da !important;
+}
+
+.select-wrapper::after {
+    content: "▼";
+    font-size: 1rem;
+    right: 5px;
+    top: 3px;
+    position: absolute;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -179,7 +221,7 @@ select:-webkit-autofill:focus {
 .form-control-sm {
     min-height: calc(1.5em + (0.5rem + 2px));
     padding: 0.25rem 0.5rem;
-    font-size: .875rem;
+    font-size: .9rem;
     border-radius: 0.2rem;
 }
 
@@ -255,7 +297,7 @@ label {
     color: #fff;
 }
 
-#product_list{
+#product_list, #distributor_list{
     list-style:none;
     margin-top:-3px;
     padding:0;
@@ -266,7 +308,7 @@ label {
     box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
 }
 
-#product_list li{
+#product_list li, #distributor_list li{
     padding: 10px;
     background: #f0f0f0;
     border-left: #bbb9b9 1px solid;
@@ -274,7 +316,7 @@ label {
     border-bottom: #bbb9b9 1px solid;
 }
 
-#product_list li:hover{background:#f1faff;cursor: pointer;}
+#product_list li:hover, #distributor_list li:hover{background:#f1faff;cursor: pointer;}
 
 #suggestion_field {
     position: relative;
@@ -521,6 +563,7 @@ label {
 
 .active {
     color: #54565a !important;
+    border: none !important;
 }
 
 .info[aria-expanded=true] {
@@ -616,7 +659,6 @@ label {
     flex-flow: nowrap;
     padding: 18px 0px;
     border-top: 1px solid rgb(226, 231, 235);
-    border-bottom: 1px solid rgb(226, 231, 235);
 }
 
 .modal_border_b {
@@ -1070,6 +1112,12 @@ a.page-link {
     border-color: #e6e6e6;
 }
 
+.alert-warning {
+    color: #664d03 !important;
+    background: #fff3cd !important;
+    border-color: #ffecb5 !important;
+}
+
 .chat-send, .chat-send:hover {
     background: #fff;
 }
@@ -1180,6 +1228,10 @@ a.page-link {
 .nav-icon {
     display: inherit;
     text-align: left;
+}
+
+.dropdown-menu[data-bs-popper] {
+    left: unset !important;
 }
 
 @keyframes dotPulseBefore {
@@ -2049,6 +2101,19 @@ input[type="text"]::-webkit-input-placeholder {
 
 .tox tox-silver-sink tox-tinymce-aux
 
+.rounded-lg {
+    border-radius: 1rem;
+}
+
+.custom-file-label.rounded-pill {
+    border-radius: 50rem;
+}
+
+.custom-file-label.rounded-pill::after {
+    border-radius: 0 50rem 50rem 0;
+}
+
+
 @media (min-width: 576px) {
 
     .w-sm-100 {
@@ -2085,6 +2150,16 @@ input[type="text"]::-webkit-input-placeholder {
         background: #fff !important;
         color: #198754 !important;
         border: solid 1px #198754 !important;
+        font-size: 14px;
+        margin-bottom: 16px;
+        padding: 8px;
+    }
+
+    .badge-warning-sm {
+        width: 100% !important;
+        background: #ffc107 !important;
+        color: #198754 !important;
+        border: solid 1px #ffc107 !important;
         font-size: 14px;
         margin-bottom: 16px;
         padding: 8px;

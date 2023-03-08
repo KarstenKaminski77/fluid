@@ -178,6 +178,59 @@ class OrderItemsRepository extends ServiceEntityRepository
         return $queryBuilder->getQuery()->getResult();
     }
 
+    /**
+     * @return OrderItems[] Returns an array of Orders objects
+     */
+
+    public function findClinicOrders($clinic_id,$distributor_id, $date, $status)
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $sql = "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));";
+        $stmt = $conn->prepare($sql)->executeQuery();
+
+        $queryBuilder = $this->createQueryBuilder('oi')
+            ->select('o', 'oi', 'os', 's')
+            ->join('oi.orders', 'o')
+            ->join('o.orderStatuses', 'os')
+            ->join('os.status', 's')
+            ->andWhere('o.clinic = :clinic_id')
+            ->setParameter('clinic_id', $clinic_id);
+
+        if(!empty($distributor_id)){
+
+            $queryBuilder
+                ->andWhere('oi.distributor = :distributor_id')
+                ->setParameter('distributor_id', $distributor_id);
+        }
+
+        if(!empty($date)){
+
+            $dates = explode(' - ', $date);
+
+            $queryBuilder
+                ->andWhere('DATE(o.created) >= :start')
+                ->setParameter('start', $dates[0])
+                ->andWhere('DATE(o.created) <= :end')
+                ->setParameter('end', $dates[1]);
+        }
+
+        if(!empty($status)){
+
+            $queryBuilder
+                ->andWhere('s.id = :status')
+                ->setParameter('status', $status);
+        }
+
+        $queryBuilder
+            ->addGroupBy('os.distributor')
+            ->addGroupBy('oi.distributor')
+            ->addGroupBy('oi.orders')
+            ->orderBy('o.id', 'DESC')
+        ;
+
+        return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
+    }
+
     /*
     public function findOneBySomeField($value): ?OrderItems
     {

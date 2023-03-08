@@ -15,7 +15,7 @@ class PaginationManager
      * @param int $limit
      * @return Paginator
      */
-    public function paginate($query, Request $request, int $limit): Paginator
+    public function paginate($query, Request $request, int $limit, $pageId = null): Paginator
     {
         $currentPage = (int) 1;
 
@@ -32,6 +32,11 @@ class PaginationManager
         if($request->get('page_id') != null) {
 
             $currentPage = (int) $request->get('page_id');
+        }
+
+        if($pageId != null) {
+
+            $currentPage = (int) $pageId;
         }
 
         $paginator = new Paginator($query);

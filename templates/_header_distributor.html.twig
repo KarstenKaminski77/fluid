@@ -10,12 +10,20 @@
             </div>
             <div class="collapse navbar-collapse" id="main_nav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item position-relative pt-1 pb-1 pt-sm-0 pb-sm-0">
-                        <a class="nav-link btn-notifications text-truncate" name="notifications" href="#">
+                    <li
+                        class="nav-item position-relative pt-1 pb-1 pt-sm-0 pb-sm-0"
+                        data-controller="distributors--notifications orders--distributors"
+                    >
+                        <a
+                            class="nav-link btn-notifications text-truncate"
+                            href="#"
+                            name="notifications"
+                            data-action="click->distributors--notifications#onClickBtnNotificataions"
+                        >
                             <i class="far fa-bell pe-2 fa-width" id="notifications_icon"></i>
                             <span class="">Notifications</span>
                         </a>
-                        <span id="notifications_panel" class="position-absolute end-0">
+                        <span id="notifications_panel" class="position-absolute end-0 hidden">
                             <span class="notification-panel delete-notification">You have no notifications</span>
                         </span>
                     </li>

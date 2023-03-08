@@ -61,7 +61,7 @@ class AdminDashboardController extends AbstractController
     private MailerInterface $mailer;
     private $children;
     private Encryptor $encryptor;
-    const ITEMS_PER_PAGE = 7;
+    const ITEMS_PER_PAGE = 10;
 
     public function __construct(
         EntityManagerInterface $em, PaginationManager $page_manager, Encryptor $encryptor,
@@ -85,13 +85,16 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/products/{page_id}', name: 'products_list')]
     public function productsList(Request $request): Response
     {
+        $dataAction = 'data-action="click->admin--products-list#onClickPagination"';
         $products = $this->em->getRepository(Products::class)->adminFindAll();
         $results = $this->page_manager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/products/');
+        $pagination = $this->getPagination((int) $request->get('page_id'), $results, '/admin/products/', $dataAction);
+        $manufacturers = $this->em->getRepository(Manufacturers::class)->findAll();
 
         return $this->render('Admin/products_list.html.twig',[
             'products' => $results,
-            'pagination' => $pagination
+            'pagination' => $pagination,
+            'manufacturers' => $manufacturers,
         ]);
     }
 
@@ -104,6 +107,7 @@ class AdminDashboardController extends AbstractController
         if($request->request->get('delete') != null){
 
             $product->setIsActive(0);
+            $product->setIsPublished(0);
 
             $this->em->persist($product);
             $this->em->flush();
@@ -150,6 +154,7 @@ class AdminDashboardController extends AbstractController
 
             $this->em->flush();
 
+            $product->setIsControlled($data->get('is-controlled') ?? 0);
             $product->setIsPublished($data->get('is-published') ?? 0);
             $product->setIsActive(1);
             $product->setExpiryDateRequired($data->get('expiry-date') ?? 0);
@@ -237,25 +242,53 @@ class AdminDashboardController extends AbstractController
             // Image = 1
             // PDF = 2
             // Video = 3
-            $productImage = new ProductImages();
 
-            if(!empty($_FILES['image']['name'])) {
+            if(is_array($_FILES['image']['name']) && !empty($_FILES['image']['name'][0]))
+            {
+                for($i = 0; $i < count($_FILES['image']['name']); $i++)
+                {
+                    $productImage = new ProductImages();
 
-                $fileName = $_FILES['image'];
-                $extension = pathinfo($fileName['name'], PATHINFO_EXTENSION);
-                $newFileName = uniqid('fluid_'. $product->getId() .'_', true) . '.' . $extension;
-                $filePath = __DIR__ . '/../../public/images/products/';
+                    $fileName = $_FILES['image'];
+                    $extension = pathinfo($fileName['name'][$i], PATHINFO_EXTENSION);
+                    $newFileName = uniqid('fluid_'. $product->getId() .'_', true) . '.' . $extension;
+                    $filePath = __DIR__ . '/../../public/images/products/';
 
-                if(move_uploaded_file($fileName['tmp_name'], $filePath . $newFileName)){
+                    if(move_uploaded_file($fileName['tmp_name'][$i], $filePath . $newFileName)){
 
-                    if($extension == 'jpg' || $extension == 'jpeg' || $extension == 'png' || $extension == 'gif' || $extension == 'webp'){
+                        if(
+                            $extension == 'jpg' || $extension == 'jpeg' || $extension == 'jfif' ||
+                            $extension == 'png' || $extension == 'gif' || $extension == 'webp'
+                        ){
 
-                        $productImage->setFileType(1);
+                            $productImage->setFileType(1);
 
-                    } elseif($extension == 'pdf'){
+                        } elseif($extension == 'pdf'){
 
-                        $productImage->setFileType(2);
+                            $productImage->setFileType(2);
+                        }
+
+                        $productImage->setIsDefault(0);
+
+                        if(count($productImages) == 0){
+
+                            $productImage->setIsDefault(1);
+                        }
+
+                        $productImage->setProduct($product);
+                        $productImage->setImage($newFileName);
+
+                        $this->em->persist($productImage);
                     }
+                }
+            }
+
+            // Video
+            if(is_array($data->get('video')) && !empty($data->get('video')[0]))
+            {
+                for ($i = 0; $i < count($data->get('video')); $i++)
+                {
+                    $productImage = new ProductImages();
 
                     $productImage->setIsDefault(0);
 
@@ -264,28 +297,15 @@ class AdminDashboardController extends AbstractController
                         $productImage->setIsDefault(1);
                     }
 
-                    $productImage->setProduct($product);
-                    $productImage->setImage($newFileName);
+                    if(!empty($data->get('video')[$i]))
+                    {
+                        $productImage->setProduct($product);
+                        $productImage->setImage($data->get('video')[$i]);
+                        $productImage->setFileType(3);
 
-                    $this->em->persist($productImage);
+                        $this->em->persist($productImage);
+                    }
                 }
-            }
-
-            // Video
-            if(!empty($data->get('video'))){
-
-                $productImage->setIsDefault(0);
-
-                if(count($productImages) == 0){
-
-                    $productImage->setIsDefault(1);
-                }
-
-                $productImage->setProduct($product);
-                $productImage->setImage($data->get('video'));
-                $productImage->setFileType(3);
-
-                $this->em->persist($productImage);
             }
 
             $product->setDescription($data->get('details'));
@@ -2690,11 +2710,9 @@ class AdminDashboardController extends AbstractController
         }
 
         $manufacturers = $this->em->getRepository(Manufacturers::class)->findAll();
-        $species = $this->em->getRepository(Species::class)->findAll();
-        $categories = $this->em->getRepository(Categories1::class)->findAll();
-        $categories2 = $this->em->getRepository(Categories2::class)->findBy([
-            'category1' => $category1Id
-        ]);
+        $species = $this->em->getRepository(Species::class)->adminFindAll();
+        $categories = $this->em->getRepository(Categories1::class)->findList();
+        $categories2 = $this->em->getRepository(Categories2::class)->findList($category1Id);
         $categories3 = $this->em->getRepository(Categories3::class)->findBy([
             'category2' => $category2Id
         ]);
@@ -2737,7 +2755,7 @@ class AdminDashboardController extends AbstractController
         if($species != null){
 
             $speciesList = $this->getMultiDropdownList(
-                $species, 'species', ProductManufacturers::class, 'getName',
+                $species[1], 'species', ProductManufacturers::class, 'getName',
                 'products', $request->get('productId'), 'getProducts'
             );
             $array = '';
@@ -2776,12 +2794,12 @@ class AdminDashboardController extends AbstractController
         }
 
         $categoriesList = $this->individualDropdownList(
-            $categories, 'category', 'category', 'getName'
+            $categories[1], 'category', 'category', 'getName'
         );
 
         // Categories2 dropdown
         $subCategoriesList = $this->individualDropdownList(
-            $categories2, 'sub-category', 'sub_category', 'getName'
+            $categories2[1], 'sub-category', 'sub_category', 'getName'
         );
 
         // Categories3 dropdown
@@ -3408,17 +3426,100 @@ class AdminDashboardController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/species/{page_id}', name: 'species_list')]
+    #[Route('/admin/species', name: 'species_list')]
     public function speciesList(Request $request): Response
     {
+        $pageId = $request->request->get('page-id') ?? 1;
         $species = $this->em->getRepository(Species::class)->adminFindAll();
         $results = $this->page_manager->paginate($species[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/species/');
+        $pagination = $this->getPagination($pageId, $results, '/admin/species/');
 
         return $this->render('Admin/species_list.html.twig',[
             'species' => $results,
             'pagination' => $pagination
         ]);
+    }
+
+    #[Route('/admin/species/paginate', name: 'species_list_paginate')]
+    public function speciesListPaginate(Request $request): Response
+    {
+        $pageId = $request->request->get('page-id') ?? 1;
+        $species = $this->em->getRepository(Species::class)->adminFindAll();
+        $results = $this->page_manager->paginate($species[0], $request, self::ITEMS_PER_PAGE);
+        $pagination = $this->getPagination($pageId, $results, '/admin/species/');
+        $html = '';
+
+        foreach($results as $result)
+        {
+            $specieId = $result->getId();
+            $specieName = $result->getName();
+            $specieIcon = $result->getIcon();
+            $editUrl = $this->generateUrl('species', ['speciesId' => $specieId]);
+
+            $html .= '
+            <div class="row py-3 border-bottom-dashed" id="row_'. $specieId .'">
+                <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
+                    #ID
+                </div>
+                <div class="col-8 col-md-1 ps-4 text-truncate">
+                    #'. $specieId .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Species
+                </div>
+                <div class="col-8 col-md-3 text-truncate">
+                    '. $specieName .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Icon
+                </div>
+                <div class="col-8 col-md-3 text-truncate">';
+
+                if($result->getIcon() != null)
+                {
+                    $html .= '<i class="'. $specieIcon .' fs-5"></i>';
+                }
+
+                $html .= '
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Modified
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $result->getModified()->format('Y-m-d H:i:s') .'
+                </div>
+                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
+                    Created
+                </div>
+                <div class="col-8 col-md-2 text-truncate">
+                    '. $result->getCreated()->format('Y-m-d') .'
+                </div>
+                <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
+                    <a
+                        href="'. $editUrl .'"
+                        class="float-start float-md-end open-user-modal ms-5 ms-md-0"
+                    >
+                        <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                    </a>
+                    <a
+                        href=""
+                        class="delete-icon float-end open-delete-species-modal"
+                        data-bs-toggle="modal"
+                        data-species-id="'. $specieId .'"
+                        data-bs-target="#modal_delete_species"
+                    >
+                        <i class="fa-solid fa-trash-can"></i>
+                    </a>
+                </div>
+            </div>';
+        }
+
+        $response = [
+            'html' => $html,
+            'pagination' => $pagination,
+        ];
+
+        return new JsonResponse($response);
     }
 
     #[Route('/admin/countries/{page_id}', name: 'countries_list')]
@@ -3507,11 +3608,34 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/product-search', name: 'product_search')]
     public function productSearch(Request $request): Response
     {
+        $itemsPerPage = (int) $request->request->get('items-per-page');
         $searchString = $request->request->get('search-string');
-        $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString);
-        $results = $this->page_manager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($request->get('page_id'), $results, '/admin/products/');
+        $manufacturer = $request->request->get('manufacturer');
+        $pageNo = $request->request->get('page_id') ?? 1;
+        $products = $this->em->getRepository(Products::class)->findBySearchAdmin($searchString, $manufacturer);
         $html = '';
+        $num = (count($products[1]) / 10) * 10;
+
+        if(empty($itemsPerPage))
+        {
+            $itemsPerPage = self::ITEMS_PER_PAGE;
+        }
+
+        $remainder = ($itemsPerPage * $pageNo) - $itemsPerPage;
+
+        if($num > $remainder)
+        {
+            $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage);
+            $pagination = $this->getPagination($request->request->get('page_id'), $results, '/admin/products/','',$itemsPerPage);
+            $currentPage = $pageNo;
+        }
+        else
+        {
+
+            $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage, 1);
+            $pagination = $this->getPagination(1, $results, '/admin/products/','',$itemsPerPage);
+            $currentPage = 1;
+        }
 
         foreach($results as $result){
 
@@ -3519,7 +3643,7 @@ class AdminDashboardController extends AbstractController
             $category1 = '';
             $category2 = '';
 
-            if($result->getIsActive() == 1){
+            if($result->getIsPublished() == 1){
 
                 $checked = 'checked';
             }
@@ -3535,7 +3659,7 @@ class AdminDashboardController extends AbstractController
             }
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ product.id }}">
+            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -3552,8 +3676,8 @@ class AdminDashboardController extends AbstractController
                             class="form-check-input is-published"
                             type="checkbox"
                             role="switch"
-                            data-product-id="{{ product.id }}"
-                            value="{{ product.isPublished }}"
+                            data-product-id="'. $result->getId() .'"
+                            value="'. $result->getIsPublished() .'"
                             '. $checked .'
                         >
                     </div>
@@ -3561,19 +3685,43 @@ class AdminDashboardController extends AbstractController
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Name
                 </div>
-                <div class="col-8 col-md-3 text-truncate">
+                <div 
+                    class="col-8 col-md-4 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $result->getName() .'"
+                >
                     '. $result->getName() .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Category
                 </div>
-                <div class="col-8 col-md-2 text-truncate">
+                <div 
+                    class="col-8 col-md-2 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $category1 .'"
+                >
                     '. $category1 .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
                     Sub Category
                 </div>
-                <div class="col-8 col-md-2 text-truncate">
+                <div 
+                    class="col-8 col-md-2 text-truncate"
+                    data-bs-trigger="hover" 
+                    data-bs-container="body" 
+                    data-bs-toggle="popover" 
+                    data-bs-placement="top" 
+                    data-bs-html="true" 
+                    data-bs-content="'. $category2 .'"
+                >
                     '. $category2 .'
                 </div>
                 <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
@@ -3581,12 +3729,6 @@ class AdminDashboardController extends AbstractController
                 </div>
                 <div class="col-8 col-md-1 text-truncate">
                     '. $result->getStockCount() .'
-                </div>
-                <div class="col-4 ps-4 d-block d-md-none fw-bold text-truncate">
-                    Price
-                </div>
-                <div class="col-8 col-md-1 text-truncate">
-                    '. $result->getUnitPrice() .'
                 </div>
                 <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                     <a
@@ -3599,7 +3741,7 @@ class AdminDashboardController extends AbstractController
                         href=""
                         class="delete-icon float-end open-delete-user-modal"
                         data-bs-toggle="modal"
-                        data-product-id="{{ product.id }}"
+                        data-product-id="'. $result->getId() .'"
                         data-bs-target="#modal_delete_product"
                     >
                         <i class="fa-solid fa-trash-can"></i>
@@ -3608,9 +3750,12 @@ class AdminDashboardController extends AbstractController
             </div>';
         }
 
+        $html .= $pagination;
+
         $response = [
             'html' => $html,
             'pagination' => $pagination,
+            'currentPage' => $currentPage,
         ];
 
         return new JsonResponse($response);
@@ -3628,7 +3773,7 @@ class AdminDashboardController extends AbstractController
         foreach($results as $result){
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ activeIngredient.id }}">
+            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getActiveIngredient()->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -4830,7 +4975,7 @@ class AdminDashboardController extends AbstractController
                 if (in_array('ROLE_SPECIE', $roles)) {
 
                     $tag = 'a';
-                    $href = 'href="' . $this->generateUrl('species_list', ['page_id' => 1]) . '"';
+                    $href = 'href="' . $this->generateUrl('species_list') . '"';
                     $disabled = '';
                     $textPrimary = 'text-primary';
 
@@ -5036,7 +5181,10 @@ class AdminDashboardController extends AbstractController
 
         $filesystem = new Filesystem();
 
-        $filesystem->remove(__DIR__ . '/../../public/images/products/'. $image->getImage());
+        if($image->getImage() != null)
+        {
+            $filesystem->remove(__DIR__ . '/../../public/images/products/'. $image->getImage());
+        }
 
         $this->em->remove($image);
         $this->em->flush();
@@ -5213,14 +5361,14 @@ class AdminDashboardController extends AbstractController
 
     private function categoryTagDropdownList($label, $selectedTags, $level): string
     {
-        $tags = $this->em->getRepository(Tags::class)->findAll();
+        $tags = $this->em->getRepository(Tags::class)->adminFindAll();
 
         $list = '
         <div class="px-3 row">
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through selected dropdown options
-        foreach($tags as $tag){
+        foreach($tags[1] as $tag){
 
             // Get related records
             $select = $label .'-select';
@@ -5352,14 +5500,14 @@ class AdminDashboardController extends AbstractController
 
     private function productFormDropdownList($label, $selectedForm): string
     {
-        $forms = $this->em->getRepository(ProductForms::class)->findAll();
+        $forms = $this->em->getRepository(ProductForms::class)->findAllAsc();
 
         $list = '
         <div class="row">
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through selected dropdown options
-        foreach($forms as $form){
+        foreach($forms[1] as $form){
 
             // Get related records
             $select = $label .'-select';
@@ -5911,7 +6059,7 @@ class AdminDashboardController extends AbstractController
     private function getActiveIngredientDropdownList($productId): array
     {
         $product = $this->em->getRepository(Products::class)->find($productId);
-        $activeIngredients = $this->em->getRepository(ActiveIngredients::class)->findAll();
+        $activeIngredients = $this->em->getRepository(ActiveIngredients::class)->adminFindAll();
         $list['selected'] = '';
         $list['selected'] = '';
         $list['twigArray'] = [];
@@ -5921,7 +6069,7 @@ class AdminDashboardController extends AbstractController
             <div class="bg-dropdown px-0 col-12">';
 
         // Loop through all dropdown options
-        foreach($activeIngredients as $activeIngredient){
+        foreach($activeIngredients[1] as $activeIngredient){
 
             $select = 'ingredient-select';
 
@@ -6062,17 +6210,19 @@ class AdminDashboardController extends AbstractController
         return $list;
     }
 
-    public function getPagination($pageId, $results, $url): string
+    public function getPagination($pageId, $results, $url, $dataAction = '', $itemsPerPage = 10): string
     {
         $currentPage = $pageId;
+        $totalPages = ceil(count($results) / $itemsPerPage);
+        $limit = 5;
         $lastPage = $this->page_manager->lastPage($results);
         $pagination = '';
 
-        if(count($results) > 0) {
-
+        if(count($results) > 0)
+        {
             $pagination .= '
             <!-- Pagination -->
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col-12">';
 
             if ($lastPage > 1) {
@@ -6095,68 +6245,54 @@ class AdminDashboardController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination" 
-                        href="' . $previousPage . '"
-                    >
-                        <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
-                    </a>
-                </li>';
-
-                $is_active = false;
-                $c = 0;
-                $i = $currentPage;
-                $pageCount = $currentPage + 9;
-
-                // First 10 pages
-                // If page count is less than 10
-                if($currentPage < 10 && $lastPage < 10){
-
-                    $i = 1;
-                    $pageCount = $lastPage;
+                if ($totalPages >= 1 && $pageId <= $totalPages && $currentPage != 1)
+                {
+                    $pagination .= '
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination" 
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage - 1 . '" 
+                            href="' . $previousPage . '"
+                            ' . $dataAction . '
+                        >
+                            <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
+                        </a>
+                    </li>
+                    <li class="page-item ">
+                        <a class="address-pagination" data-page-id="12" href="'. $url.'1">First</a>
+                    </li>';
                 }
 
-                // If page count is greater than 10
-                if($currentPage < 10 && $lastPage > 10){
+                $i = max(1, $currentPage - $limit);
+                $forLimit = min($currentPage + $limit, $totalPages);
+                $isActive = false;
 
-                    $i = 1;
-                    $pageCount = 10;
-                }
-
-                // Last 10 pages
-                if($currentPage > 10 && $currentPage > $lastPage - 10){
-
-                    $i = $currentPage - 10;
-                    $pageCount = $currentPage;
-                }
-
-                for ($i; $i <= $pageCount; $i++) {
-
+                for (; $i <= $forLimit; $i++)
+                {
                     $active = '';
-                    $c++;
 
                     if ($i == (int)$currentPage) {
 
                         $active = 'active';
-                        $is_active = true;
+                        $isActive = true;
                     }
 
                     // Go to previous page if all records for a page have been deleted
-                    if(!$is_active && $i == count($results)){
+                    if (!$isActive && $i == count($results)) {
 
                         $active = 'active';
                     }
 
                     $pagination .= '
                     <li class="page-item ' . $active . '">
-                        <a class="address-pagination" href="' . $url . $i . '">' . $i . '</a>
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="' . $i . '" 
+                            href="' . $url . $i . '"
+                            ' . $dataAction . '
+                        >' . $i . '</a>
                     </li>';
-
-                    if($i == $lastPage){
-                        break;
-                    }
                 }
 
                 $disabled = 'disabled';
@@ -6168,24 +6304,29 @@ class AdminDashboardController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination" 
-                        aria-disabled="' . $dataDisabled . '" 
-                        href="' . $url . $currentPage + 1 . '">
-                        <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>';
-
-                if(count($results) < $currentPage){
-
-                    $currentPage = count($results);
+                if ($currentPage < $lastPage)
+                {
+                    $pagination .= '
+                    <li class="page-item ">
+                        <a class="address-pagination" data-page-id="12" href="'. $url . $lastPage .'">Last</a>
+                    </li>
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination"  
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage + 1 . '" 
+                            href="' . $url . $currentPage + 1 . '"
+                            '. $dataAction .'
+                        >
+                            <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>';
                 }
 
                 $pagination .= '
                         </ul>
                     </nav>
+                    <input type="hidden" id="page_no" value="' . $currentPage . '">
                 </div>';
             }
         }
@@ -6286,6 +6427,130 @@ class AdminDashboardController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/admin/distributor-search-list', name: 'admin_distributor_search_list')]
+    public function adminDistributorSearchListAction(Request $request): Response
+    {
+        $keywords = strtolower($request->request->get('keywords'));
+        $productId = $request->request->get('product-id');
+        $distributors = $this->em->getRepository(Distributors::class)->findAll();
+        $select = '';
+
+        // Decrypt distributors
+        if(is_array($distributors) && count($distributors) > 0)
+        {
+            $select .= '<ul id="distributor_list">';
+
+            foreach ($distributors as $distributor)
+            {
+                $distributorName = $this->encryptor->decrypt($distributor->getDistributorName());
+
+                if(strstr(strtolower($distributorName), $keywords))
+                {
+                    $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+                        'product' => $productId,
+                        'distributor' => $distributor->getId(),
+                    ]);
+                    $price = '';
+
+                    if($distributorProducts != null)
+                    {
+                        $price = $distributorProducts->getUnitPrice() ?? '';
+                    }
+
+                    $select .= '
+                    <li class="search-item">
+                        <div class="row">
+                            <div class="col-12 col-sm-8">
+                                '. $distributorName .'
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-sm form-control-bg-grey price-field"
+                                        placeholder="price"
+                                        data-action="keyup->admin--products#onKeyUpDistributorPriceField"
+                                        value="'. $price .'"
+                                    >
+                                    <button 
+                                        class="btn btn-sm btn-primary hidden save-distributor-product"
+                                        data-product-id="'. $productId .'"
+                                        data-distributor-id="'. $distributor->getId() .'"
+                                        data-action="click->admin--products#onClickSaveDistributorProduct"
+                                    >
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>';
+                }
+            }
+
+            $select .= '</ul>';
+        }
+
+        return new Response($select);
+    }
+
+    #[Route('/admin/create-distributor-product', name: 'admin_create_distributor_product')]
+    public function AdminCreateDistributorProductAction(Request $request, MailerInterface $mailer): Response
+    {
+        $data = $request->request;
+        $productId = $data->get('product-id');
+        $distributorId = $data->get('distributor-id');
+        $unitPrice = $data->get('price') ?? 0.00;
+        $product = $this->em->getRepository(Products::class)->find($productId);
+        $distributor = $this->em->getRepository(Distributors::class)->find($distributorId);
+        $distributorProducts = $this->em->getRepository(DistributorProducts::class)->findOneBy(
+            [
+                'product' => $productId,
+                'distributor' => $distributorId,
+            ]
+        );
+
+        if($distributorProducts == null)
+        {
+            $distributorProducts = new DistributorProducts();
+        }
+
+        if(!empty($productId) && !empty($distributorId))
+        {
+            $distributorProducts->setDistributor($distributor);
+            $distributorProducts->setProduct($product);
+            $distributorProducts->setIsActive(1);
+            $distributorProducts->setUnitPrice($unitPrice);
+            $distributorProducts->setStockCount(0);
+            $distributorProducts->setTaxExempt(0);
+            $distributorProducts->setSku('');
+            $distributorProducts->setItemId(0);
+
+            $this->em->persist($distributorProducts);
+            $this->em->flush();
+
+            // Update parent stock level
+            $stockCount = $this->em->getRepository(DistributorProducts::class)->getProductStockCount($product->getId());
+
+            $product->setStockCount($stockCount[0][1]);
+
+            // Get the lowest price
+            $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($product->getId());
+
+            $product->setUnitPrice($lowestPrice[0]['unitPrice'] ?? 0.00);
+
+            $this->em->persist($product);
+            $this->em->flush();
+
+            $response['flash'] = '<b><i class="fa-solid fa-circle-check"></i></i></b> '. $product->getName() .' successfully updated.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        } else {
+
+            $response['flash'] = 'An error occurred';
+        }
+
+        return new JsonResponse($response);
+    }
+
     private function generatePassword(): string
     {
         $sets = [];
@@ -6374,5 +6639,430 @@ class AdminDashboardController extends AbstractController
         }
 
         return $html;
+    }
+
+    #[Route('/admin/get-distributor-products', name: 'admin_get_distributor_products')]
+    public function getDistributorInventory(Request $request)
+    {
+        $pageId = $request->request->get('page-id') ?? 1;
+        $distributorId = $request->request->get('distributor-id');
+        $manufacturerId = (int) $request->request->get('manufacturer-id') ?? 0;
+        $speciesId = (int) $request->request->get('species-id') ?? 0;
+        $dataAction = 'data-action="click->admin--distributors#onClickPagination"';
+        $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,$manufacturerId,$speciesId);
+        $distributorProducts = $this->page_manager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
+        $distributorProductsPagination = $this->getPagination($pageId, $distributorProducts, $distributorId, $dataAction);
+        $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
+        $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
+
+        $html = '
+        <div class="col-12">
+            <div class="row">
+                <div class="col-12 text-center mt-1 pt-3 pb-3" id="order_header">
+                    <h4 class="text-primary text-truncate">Inventory</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-end mb-2">
+                    <a 
+                        href="" 
+                        class="toggle-search"
+                        data-action="click->admin--distributors#onClickToggleSearch"
+                    >
+                        <i class="fal fa-magnifying-glass-plus"></i>
+                        <span class="ms-1">Search Inventory</span>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div 
+                    class="col-12 bg-light border-top border-left border-right search-row" style="display: none"
+                >
+                    <div class="input-group py-2">
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            data-action="keyup->admin--distributors#onKeyupSearchField"
+                        >
+                        <span class="input-group-text">
+                            <a href="/clinics/manage-inventory" class="text-primary" id="inventory_clear" data-action="click->admin--distributors#onClickResetProductsList">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        </span>
+                    </div>
+                    <div id="suggestion_field"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 bg-light border-top border-left border-right">
+                    <div class="row">
+                        <div class="col-12 col-md-3 offset-sm-0 offset-md-3 py-3">
+                            <select
+                                class="form-control"
+                                name="manufacturer-id"
+                                id="manufacturer_id"
+                                data-action="change->admin--distributors#onChangeFilterSelect"
+                            >
+                                <option value="0">
+                                    Select a Manufacturer
+                                </option>';
+
+                                foreach($manufacturers as $manufacturer)
+                                {
+                                    $selected = '';
+
+                                    if($manufacturerId == $manufacturer->getManufacturers()->getId())
+                                    {
+                                        $selected = 'selected';
+                                    }
+
+                                    $html .= '
+                                    <option value="'. $manufacturer->getManufacturers()->getId() .'" '. $selected .'>
+                                        '. $this->encryptor->decrypt($manufacturer->getManufacturers()->getName()) .'
+                                    </option>';
+                                }
+
+                            $html .= '
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3 py-3">
+                            <select
+                                class="form-control"
+                                name="species-id"
+                                id="species_id"
+                                data-action="change->admin--distributors#onChangeFilterSelect"
+                            >
+                                <option value="0">
+                                    Select a Species
+                                </option>';
+
+                                foreach($species as $specie)
+                                {
+                                    $selected = '';
+
+                                    if($speciesId == $specie['species']['id'])
+                                    {
+                                        $selected = 'selected';
+                                    }
+
+                                    $html .= '
+                                    <option value="'. $specie['species']['id'] .'" '. $selected .'>
+                                        '. $specie['species']['name'] .'
+                                    </option>';
+                                }
+
+                            $html .= '
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 d-none d-xl-block">
+                    <div class="row">
+                        <div class="col-md-3 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-left border-top">
+                            Name
+                        </div>
+                        <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Active Ingredient
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Dosage
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Size
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Unit
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Stock
+                        </div>
+                        <div class="col-md-1 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-top">
+                            Price
+                        </div>
+                        <div class="col-md-2 pt-3 pb-3 text-primary fw-bold bg-light border-bottom border-right border-top">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12" id="inventory_list">';
+
+                    foreach($distributorProducts as $distributorProduct)
+                    {
+                        $html .= '
+                        <div 
+                            class="row border-left border-right border-bottom bg-white" 
+                            id="distributor_product_'. $distributorProduct->getDistributorProducts()[0]->getId() .'"
+                        >
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Name:
+                            </div>
+                            <div
+                                class="col-7 col-md-3 col-xl-3 text-truncate border-list pt-3 pb-3"
+                                data-bs-trigger="hover"
+                                data-bs-container="body"
+                                data-bs-toggle="popover"
+                                data-bs-placement="top"
+                                data-bs-html="true"
+                                data-bs-content="'. $distributorProduct->getName() .'"
+                            >
+                                '. $distributorProduct->getName() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Active Ingredient:
+                            </div>
+                            <div class="col-7 col-md-2 col-xl-2 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getActiveIngredient() .'
+                            </div>
+                            <div class="col-5 col-md-1 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Dosage:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getDosage() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Size:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getSize() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Unit:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getUnit() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Stock:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 text-truncate border-list pt-3 pb-3">
+                                '. $distributorProduct->getDistributorProducts()[0]->getStockCount() .'
+                            </div>
+                            <div class="col-5 col-md-2 d-xl-none t-cell fw-bold text-primary text-truncate border-list pt-3 pb-3">
+                                Price:
+                            </div>
+                            <div class="col-7 col-md-1 col-xl-1 border-list pt-3 pb-3">
+                                <span class="unit-price">'. $distributorProduct->getDistributorProducts()[0]->getUnitPrice() .'</span>
+                                <input 
+                                    type="text" 
+                                    class="form-control form-control-sm unit-price-field hidden" 
+                                    value="'. $distributorProduct->getDistributorProducts()[0]->getUnitPrice() .'"
+                                    data-product-name="'. $distributorProduct->getName() .'"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                >
+                                <div class="hidden_msg">
+                                    Required Field
+                                </div>
+                            </div>
+                            <div class="col-md-2 t-cell text-truncate border-list pt-3 pb-3 save-col">
+                                <a
+                                    href=""
+                                    class="float-end update-product"
+                                    data-product-name="'. $distributorProduct->getName() .'"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                    data-action="click->admin--distributors#onClickUpdateProduct"
+                                >
+                                    <i class="fa-solid fa-pen-to-square edit-icon"></i>
+                                </a>
+                                <a 
+                                    href="" 
+                                    class="float-end save-product hidden"
+                                    data-action="click->admin--distributors#onClickSaveProduct"
+                                >
+                                    <i class="fas fa-save" style="margin-right: 16px"></i>
+                                </a>
+                                <a
+                                    href=""
+                                    class="delete-icon float-end delete-distributor-product"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modal_product_delete"
+                                    data-product-id="'. $distributorProduct->getId() .'"
+                                    data-action="click->admin--distributors#onClickDeleteProductIcon"
+                                >
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>
+                            </div>
+                        </div>';
+                    }
+
+                    $html .= '
+                    <div id="distributor_products_pagination">'. $distributorProductsPagination .'</div>
+                    <div 
+                        class="modal fade" 
+                        id="modal_product_delete" 
+                        tabindex="-1" 
+                        aria-labelledby="product_delete_label" 
+                        aria-hidden="true"
+                    >
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="product_delete_label">Delete Product</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-12 mb-0">
+                                            Are you sure you would like to delete this product? This action cannot be undone.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">CANCEL</button>
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-danger btn-sm" 
+                                        id="delete_product"
+                                        data-action="click->admin--distributors#onClickDeleteProduct"
+                                    >DELETE</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>';
+
+        return new JsonResponse($html);
+    }
+
+    #[Route('/admin/save-distributor-product', name: 'admin_save_distributor_product')]
+    public function saveDistributorProduct(Request $request)
+    {
+        $data = $request->request;
+        $distributorId = $data->get('distributor-id');
+        $productId = $data->get('product-id');
+        $unitPrice = $data->get('unit-price');
+
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+            'distributor' => $distributorId,
+            'product' => $productId,
+        ]);
+
+        if($distributorProduct == null)
+        {
+            $distributorProduct = new DistributorProducts();
+        }
+
+        $distributorProduct->setUnitPrice($unitPrice);
+
+        $this->em->persist($distributorProduct);
+        $this->em->flush();
+
+        $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Saved.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        $type = 'success';
+
+        $response = [
+            'flash' => $flash,
+            'type' => $type,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/delete-distributor-product', name: 'admin_delete_distributor_product')]
+    public function deleteDistributorProduct(Request $request)
+    {
+        $data = $request->request;
+        $distributorId = $data->get('distributor-id');
+        $productId = $data->get('product-id');
+
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
+            'distributor' => $distributorId,
+            'product' => $productId,
+        ]);
+
+        $flash = '<b><i class="fas fa-check-circle"></i> An Error Occurred.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+        $type = 'danger';
+
+        if($distributorProduct != null)
+        {
+            $this->em->remove($distributorProduct);
+            $this->em->flush();
+
+            $flash = '<b><i class="fas fa-check-circle"></i> Product Successfully Deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+            $type = 'success';
+        }
+
+        $response = [
+            'flash' => $flash,
+            'type' => $type,
+        ];
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/admin/distributors-inventory-search', name: 'admin_distributor_inventory_search')]
+    public function adminDistributorInventorySearchAction(Request $request): Response
+    {
+        $distributorId = $request->request->get('distributor-id');
+        $pageId = $request->request->get('page-id');
+        $products = $this->em->getRepository(Products::class)->findBySearch($request->request->get('keyword'));
+        $select = '<ul id="product_list">';
+
+        foreach($products as $product){
+
+            $id = $product->getId();
+            $name = $product->getName();
+            $dosage = '';
+            $size = '';
+
+            if(!empty($product->getDosage())) {
+
+                $unit = '';
+
+                if(!empty($product->getUnit())) {
+
+                    $unit = $product->getUnit();
+                }
+
+                $dosage = ' | '. $product->getDosage() . $unit;
+            }
+
+            if(!empty($product->getSize())) {
+
+                $size = ' | '. $product->getSize();
+            }
+
+            $select .= "
+            <li 
+                class=\"search-item\"
+                data-product-id=\"$id\"
+                data-product-name=\"$name\"
+                data-action='click->products--distributor-products#onclickEditIcon'
+            >
+                <div class='row'>
+                    <div class='col-12 col-sm-10'>
+                        $name$dosage$size
+                    </div>
+                    <div class='col-12 col-sm-2'>
+                        <div class='input-group'>
+                            <input 
+                                type='text' 
+                                class='form-control form-control-sm form-control-bg-grey price-field'
+                                placeholder='price'
+                                data-action='keyup->admin--distributors#onKeyUpProductPriceField'
+                                value=''
+                                    >
+                            <button 
+                                class='btn btn-sm btn-primary hidden save-distributor-product'
+                                data-product-id='$id'
+                                data-distributor-id='$distributorId'
+                                data-page-id='$pageId'
+                                data-action='click->admin--distributors#onClickCreateDistributorProduct'
+                                    >
+                                <i class='fas fa-save'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            ";
+        }
+
+        $select .= '</ul>';
+
+        return new Response($select);
     }
 }

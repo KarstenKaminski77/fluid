@@ -231,6 +231,11 @@ class Products
      */
     private $productRetails;
 
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $isControlled;
+
     public function __construct()
     {
         $this->setCreated(new \DateTime());
@@ -978,6 +983,18 @@ class Products
                 $productRetail->setProduct(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getIsControlled(): ?bool
+    {
+        return $this->isControlled;
+    }
+
+    public function setIsControlled(?bool $isControlled): self
+    {
+        $this->isControlled = $isControlled;
 
         return $this;
     }

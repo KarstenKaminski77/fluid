@@ -17,13 +17,18 @@ class NotificationsController extends AbstractController
         $this->em = $entityManager;
     }
 
-    #[Route('clinics/get-notification', name: 'get_notifications')]
+    #[Route('/clinics/get-notification', name: 'get_notifications')]
+    #[Route('/distributors/get-notification', name: 'get_distributor_notifications')]
     public function getNotifications(): Response
     {
         $response = '';
+        $uri = trim($_SERVER['REQUEST_URI'], '/');
+        $pieces = explode('/', $uri);
+        $entity = 'get' . ucfirst(substr($pieces[0],0,-1));
 
         if($this->getUser() != null) {
 
+            if($this->getUser()->$entity() != null)
             $notifications = $this->em->getRepository(Notifications::class)->findByClinic($this->getUser()->getClinic());
 
             if(count($notifications) > 0){
@@ -60,7 +65,8 @@ class NotificationsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    #[Route('clinics/delete-notification', name: 'delete_notifications')]
+    #[Route('/clinics/delete-notification', name: 'clinic_delete_notifications')]
+    #[Route('/distributors/delete-notification', name: 'distributor_delete_notifications')]
     public function deleteNotifications(Request $request): Response
     {
         $notification = $this->em->getRepository(Notifications::class)->find($request->request->get('notification-id'));
@@ -78,7 +84,7 @@ class NotificationsController extends AbstractController
         }
 
         $this->em->flush();
-
+dd($request->request, $notification);
         if ($notification != null && $notification->getIsRead() == 1 && $notification->getIsReadDistributor() == 1){
 
             $this->em->remove($notification);
@@ -94,7 +100,6 @@ class NotificationsController extends AbstractController
 
         $response = [
             'flash' => $flash,
-            'notifications' => $this->getNotifications(),
         ];
 
         return new JsonResponse($response);
@@ -116,9 +121,7 @@ class NotificationsController extends AbstractController
                 'isRead' => 0,
             ]);
         }
-
         else
-
         {
             $notifications = $this->em->getRepository(Notifications::class)->findBy([
                 'distributor' => $businessId,
