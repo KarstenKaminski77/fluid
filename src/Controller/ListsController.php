@@ -596,17 +596,20 @@ class ListsController extends AbstractController
                             <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
                                 <a 
                                     href="" 
-                                    onclick="selectProductListItem(\'' . $result->getProduct()->getId() . '\',\'' . $result->getProduct()->getName() . '\');"
+                                    onclick=""
                                     class="float-end edit-product" 
                                     data-product-name="' . $result->getProduct()->getName() . '" 
-                                    data-product-id="' . $result->getId() . '"
+                                    data-product-id="' . $result->getProduct()->getId() . '"
+                                    ata-distributor-id="' . $result->getDistributor()->getId() . '" 
+                                    data-list-id="' . $result->getList()->getId() . '" 
+                                    data-action="click->clinics--inventory#onClickEditIcon"
                                 >
                                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                 </a>
                                 <a 
                                     href="" 
                                     class="delete-icon float-end delete-clinic-product" 
-                                    data-bs-toggle="modal" 
+                                    data-bs-toggle="mFodal" 
                                     data-clinic-product-id="' . $result->getProduct()->getId() . '" 
                                     data-distributor-id="' . $result->getDistributor()->getId() . '"
                                     data-list-id="' . $result->getList()->getId() . '"

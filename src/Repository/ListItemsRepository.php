@@ -56,10 +56,9 @@ class ListItemsRepository extends ServiceEntityRepository
             ->join('li.product', 'p')
             ->join('li.distributor', 'd')
             ->join('li.distributorProduct', 'dp')
-            ->join('d.api', 'a')
+            ->leftJoin('d.api', 'a')
             ->andWhere('li.list = :listId')
-            ->setParameter('listId', $listId)
-            ->andWhere("li.itemId != ''");
+            ->setParameter('listId', $listId);
 
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }

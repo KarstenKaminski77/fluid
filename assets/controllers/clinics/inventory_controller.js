@@ -184,42 +184,40 @@ export default class extends Controller {
 
         let self = this;
         let clickedElement = e.currentTarget;
-        let productId = $(clickedElement).attr('data-product-id');
-        let distributorId = $(clickedElement).attr('data-list-id');
-        let listId = $(clickedElement).attr('data-list-id');
+        let id = $(clickedElement).attr('data-product-id');
+        let name = $(clickedElement).attr('data-product-name');
 
         $.ajax({
-            async: "true",
-            url: "/clinics/inventory/manage-list",
-            type: 'POST',
-            cache: false,
-            timeout: 600000,
-            dataType: 'json',
-            data:
-                {
-                    'product-id': productId,
-                    'list-id': listId,
-                    'distributor-id': distributorId,
-                    'favourite': false,
-                    'retail': true,
-                    'delete': true,
-                    'return': 'list',
-                },
-            beforeSend: function ()
-            {
-                self.isLoading(true);
+            type: "POST",
+            url: "/clinics/inventory-get-data",
+            data: {
+                'product-id': id,
             },
             success: function (response)
             {
-                $('#clinic_product_'+ productId).remove();
-                $('#inventory_item').empty().append(response.html).slideDown(700);
-                self.isLoading(false);
-                self.popOver();
+                $("#suggestion_field").show();
+                $("#suggestion_field").html(response);
+                $('#product_id').val(id);
+                $('#distributor_id').empty().append(response.distributors);
+                $('option[value="'+ response.distributorId +'"]').prop("selected", true);
+                $('#unit').val(response.unit);
+                $('#sku').val(response.sku);
+                $('#cost_price').val(response.costPrice);
+                $('#your_price').val(response.unitPrice);
+                $('#dosage').val(response.dosage);
+                $('#size').val(response.size);
+                $('#active_ingredient').val(response.activeIngredient);
+                $('#product_name').empty();
+                $('#product_name').append(name + response.dosage + response.unit + response.size);
+                $('#inventory_item').slideDown(700);
+
+                $("#search_inventory_field").val(name);
+                $("#suggestion_field").hide();
+
+                $('#inventory_attach_container').slideDown('700');
+                window.scrollTo(0, 0);
             }
         });
-
-        $('#inventory_attach_container').slideDown('700');
-        window.scrollTo(0, 0);
     }
 
     onClickAddToRetailList(e)
