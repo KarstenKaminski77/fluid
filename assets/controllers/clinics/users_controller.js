@@ -45,7 +45,7 @@ export default class extends Controller
             {
                 if(e.status === 500)
                 {
-                    //window.location.href = '/clinics/error';
+                    window.location.href = '/clinics/error';
                 }
             },
             success: function (response)
@@ -373,6 +373,48 @@ export default class extends Controller
         });
         
         return iti;
+    }
+
+    onBlurEmail()
+    {
+        let email = $('#user_email').val();
+        let errorEmail = $('#error_user_email');
+
+        errorEmail.hide();
+
+        $.ajax({
+            url: "/clinics/user/check-email",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                email: email
+            },
+            complete: function(e)
+            {
+                if(e.status === 500)
+                {
+                    window.location.href = '/clinics/error';
+                }
+            },
+            success: function (response) {
+
+                if(!response.response)
+                {
+                    if(response.restricted)
+                    {
+                        let domain = email.split('@');
+
+                        errorEmail.empty().append('The domain name '+ domain[1] +' is not allowed').show();
+
+                    } else
+                    {
+                        errorEmail.empty().append(email +' is already in use').show();
+                    }
+
+                    $('#user_email').val('');
+                }
+            }
+        });
     }
 
     getFlash(flash)

@@ -82,4 +82,13 @@ class DistributorsRepository extends ServiceEntityRepository
             ->orderBy('d.distributorName', 'ASC');
         return [$queryBuilder->getQuery(), $queryBuilder->getQuery()->getResult()];
     }
+
+    public function adminFindDistributors($keywords)
+    {
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.distributorName LIKE :searchTerm')
+            ->setParameter('searchTerm', '%'.$keywords.'%')
+            ->orderBy('d.distributorName', 'DESC')
+            ->getQuery()->getResult();
+    }
 }

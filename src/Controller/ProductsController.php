@@ -795,94 +795,10 @@ class ProductsController extends AbstractController
             </div>';
 
             $currentPage = $request->request->get('page-no');
-            $lastPage = $this->pageManager->lastPage($results);
+            $dataAction = 'data-action="click->products--search#onClickPagination"';
 
-            $html .= '
-                <!-- Pagination -->
-                <div class="row">
-                    <div class="col-12">';
+            $html .= $this->getPagination($currentPage,$results,'/clinics/inventory/',$dataAction, self::ITEMS_PER_PAGE)->getContent();
 
-            if($lastPage > 1) {
-
-                $previousPageNo = $currentPage - 1;
-                $url = '/clinics/inventory';
-                $previousPage = $url;
-
-                $html .= '
-                <nav class="custom-pagination">
-                    <ul class="pagination justify-content-center">
-                ';
-
-                $disabled = 'disabled';
-                $dataDisabled = 'true';
-
-                // Previous Link
-                if($currentPage > 1){
-
-                    $disabled = '';
-                    $dataDisabled = 'false';
-                }
-
-                $html .= '
-                <li class="page-item '. $disabled .'">
-                    <a 
-                        class="page-link" '. $listId .' 
-                        aria-disabled="'. $dataDisabled .'" 
-                        data-page-id="'. $currentPage - 1 .'" 
-                        href="'. $previousPage .'"
-                        data-action="click->products--search#onClickPagination"
-                    >
-                        <span aria-hidden="true">&laquo;</span> Previous
-                    </a>
-                </li>';
-
-                for($i = 1; $i <= $lastPage; $i++) {
-
-                    $active = '';
-
-                    if($i == (int) $currentPage){
-
-                        $active = 'active';
-                    }
-
-                    $html .= '
-                    <li class="page-item '. $active .'">
-                        <a 
-                            class="page-link" '. $listId .' 
-                            data-page-id="'. $i .'" 
-                            href="'. $url .'"
-                            data-action="click->products--search#onClickPagination"
-                        >'. $i .'</a>
-                    </li>';
-                }
-
-                $disabled = 'disabled';
-                $dataDisabled = 'true';
-
-                if($currentPage < $lastPage) {
-
-                    $disabled = '';
-                    $dataDisabled = 'false';
-                }
-
-                $html .= '
-                <li class="page-item '. $disabled .'">
-                    <a 
-                        class="page-link" '. $listId .' 
-                        aria-disabled="'. $dataDisabled .'" 
-                        data-page-id="'. $currentPage + 1 .'" 
-                        href="'. $url  .'"
-                        data-action="click->products--search#onClickPagination"
-                    >
-                        Next <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>';
-
-                $html .= '
-                        </ul>
-                    </nav>
-                </div>';
-            }
 
         } else {
 
@@ -1159,7 +1075,7 @@ class ProductsController extends AbstractController
                         'itemId' => $itemId,
                     ])->getContent(), true);
 
-                    If($priceStockLevels != null && is_array($priceStockLevels))
+                    If($priceStockLevels != null && is_array($priceStockLevels) && count($priceStockLevels) > 0)
                     {
                         $distributorProduct = $this->em->getRepository(DistributorProducts::class)->findOneBy([
                             'distributor' => $distributorId,
@@ -1534,9 +1450,10 @@ class ProductsController extends AbstractController
         }
 
         // Get the lowest price
-        $per = strtolower($product->getForm());
         $lowestPrice = $this->em->getRepository(DistributorProducts::class)->getLowestPrice($productId);
-        $price = number_format($lowestPrice[0]['unitPrice'], 3) / $product->getSize();
+        $lowestUnitPrice = $lowestPrice[0]['unitPrice'] ?? 0;
+        $size = (int) $product->getSize(); //dd($lowestUnitPrice, $size);
+        $price = $lowestUnitPrice / $size;
 
         $response['from'] = '';
 
@@ -1711,7 +1628,13 @@ class ProductsController extends AbstractController
         ]);
         $products = $this->em->getRepository(ListItems::class)->findByListId($list->getId());
         $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
-        $pagination = $this->getPagination($pageId, $results, "clinics/manage-inventory");
+        $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $request->request->get('page-id'),
+            'results' => $results,
+            'url' => '/clinics/manage-inventory/',
+            'dataAction' => 'data-action="click->clinics--inventory#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
         $species = $this->em->getRepository(ProductsSpecies::class)->findByClinic($clinic->getId());
         $manufacturers = [];
 
@@ -2030,11 +1953,12 @@ class ProductsController extends AbstractController
                         </div>
                         <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
                             <a 
-                                href="" 
-                                onclick="selectProductListItem(\''. $result->getProduct()->getId() .'\',\''. $result->getProduct()->getName() .'\');"
+                                href=""
                                 class="float-end edit-product" 
                                 data-product-name="'. $result->getProduct()->getName() .'" 
-                                data-product-id="'. $result->getId() .'"
+                                data-product-id="'. $result->getProduct()->getId() .'"
+                                data-distributor-id="'. $result->getDistributor()->getId() .'"
+                                data-list-id="'. $result->getList()->getId() .'"
                                 data-action="click->clinics--inventory#onClickEditIcon"
                             >
                                 <i class="fa-solid fa-pen-to-square edit-icon"></i>
@@ -2206,17 +2130,19 @@ class ProductsController extends AbstractController
         return new JsonResponse($response);
     }
 
-    public function getPagination($pageId, $results, $url): string
+    public function getPagination($pageId, $results, $url, $dataAction = '', $itemsPerPage  = 10): Response
     {
         $currentPage = $pageId;
+        $totalPages = ceil(count($results) / $itemsPerPage);
+        $limit = 5;
         $lastPage = $this->pageManager->lastPage($results);
         $pagination = '';
 
-        if(count($results) > 0)
+        if($lastPage > 0)
         {
             $pagination .= '
             <!-- Pagination -->
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col-12">';
 
             if ($lastPage > 1)
@@ -2239,59 +2165,47 @@ class ProductsController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination" 
-                        href="' . $previousPage . '"
-                        data-page-id="'. $previousPageNo .'"
-                        data-action="click->clinics--inventory#onClickPagination"
-                    >
-                        <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
-                    </a>
-                </li>';
-
-                $is_active = false;
-                $c = 0;
-                $i = $currentPage;
-                $pageCount = $currentPage + 9;
-
-                // First 10 pages
-                // If page count is less than 10
-                if($currentPage < 10 && $lastPage < 10)
+                if ($totalPages >= 1 && $pageId <= $totalPages && $currentPage != 1)
                 {
-                    $i = 1;
-                    $pageCount = $lastPage;
+                    $pagination .= '
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination" 
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage - 1 . '" 
+                            href="' . $previousPage . '"
+                            ' . $dataAction . '
+                        >
+                            <span aria-hidden="true">&laquo;</span> <span class="d-none d-sm-inline">Previous</span>
+                        </a>
+                    </li>
+                    <li class="page-item ">
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="1" 
+                            href="'. $url.'1"
+                            ' . $dataAction . '
+                        >First</a>
+                    </li>';
                 }
 
-                // If page count is greater than 10
-                if($currentPage < 10 && $lastPage > 10)
-                {
-                    $i = 1;
-                    $pageCount = 10;
-                }
+                $i = max(1, $currentPage - $limit);
+                $forLimit = min($currentPage + $limit, $totalPages);
+                $isActive = false;
 
-                // Last 10 pages
-                if($currentPage > 10 && $currentPage > $lastPage - 10)
-                {
-                    $i = $currentPage - 10;
-                    $pageCount = $currentPage;
-                }
-
-                for ($i; $i <= $pageCount; $i++)
+                for (; $i <= $forLimit; $i++)
                 {
                     $active = '';
-                    $c++;
 
                     if ($i == (int)$currentPage)
                     {
                         $active = 'active';
-                        $is_active = true;
+                        $isActive = true;
                     }
 
                     // Go to previous page if all records for a page have been deleted
-                    if(!$is_active && $i == count($results))
-                    {
+                    if (!$isActive && $i == count($results)) {
+
                         $active = 'active';
                     }
 
@@ -2299,16 +2213,11 @@ class ProductsController extends AbstractController
                     <li class="page-item ' . $active . '">
                         <a 
                             class="address-pagination" 
-                            href="' . $url . '"
-                            data-page-id="'. $i .'"
-                            data-action="click->clinics--inventory#onClickPagination"
+                            data-page-id="' . $i . '" 
+                            href="' . $url . $i . '"
+                            ' . $dataAction . '
                         >' . $i . '</a>
                     </li>';
-
-                    if($i == $lastPage)
-                    {
-                        break;
-                    }
                 }
 
                 $disabled = 'disabled';
@@ -2320,32 +2229,39 @@ class ProductsController extends AbstractController
                     $dataDisabled = 'false';
                 }
 
-                $pagination .= '
-                <li class="page-item ' . $disabled . '">
-                    <a 
-                        class="address-pagination" 
-                        aria-disabled="' . $dataDisabled . '" 
-                        href="' . $url . $currentPage + 1 . '"
-                        data-page-id="'. $currentPage + 1 .'"
-                        data-action="click->clinics--inventory#onClickPagination"
-                    >
-                        <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>';
-
-                if(count($results) < $currentPage)
+                if ($currentPage < $lastPage)
                 {
-                    $currentPage = count($results);
+                    $pagination .= '
+                    <li class="page-item ">
+                        <a 
+                            class="address-pagination" 
+                            data-page-id="'. $lastPage .'" 
+                            href="'. $url . $lastPage .'"
+                            ' . $dataAction . '
+                        >Last</a>
+                    </li>
+                    <li class="page-item ' . $disabled . '">
+                        <a 
+                            class="address-pagination"  
+                            aria-disabled="' . $dataDisabled . '" 
+                            data-page-id="' . $currentPage + 1 . '" 
+                            href="' . $url . $currentPage + 1 . '"
+                            '. $dataAction .'
+                        >
+                            <span class="d-none d-sm-inline">Next</span> <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>';
                 }
 
                 $pagination .= '
                         </ul>
                     </nav>
+                    <input type="hidden" id="page_no" value="' . $currentPage . '">
                 </div>';
             }
         }
 
-        return $pagination;
+        return new Response($pagination);
     }
 
     public function zohoRetrieveItem($distributorId, $itemId): Response
@@ -2409,7 +2325,7 @@ class ProductsController extends AbstractController
             curl_close($curl);
         }
 
-        return $response;
+        return new JsonResponse($response);
     }
 
     private function zohoRetrieveItemsByIds($distributorId, $itemIds)

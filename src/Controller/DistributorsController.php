@@ -156,6 +156,51 @@ class DistributorsController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/distributors/user/check-email', name: 'distributor_user_check_email')]
+    public function distributorsUserCheckEmailAction(Request $request): Response
+    {
+        $email = $request->request->get('email');
+        $domainName = explode('@', $email);
+        $response['response'] = true;
+        $firstName = '';
+        $restrictedDomains = $this->em->getRepository(RestrictedDomains::class)->arrayFindAll();
+
+        foreach($restrictedDomains as $restrictedDomain)
+        {
+            if(md5($domainName[1]) == md5($restrictedDomain->getName()))
+            {
+                $response['response'] = false;
+                $response['restricted'] = true;
+
+                return new JsonResponse($response);
+            }
+        }
+
+        $distributorUsers = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $clinic = $this->em->getRepository(Clinics::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $clinicDomain = $this->em->getRepository(Clinics::class)->findOneBy([
+            'domainName' => md5($domainName[1]),
+        ]);
+
+        $clinicUsers = $this->em->getRepository(ClinicUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        if($distributorUsers != null || $clinic != null || $clinicUsers != null || $clinicDomain != null)
+        {
+            $response['response'] = false;
+            $response['restricted'] = false;
+        }
+
+        return new JsonResponse($response);
+    }
+
     protected function createRegisterForm()
     {
         $distributors = new Distributors();

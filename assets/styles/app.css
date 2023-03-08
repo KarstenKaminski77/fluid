@@ -25,8 +25,8 @@ body {
     font-family: 'Montserrat', Serif !important;
 }
 
-body, form-control {
-    font-size: 0.9rem;
+body, .form-control {
+    font-size: 0.9rem !important;
 }
 
 .body-pt {
@@ -221,7 +221,7 @@ select:-webkit-autofill:focus {
 .form-control-sm {
     min-height: calc(1.5em + (0.5rem + 2px));
     padding: 0.25rem 0.5rem;
-    font-size: .875rem;
+    font-size: .9rem;
     border-radius: 0.2rem;
 }
 
@@ -297,7 +297,7 @@ label {
     color: #fff;
 }
 
-#product_list{
+#product_list, #distributor_list{
     list-style:none;
     margin-top:-3px;
     padding:0;
@@ -308,7 +308,7 @@ label {
     box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
 }
 
-#product_list li{
+#product_list li, #distributor_list li{
     padding: 10px;
     background: #f0f0f0;
     border-left: #bbb9b9 1px solid;
@@ -316,7 +316,7 @@ label {
     border-bottom: #bbb9b9 1px solid;
 }
 
-#product_list li:hover{background:#f1faff;cursor: pointer;}
+#product_list li:hover, #distributor_list li:hover{background:#f1faff;cursor: pointer;}
 
 #suggestion_field {
     position: relative;

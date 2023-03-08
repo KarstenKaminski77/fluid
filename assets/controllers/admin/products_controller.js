@@ -57,4 +57,127 @@ export default class extends Controller {
 
         $(clickedElement).closest('.image-upload-row').remove();
     }
+
+    onKeyUpDistributorSearchField(e)
+    {
+        let clickedElement = e.currentTarget;
+        let productId = $(clickedElement).attr('data-product-id');
+
+        $.ajax({
+            type: "POST",
+            url: "/admin/distributor-search-list",
+            data:{
+                'keywords': $(clickedElement).val(),
+                'product-id': productId,
+            },
+            success: function(response)
+            {
+                $("#suggestion_field").show();
+                $("#suggestion_field").html(response);
+
+                if($(clickedElement).val() == '')
+                {
+                    $("#suggestion_field").empty().hide();
+                }
+            }
+        });
+    }
+
+    onKeyUpDistributorPriceField(e)
+    {
+        let clickedElement = e.currentTarget;
+        let button = $(clickedElement).closest('li').find('button');
+
+        if(!$.isNumeric($(clickedElement).val()))
+        {
+            $(clickedElement).val('');
+            button.hide(700);
+        }
+
+        button.attr('data-price', $(clickedElement).val());
+
+        if($(clickedElement).val() != '')
+        {
+            if (!button.is(':visible'))
+            {
+                $(button.show(700));
+            }
+        }
+        else
+        {
+            $(button.hide(700));
+        }
+    }
+
+    onClickSaveDistributorProduct(e)
+    {
+        e.preventDefault();
+
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let distributorId = $(clickedElement).attr('data-distributor-id');
+        let productId = $(clickedElement).attr('data-product-id');
+        let price = $(clickedElement).attr('data-price');
+
+        $.ajax({
+            type: "POST",
+            url: "/admin/create-distributor-product",
+            data:{
+                'distributor-id': distributorId,
+                'product-id': productId,
+                'price': price
+            },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            success: function(response)
+            {
+                $("#suggestion_field").slideUp(700).empty();
+                $('#search_distributor_field').val('');
+                self.isLoading(false);
+                self.getFlash(response.flash);
+
+                if($(clickedElement).val() == '')
+                {
+                    $("#suggestion_field").empty().hide();
+                }
+            }
+        });
+    }
+
+    onClickResetDistributorList(e)
+    {
+        e.preventDefault();
+
+        $("#suggestion_field").slideUp(700).empty();
+        $('#search_distributor_field').val('');
+    }
+
+    getFlash(flash)
+    {
+        $('#flash').addClass('alert-success').removeClass('alert-danger').addClass('alert').addClass('text-center');
+        $('#flash').removeClass('users-flash').addClass('users-flash').empty().append(flash).removeClass('hidden');
+
+        setTimeout(function()
+        {
+            $('#flash').removeClass('alert-success').removeClass('alert').removeClass('text-center');
+            $('#flash').removeClass('users-flash').empty().addClass('hidden');
+        }, 5000);
+    }
+
+    isLoading(status)
+    {
+        if(status)
+        {
+            $("div.spanner").addClass("show");
+            $("div.overlay").addClass("show");
+
+        }
+        else
+        {
+            $("div.spanner").removeClass("show");
+            $("div.overlay").removeClass("show");
+        }
+    }
 }

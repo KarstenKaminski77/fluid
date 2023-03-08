@@ -316,6 +316,61 @@ class ClinicsController extends AbstractController
         return new JsonResponse($response);
     }
 
+    #[Route('/clinics/user/check-email', name: 'clinic_user_check_email')]
+    public function clinicsUserCheckEmailAction(Request $request): Response
+    {
+        $email = $request->request->get('email');
+        $domainName = explode('@', $email);
+        $response['response'] = true;
+        $restrictedDomains = $this->em->getRepository(RestrictedDomains::class)->arrayFindAll();
+        $firstName = '';
+
+        foreach($restrictedDomains as $restrictedDomain)
+        {
+            if(md5($domainName[1]) == md5($restrictedDomain->getName()))
+            {
+                $response['response'] = false;
+                $response['restricted'] = true;
+
+                return new JsonResponse($response);
+            }
+        }
+
+        $distributor = $this->em->getRepository(Distributors::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $distributorDomain = $this->em->getRepository(Distributors::class)->findOneBy([
+            'domainName' => md5($domainName[1]),
+        ]);
+
+        $distributorUsers = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        $clinicUsers = $this->em->getRepository(ClinicUsers::class)->findOneBy([
+            'hashedEmail' => md5($email),
+        ]);
+
+        if($distributorDomain != null)
+        {
+            $user = $this->em->getRepository(DistributorUsers::class)->findOneBy([
+                'distributor' => $distributorDomain->getId(),
+                'isPrimary' => 1
+            ]);
+            $firstName = $this->encryptor->decrypt($user->getFirstName());
+        }
+
+        $response['firstName'] = $firstName;
+
+        if($distributor != null || $distributorUsers != null || $clinicUsers != null || $distributorDomain != null){
+
+            $response['response'] = false;
+        }
+
+        return new JsonResponse($response);
+    }
+
     #[Route('/clinics/update/personal-information', name: 'clinic_update_personal_information')]
     public function clinicsUpdatePersonalInformationAction(Request $request): Response
     {

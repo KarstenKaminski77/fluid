@@ -30,7 +30,7 @@ class ListsController extends AbstractController
     private $em;
     private $encryptor;
     private $pageManager;
-    const ITEMS_PER_PAGE = 4;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, Encryptor $encryptor, PaginationManager $pageManager) {
 
@@ -537,6 +537,13 @@ class ListsController extends AbstractController
             {
                 $products = $this->em->getRepository(ListItems::class)->findByListId($listId);
                 $results = $this->pageManager->paginate($products[0], $request, self::ITEMS_PER_PAGE);
+                $pagination = $this->forward('App\Controller\ProductsController::getPagination', [
+                    'pageId'  => 1,
+                    'results' => $results,
+                    'url' => '/clinics/manage-inventory/',
+                    'dataAction' => 'data-action="click->clinics--inventory#onClickPagination"',
+                    'itemsPerPage' => self::ITEMS_PER_PAGE,
+                ])->getContent();
 
                 if(count($results) > 0)
                 {
@@ -589,17 +596,20 @@ class ListsController extends AbstractController
                             <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
                                 <a 
                                     href="" 
-                                    onclick="selectProductListItem(\'' . $result->getProduct()->getId() . '\',\'' . $result->getProduct()->getName() . '\');"
+                                    onclick=""
                                     class="float-end edit-product" 
                                     data-product-name="' . $result->getProduct()->getName() . '" 
-                                    data-product-id="' . $result->getId() . '"
+                                    data-product-id="' . $result->getProduct()->getId() . '"
+                                    ata-distributor-id="' . $result->getDistributor()->getId() . '" 
+                                    data-list-id="' . $result->getList()->getId() . '" 
+                                    data-action="click->clinics--inventory#onClickEditIcon"
                                 >
                                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
                                 </a>
                                 <a 
                                     href="" 
                                     class="delete-icon float-end delete-clinic-product" 
-                                    data-bs-toggle="modal" 
+                                    data-bs-toggle="mFodal" 
                                     data-clinic-product-id="' . $result->getProduct()->getId() . '" 
                                     data-distributor-id="' . $result->getDistributor()->getId() . '"
                                     data-list-id="' . $result->getList()->getId() . '"
@@ -610,6 +620,8 @@ class ListsController extends AbstractController
                             </div>
                         </div>';
                     }
+
+                    $retailLists .= $pagination;
                 }
                 else
                 {

@@ -35,8 +35,8 @@ export default class extends Controller
                 'notification-id': notificationId,
                 'type': 'clinic',
             },
-            success: function (response) {
-
+            success: function (response)
+            {
                 self.getFlash(response.flash);
                 self.getNotifications();
             }

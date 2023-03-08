@@ -27,7 +27,7 @@ class DistributorUsersController extends AbstractController
     private $plainPassword;
     private $encryptor;
 
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 2;
 
     public function __construct(EntityManagerInterface $em, PaginationManager $pagination, MailerInterface $mailer, Encryptor $encryptor)
     {
@@ -297,7 +297,7 @@ class DistributorUsersController extends AbstractController
         $distributorId = $this->getUser()->getDistributor()->getId();
         $users = $this->em->getRepository(DistributorUsers::class)->findDistributorUsers($distributorId);
         $userResults = $this->pageManager->paginate($users[0], $request, self::ITEMS_PER_PAGE);
-        $pageId = $request->request->get('page-id');
+        $pageId = $request->request->get('page-id') ?? 1;
         $userPermissions = $this->em->getRepository(UserPermissions::class)->findBy([
             'isDistributor' => 1,
         ]);
@@ -409,7 +409,13 @@ class DistributorUsersController extends AbstractController
             </div>';
         }
 
-        $html .= $this->getPagination($pageId, $userResults, $distributorId);
+        $html .= $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $pageId,
+            'results' => $userResults,
+            'url' => '/distributors/users/',
+            'dataAction' => 'data-action="click->distributors--users#onClickPagintion"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
 
         $html .= '
         </div>
@@ -474,6 +480,7 @@ class DistributorUsersController extends AbstractController
                                         name="distributor_users_form[email]" 
                                         class="form-control" 
                                         placeholder="Email Address"
+                                        data-action="blur->distributors--users#onBlurEmail"
                                     >
                                     <div class="hidden_msg" id="error_user_email">
                                         Required Field

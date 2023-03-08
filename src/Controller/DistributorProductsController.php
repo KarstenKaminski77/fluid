@@ -289,6 +289,21 @@ class DistributorProductsController extends AbstractController
     }
 
     #[Route('/distributors/delete/distributor-product', name: 'delete_distributor_product')]
+    public function distributorDeleteProductAction(Request $request): Response
+    {
+        $distributorProductId = $request->request->get('distributor-product-id');
+        $distributorProduct = $this->em->getRepository(DistributorProducts::class)->find($distributorProductId);
+
+        if($distributorProduct != null)
+        {
+            $this->em->remove($distributorProduct);
+            $this->em->flush();
+        }
+
+        $response = '<b><i class="fa-solid fa-circle-check"></i></i></b> Product successfully deleted.<div class="flash-close"><i class="fa-solid fa-xmark"></i></div>';
+
+        return new JsonResponse($response);
+    }
 
     #[Route('/distributors/get/product-list', name: 'get_distributor_product_list')]
     public function getDistributorProductListAction(Request $request): Response
@@ -299,7 +314,13 @@ class DistributorProductsController extends AbstractController
         $speciesId = (int) $request->request->get('species-id') ?? 0;
         $distributorProductsRepo = $this->em->getRepository(Products::class)->findByManufacturer($distributorId,$manufacturerId,$speciesId);
         $distributorProducts = $this->pageManager->paginate($distributorProductsRepo[0], $request, self::ITEMS_PER_PAGE);
-        $distributorProductsPagination = $this->getPagination($pageId, $distributorProducts, $distributorId);
+        $distributorProductsPagination = $this->forward('App\Controller\ProductsController::getPagination', [
+            'pageId'  => $pageId,
+            'results' => $distributorProducts,
+            'url' => '/distributors/inventory/list/',
+            'dataAction' => 'data-action="click->products--distributor-products#onClickPagination"',
+            'itemsPerPage' => self::ITEMS_PER_PAGE,
+        ])->getContent();
         $manufacturers = $this->em->getRepository(ProductManufacturers::class)->findByDistributorManufacturer($distributorId);
         $species = $this->em->getRepository(ProductsSpecies::class)->findByDistributorProducts($distributorId);
 
@@ -980,7 +1001,7 @@ class DistributorProductsController extends AbstractController
         if ($lastPage > 1)
         {
             $previousPageNo = $currentPage - 1;
-            $url = '/distributors/users';
+            $url = '/distributors/inventory/list';
             $previousPage = $url . $previousPageNo;
 
             $pagination .= '
