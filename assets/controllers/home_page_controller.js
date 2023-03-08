@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller
 {
     connect()
-    {
+    { 
         $('.multiple-items').slick({
             infinite: true,
             slidesToShow: 3,
@@ -57,6 +57,17 @@ export default class extends Controller
         {
             $('body').addClass('form-control-bg-grey');
         }
+
+        let maxHeight = 0;
+
+        $('.slick-gradient').each(function ()
+        {
+            if(maxHeight < $(this).height())
+            {
+                maxHeight = $(this).height()
+            }
+        });
+        $('.slick-gradient').height(maxHeight);
     }
 
     onClickContactLink(e)

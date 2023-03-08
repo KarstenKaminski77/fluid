@@ -92,11 +92,15 @@
                             {% set dosage = product.dosage ~ product.unit ~ ', ' ~ product.size ~ ' Count' %}
                             {% set from = 'From ' ~  product.priceFrom|format_currency('AED') ~ ' per ' ~ per %}
                         {% endif %}
+                        {% set image = asset('images/products/image-not-found.jpg') %}
+                        {% if product.productImages[0].image is not empty %}
+                            set image = {{ asset('images/products/' ~ product.productImages[0].image) }}
+                        {% endif %}
                         <div class="row">
                             <div class="col-12 half-border-home">
                                 <div class="row slick-gradient">
                                     <div class="col-3 text-center py-3">
-                                        <img src="{{ asset('images/products/' ~ product.productImages[0].image) }}" class="img-fluid" style="max-height: 80px">
+                                        <img src="{{ image }}" class="img-fluid" style="max-height: 80px">
                                     </div>
                                     <div class="col-9 text-start">
                                         <div class="row">
