@@ -28,19 +28,6 @@ class HomePageController extends AbstractController
         $banners = $this->em->getRepository(Banners::class)->findHomePage();
         $products = $this->em->getRepository(Products::class)->findByRand();
 
-        foreach($products as $product){
-
-            $per = strtolower($product->getForm());
-            $from = '';
-
-            if($product->getSize() > 1){
-
-                $price = number_format($product->getUnitPrice() ?? 0.00 / $product->getSize(), 2);
-
-                $product->setPriceFrom($price);
-            }
-        }
-
         return $this->render('frontend/index.html.twig', [
             'banners' => $banners,
             'products' => $products,

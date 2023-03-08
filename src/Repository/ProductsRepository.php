@@ -239,6 +239,7 @@ class ProductsRepository extends ServiceEntityRepository
             ->andWhere('pi.isDefault = 1')
             ->andWhere('p.isActive = 1')
             ->andWhere('p.isPublished = 1')
+            ->andWhere('dp.unitPrice > 0')
             //->groupBy('dp.id')
             ->orderBy('rand')
             ->setMaxResults(10);
