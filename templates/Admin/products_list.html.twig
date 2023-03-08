@@ -8,10 +8,10 @@
 
 {% block content %}
     <div class="row border-bottom admin-header" style="left: 16.8%" data-controller="admin--products-list">
-        <div class="col-12 col-sm-3 text-truncate mt-1 pt-3 pb-3 ps-4">
+        <div class="col-12 col-sm-2 text-truncate mt-1 pt-3 pb-3 ps-4">
             <h4 class="text-truncate m-0">Products</h4>
         </div>
-        <div class="col-12 col-sm-9 text-truncate mt-1 pt-3 pb-3 px-4">
+        <div class="col-12 col-sm-10 text-truncate mt-1 pt-3 pb-3 px-4">
             <div class="row">
                 <div class="col-1 pe-0">
                     {% set increment = 10 %}
@@ -27,12 +27,15 @@
                         <option value="4">4</option>
                         <option value="5">5</option>
                         {% for i in range(1, increment) %}
-                            <option value="{{ i * 10 }}">{{ i * 10 }}</option>
+                            {% set selected = '' %}
+                            {% if i * 10 == 100 %}
+                                {% set selected = 'selected' %}
+                            {% endif %}
+                            <option value="{{ i * 10 }}" selected="{{ selected }}">{{ i * 10 }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-11">
-                    <div class="input-group">
+                <div class="col-4">
                         <input
                             name="search-string"
                             id="search_string"
@@ -40,41 +43,43 @@
                             type="text"
                             placeholder="Search..."
                         >
-                        <div class="select-wrapper">
-                            <select
-                                id="manufacturers"
-                                name="manufacturers"
-                                class="input-group-border"
-                            >
-                                <option value="">Filter by brand</option>
-                                {% for manufacture in manufacturers %}
-                                    <option value="{{ manufacture.id }}">{{ nzo_decrypt(manufacture.name) }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="input-group-append">
-                            <button
-                                class="btn btn-primary btn-sm w-sm-100 mt-2 mt-sm-0"
-                                id="search_btn"
-                                data-action="click->admin--products-list#onClickBtnSearch"
-                            >
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                            </button>
-                            <a
-                                href="{{ path('products', {'productId':0}) }}"
-                                class="btn btn-primary btn-sm float-end w-sm-100 text-truncate ms-3 mt-2 mt-sm-0"
-                            >
-                                <i class="fa-solid fa-circle-plus me-2"></i> ADD PRODUCT
-                            </a>
-                            <a
-                                href=""
-                                id="reset_filters"
-                                class="btn btn-secondary float-end btn-sm ms-sm-3 w-sm-100 mt-2 mt-sm-0"
-                            >
-                                <i class="fa-solid fa-rotate-right"></i>
-                            </a>
-                        </div>
-                    </div>
+
+                </div>
+                <div class="col-3 ps-0">
+                    <select
+                        id="manufacturers"
+                        name="manufacturers"
+                        class="form-control form-control-sm"
+                    >
+                        <option value="">Filter by brand</option>
+                        {% for manufacture in manufacturers %}
+                            <option value="{{ manufacture.id }}">{{ nzo_decrypt(manufacture.name) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-4 ps-0">
+                    <button
+                        class="btn btn-primary btn-sm w-sm-100 mt-2 mt-sm-0"
+                        id="search_btn"
+                        data-action="click->admin--products-list#onClickBtnSearch"
+                    >
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+
+                    <a
+                        href=""
+                        id="reset_filters"
+                        class="btn btn-secondary btn-sm ms-sm-2 w-sm-100 mt-2 mt-sm-0"
+                    >
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </a>
+
+                    <a
+                        href="{{ path('products', {'productId':0}) }}"
+                        class="btn btn-primary btn-sm float-end w-sm-100 text-truncate ms-3 mt-2 mt-sm-0"
+                    >
+                        <i class="fa-solid fa-circle-plus me-2"></i> ADD PRODUCT
+                    </a>
                 </div>
             </div>
         </div>
@@ -138,10 +143,14 @@
     {
         let uri = window.location.pathname.split('/');
         let pageNo = uri[3];
+        let itemsPerPage = $.session.get('items-per-page') ? $.session.get('items-per-page') : 100;
 
         $('#search_string').val($.session.get('search-string'));
         $('#manufacturers').val($.session.get('manufacturer'));
-        $('#items_per_page').val($.session.get('items-per-page'));
+        $('#items_per_page option')
+            .removeAttr('selected')
+            .filter('[value='+ itemsPerPage +']')
+            .attr('selected', true)
 
         getProducts(pageNo);
 

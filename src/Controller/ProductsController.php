@@ -1953,11 +1953,12 @@ class ProductsController extends AbstractController
                         </div>
                         <div class="col-md-1  t-cell text-truncate border-list pt-3 pb-3">
                             <a 
-                                href="" 
-                                onclick="selectProductListItem(\''. $result->getProduct()->getId() .'\',\''. $result->getProduct()->getName() .'\');"
+                                href=""
                                 class="float-end edit-product" 
                                 data-product-name="'. $result->getProduct()->getName() .'" 
-                                data-product-id="'. $result->getId() .'"
+                                data-product-id="'. $result->getProduct()->getId() .'"
+                                data-distributor-id="'. $result->getDistributor()->getId() .'"
+                                data-list-id="'. $result->getList()->getId() .'"
                                 data-action="click->clinics--inventory#onClickEditIcon"
                             >
                                 <i class="fa-solid fa-pen-to-square edit-icon"></i>

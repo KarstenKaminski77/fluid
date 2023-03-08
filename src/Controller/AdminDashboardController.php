@@ -3608,7 +3608,7 @@ class AdminDashboardController extends AbstractController
     #[Route('/admin/product-search', name: 'product_search')]
     public function productSearch(Request $request): Response
     {
-        $itemsPerPage = $request->request->get('items-per-page');
+        $itemsPerPage = (int) $request->request->get('items-per-page');
         $searchString = $request->request->get('search-string');
         $manufacturer = $request->request->get('manufacturer');
         $pageNo = $request->request->get('page_id') ?? 1;
@@ -3626,14 +3626,14 @@ class AdminDashboardController extends AbstractController
         if($num > $remainder)
         {
             $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage);
-            $pagination = $this->getPagination($request->request->get('page_id'), $results, '/admin/products/');
+            $pagination = $this->getPagination($request->request->get('page_id'), $results, '/admin/products/','',$itemsPerPage);
             $currentPage = $pageNo;
         }
         else
         {
 
             $results = $this->page_manager->paginate($products[0], $request, $itemsPerPage, 1);
-            $pagination = $this->getPagination(1, $results, '/admin/products/');
+            $pagination = $this->getPagination(1, $results, '/admin/products/','',$itemsPerPage);
             $currentPage = 1;
         }
 
@@ -6210,10 +6210,10 @@ class AdminDashboardController extends AbstractController
         return $list;
     }
 
-    public function getPagination($pageId, $results, $url, $dataAction = ''): string
+    public function getPagination($pageId, $results, $url, $dataAction = '', $itemsPerPage = 10): string
     {
         $currentPage = $pageId;
-        $totalPages = ceil(count($results) / 10);
+        $totalPages = ceil(count($results) / $itemsPerPage);
         $limit = 5;
         $lastPage = $this->page_manager->lastPage($results);
         $pagination = '';

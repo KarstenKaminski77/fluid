@@ -2,18 +2,13 @@ import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller
 {
-    connect(e)
-    {
-        console.log('admin');
-    }
-
     onClickBtnSearch(e)
     {
         e.preventDefault();
 
         let self = this;
         let searchString = $('#search_string').val();
-        let breand = $('#brand').val();
+        let brand = $('#brand').val();
 
         if(searchString != '' || searchString != 'undefined')
         {

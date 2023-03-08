@@ -182,6 +182,42 @@ export default class extends Controller {
     {
         e.preventDefault();
 
+        let self = this;
+        let clickedElement = e.currentTarget;
+        let productId = $(clickedElement).attr('data-product-id');
+        let distributorId = $(clickedElement).attr('data-list-id');
+        let listId = $(clickedElement).attr('data-list-id');
+
+        $.ajax({
+            async: "true",
+            url: "/clinics/inventory/manage-list",
+            type: 'POST',
+            cache: false,
+            timeout: 600000,
+            dataType: 'json',
+            data:
+                {
+                    'product-id': productId,
+                    'list-id': listId,
+                    'distributor-id': distributorId,
+                    'favourite': false,
+                    'retail': true,
+                    'delete': true,
+                    'return': 'list',
+                },
+            beforeSend: function ()
+            {
+                self.isLoading(true);
+            },
+            success: function (response)
+            {
+                $('#clinic_product_'+ productId).remove();
+                $('#inventory_item').empty().append(response.html).slideDown(700);
+                self.isLoading(false);
+                self.popOver();
+            }
+        });
+
         $('#inventory_attach_container').slideDown('700');
         window.scrollTo(0, 0);
     }

@@ -25,8 +25,8 @@ body {
     font-family: 'Montserrat', Serif !important;
 }
 
-body, form-control {
-    font-size: 0.9rem;
+body, .form-control {
+    font-size: 0.9rem !important;
 }
 
 .body-pt {
@@ -221,7 +221,7 @@ select:-webkit-autofill:focus {
 .form-control-sm {
     min-height: calc(1.5em + (0.5rem + 2px));
     padding: 0.25rem 0.5rem;
-    font-size: .875rem;
+    font-size: .9rem;
     border-radius: 0.2rem;
 }
 
