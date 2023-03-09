@@ -143,7 +143,7 @@
     {
         let redirect = false;
 
-        if($.session.get('page-no') != '' || $.session.get('page-no') != undefined)
+        if($.session.get('page-no') != '' || $.session.get('page-no') != 'undefined')
         {
             if('{{ app.request.get('page_id')}}' != $.session.get('page-no'))
             { console.log('{{ app.request.get('page_id')}}', $.session.get('page-no'))
