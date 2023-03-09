@@ -60,7 +60,7 @@
         </div>
         <div id="countries">
         {% for country in countries %}
-            <div class="row py-3 border-bottom-dashed" id="row_{{ country.id }}">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ country.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -100,7 +100,8 @@
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="{{ path('country', {'countryId':country.id} ) }}"
-                        class="float-start float-md-end open-country-modal ms-5 ms-md-0"
+                        class="float-start float-md-end open-country-modal ms-5 ms-md-0 edit-link"
+                        data-country-id="{{ country.id }}"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -122,7 +123,24 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('country-scroll-height') ? $.session.get('country-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('country-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('country-scroll-height', scrollHeight);
+                $.session.set('country-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('country-id', $(this).attr('data-country-id'));
+            });
 
             $(document).on('click', '#search_btn', function (e){
 

@@ -61,7 +61,7 @@
         <div id="tags">
         {% if tags|length > 0 %}
             {% for tag in tags %}
-            <div class="row py-3 border-bottom-dashed" id="row_{{ tag.id }}">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ tag.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -89,7 +89,8 @@
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="{{ path('tags', {'tagId':tag.id} ) }}"
-                        class="float-end open-tag-modal"
+                        class="float-end open-tag-modal edit-link"
+                        data-tag-id="{{ tag.id }}"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -150,7 +151,24 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('tag-scroll-height') ? $.session.get('tag-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('tag-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('tag-scroll-height', scrollHeight);
+                $.session.set('tag-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('tag-id', $(this).attr('data-tag-id'));
+            });
 
             $(document).on('click', '#search_btn', function (e) {
 
@@ -171,6 +189,11 @@
 
                             $('#tags').empty().append(response.html);
                             $('.custom-pagination').hide();
+
+                            if(lastOpened != '' || lastOpened != 'undefined')
+                            {
+                                $('#row_'+ lastOpened).addClass('row-hover');
+                            }
                         }
                     });
                 }

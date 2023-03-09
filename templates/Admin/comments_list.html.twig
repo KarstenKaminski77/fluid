@@ -46,7 +46,7 @@
         {% if comments|length > 0 %}
             {% for comment in comments %}
             <div class="col-12">
-                <div class="row py-3 border-bottom-dashed" id="row_{{ comment.id }}">
+                <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ comment.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -80,7 +80,8 @@
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="{{ path('comments', {'commentId':comment.id} ) }}"
-                        class="float-end"
+                        class="float-end edit-link"
+                        data-action-comment-id="{{ comment.id }}"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -109,7 +110,24 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('comment-scroll-height') ? $.session.get('comment-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('comment-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('comment-scroll-height', scrollHeight);
+                $.session.set('comment-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('comment-id', $(this).attr('data-comment-id'));
+            });
 
             $(document).on('change', '.comment-status', function () {
 
@@ -131,6 +149,11 @@
 
                         $('#comments').empty().append(response);
                         isLoading(false);
+
+                        if(lastOpened != '' || lastOpened != 'undefined')
+                        {
+                            $('#row_'+ lastOpened).addClass('row-hover');
+                        }
                     }
                 });
             })

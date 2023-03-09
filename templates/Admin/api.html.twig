@@ -38,6 +38,16 @@
                             Save
                         </span>
                     </button>
+                    <button
+                        class="btn btn-primary w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="button"
+                        name="go-back"
+                        id="go_back"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon far fa-chevron-double-left"></i>
+                        </span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -248,7 +258,17 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            // Back button
+            $(document).on('click', '#go_back', function (e)
+            {
+                e.preventDefault();
+
+                let pageNo = $.session.get('api-last-page') ? $.session.get('api-last-page') : 1;
+
+                window.location.href = '/admin/apis/'+ pageNo;
+            });
 
             {# Save API #}
             $(document).on('submit', '#apis_form', function (e){

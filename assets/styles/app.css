@@ -990,6 +990,11 @@ a.page-link {
 /*    top: 12px;*/
 /*}*/
 
+.row-hover, .admin-row:hover {
+    background: #f8f9fa !important;
+    color: #434343 !important;
+}
+
 .active-basket {
     background: #f4f8fe;
     color: #b3b4b2;

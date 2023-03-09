@@ -35,7 +35,7 @@
                 <div class="col-12 col-md-6">
                     {% if app.request.get('productId') > 0 %}
                     <button
-                            class="action-saveAndClone btn btn-primary action-save w-sm-100 mb-3 mb-sm-0 float-end text-truncate"
+                            class="action-saveAndClone btn btn-secondary action-save w-sm-100 mb-3 mb-sm-0 float-end text-truncate"
                             type="button"
                             name="save_clone"
                             id="clone"
@@ -64,6 +64,16 @@
                         <span class="btn-label">
                             <i class="action-icon far fa-edit"></i>
                             Save
+                        </span>
+                    </button>
+                    <button
+                        class="btn btn-primary w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="button"
+                        name="go-back"
+                        id="go_back"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon far fa-chevron-double-left"></i>
                         </span>
                     </button>
                 </div>
@@ -795,6 +805,16 @@
 
             // Set is published as active element
             $('#is_published').focus();
+
+            // Back button
+            $(document).on('click', '#go_back', function (e)
+            {
+                e.preventDefault();
+
+                let pageNo = $.session.get('page-no') ? $.session.get('page-no') : 1;
+
+                window.location.href = '/admin/products/'+ pageNo;
+            });
 
             {# Save Products #}
             {% set productId = app.request.get('productId') %}
