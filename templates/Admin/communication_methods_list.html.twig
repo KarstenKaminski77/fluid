@@ -36,7 +36,7 @@
             {% if i == count %}
                 {% set class = 'pt-3' %}
             {% endif %}
-            <div class="row {{ class }}" id="row_{{ communicationMethod.id }}">
+            <div class="row admin-row {{ class }}" id="row_{{ communicationMethod.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -64,7 +64,8 @@
                 <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                     <a
                         href="{{ path('communication_methods', {'communicationMethodId':communicationMethod.id} ) }}"
-                        class="float-end open-user-modal"
+                        class="float-end open-user-modal edit-link"
+                        data-method-id="{{ communicationMethod.id }}"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -77,4 +78,27 @@
 
 {% block javascripts %}
     {{ parent() }}
+
+    <script>
+
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('method-scroll-height') ? $.session.get('method-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('method-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('method-scroll-height', scrollHeight);
+                $.session.set('method-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('method-id', $(this).attr('data-method-id'));
+            });
+        });
+    </script>
 {% endblock %}

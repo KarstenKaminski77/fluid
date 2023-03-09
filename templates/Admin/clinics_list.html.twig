@@ -81,7 +81,7 @@
                 {% set border = 'pt-3' %}
             {% endif %}
             <div class="col-12">
-                <div class="row {{ border }}" id="row_{{ clinic.id }}">
+                <div class="row admin-row {{ border }}" id="row_{{ clinic.id }}">
                     <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                         #ID
                     </div>
@@ -133,7 +133,8 @@
                     <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                         <a
                             href="{{ path('clinics', {'clinic_id':clinic.id} ) }}"
-                            class="float-end open-user-modal"
+                            class="float-end open-user-modal edit-link"
+                            data-clinic-id="{{ clinic.id }}"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -155,10 +156,19 @@
 
 <script>
 
-    $(document).ready(function (){
+    $(document).ready(function ()
+    {
+        let scrollTo = $.session.get('clinic-scroll-height') ? $.session.get('clinic-scroll-height') : 0;
+        window.scrollTo(0, scrollTo);
+        let lastOpened = $.session.get('clinic-id');
 
-        $(document).on('click', '#search_btn', function (e) {
+        if(lastOpened != '' || lastOpened != 'undefined')
+        {
+            $('#row_'+ lastOpened).addClass('row-hover');
+        }
 
+        $(document).on('click', '#search_btn', function (e) 
+        {
             e.preventDefault();
 
             let searchString = $('#search_string').val();
@@ -180,6 +190,15 @@
                 });
             }
         });
+
+        $(document).on('click', '.edit-link', function (e)
+        {
+            let scrollHeight = window.scrollY;
+            $.session.set('clinic-scroll-height', scrollHeight);
+            $.session.set('clinic-last-page', '{{ app.request.get('page_id') }}');
+            $.session.set('clinic-id', $(this).attr('data-clinic-id'));
+        });
+        
         $(document).on('change', '.clinic-status', function () {
 
             let statusId = $(this).val();
@@ -200,6 +219,11 @@
 
                     $('#clinics').empty().append(response);
                     isLoading(false);
+
+                    if(lastOpened != '' || lastOpened != 'undefined')
+                    {
+                        $('#row_'+ lastOpened).addClass('row-hover');
+                    }
                 }
             });
         })

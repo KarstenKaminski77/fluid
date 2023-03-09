@@ -3051,7 +3051,8 @@ class AdminDashboardController extends AbstractController
                     <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                         <a
                             href="'. $this->generateUrl('clinics', ['clinic_id' => $clinic->getId()]) .'"
-                            class="float-end open-user-modal"
+                            class="float-end open-user-modal edit-link"
+                            data-clinic-id="'. $clinic->getId() .'"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -3109,7 +3110,7 @@ class AdminDashboardController extends AbstractController
 
             $response .= '
             <div class="col-12">
-                <div class="row py-3 '. $border .'" id="row_'. $distributor->getId() .'">
+                <div class="row py-3 admin-row '. $border .'" id="row_'. $distributor->getId() .'">
                     <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                         #ID
                     </div>
@@ -3155,7 +3156,8 @@ class AdminDashboardController extends AbstractController
                     <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                         <a
                             href="'. $this->generateUrl('distributor_admin', ['distributorId' => $distributor->getId()]) .'"
-                            class="float-end open-user-modal"
+                            class="float-end open-user-modal edit-link"
+                            data-distributor-id="'. $distributor->getId() .'"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -3314,7 +3316,7 @@ class AdminDashboardController extends AbstractController
             $lastName = $this->encryptor->decrypt($comment->getClinicUser()->getLastName());
             $response .= '
             <div class="col-12">
-                <div class="row py-3 border-bottom-dashed" id="row_'. $comment->getId() .'">
+                <div class="row py-3 border-bottom-dashed admin-row" id="row_'. $comment->getId() .'">
                     <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                         #ID
                     </div>
@@ -3348,7 +3350,8 @@ class AdminDashboardController extends AbstractController
                     <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                         <a
                             href="'. $this->getParameter('app.base_url') . '/admin/comment/'. $comment->getId() .'"
-                            class="float-end open-review-modal"
+                            class="float-end open-review-modal edit-link"
+                            data-comment-id="'. $comment->getId() .'"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -3659,7 +3662,7 @@ class AdminDashboardController extends AbstractController
             }
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getId() .'">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -3733,7 +3736,8 @@ class AdminDashboardController extends AbstractController
                 <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                     <a
                         href="'. $this->generateUrl('products',['productId' => $result->getId()]) .'"
-                        class="float-start float-md-end ms-5 ms-md-0 open-user-modal"
+                        class="float-start float-md-end ms-5 ms-md-0 edit-product"
+                        data-product-id="'. $result->getId() .'"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -3838,7 +3842,7 @@ class AdminDashboardController extends AbstractController
         foreach($results as $result){
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ activeIngredient.id }}">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ activeIngredient.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -3866,7 +3870,8 @@ class AdminDashboardController extends AbstractController
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="'. $this->generateUrl('restricted_domain', ['domainId' => $result->getId()]) .'"
-                        class="float-end open-tag-modal"
+                        class="float-end open-tag-modal edit-link"
+                        data-domain-id="'. $result->getId() .'"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -3911,7 +3916,7 @@ class AdminDashboardController extends AbstractController
             }
 
             $html .= '
-            <div class="row '. $border .'" id="row_'. $result->getId() .'">
+            <div class="row admin-row '. $border .'" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -3996,7 +4001,7 @@ class AdminDashboardController extends AbstractController
             }
 
             $html .= '
-            <div class="row '. $border .'" id="row_'. $result->getId() .'">
+            <div class="row admin-row '. $border .'" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -4074,7 +4079,7 @@ class AdminDashboardController extends AbstractController
         foreach($results as $result){
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_'. $result->getId() .'">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_'. $result->getId() .'">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -4241,7 +4246,7 @@ class AdminDashboardController extends AbstractController
         foreach($results as $result){
 
             $html .= '
-            <div class="row py-3 border-bottom-dashed" id="row_{{ tag.id }}">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ tag.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -4269,7 +4274,8 @@ class AdminDashboardController extends AbstractController
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="'. $this->generateUrl('tags', ['tagId' => $result->getId()]) .'"
-                        class="float-end open-tag-modal"
+                        class="float-end open-tag-modal edit-link"
+                        data-tag-id="'. $result->getId() .'"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
