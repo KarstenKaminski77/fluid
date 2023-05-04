@@ -265,10 +265,7 @@ export default class extends Controller
         let speciesId = $('#species_id').val() ? $('#species_id').val() : 0;
         let pageId = $('.custom-pagination').find('.active').find('a').attr('data-page-id');
 
-        if(manufacturerId > 0 || speciesId > 0)
-        {
-            this.getInventory(pageId, this.distributorId, manufacturerId, speciesId);
-        }
+        this.getInventory(pageId, this.distributorId, manufacturerId, speciesId);
     }
 
     onClickResetProductsList(e)

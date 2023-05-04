@@ -61,7 +61,7 @@
         <div id="domains">
         {% if domains|length > 0 %}
             {% for domain in domains %}
-            <div class="row py-3 border-bottom-dashed" id="row_{{ domain.id }}">
+            <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ domain.id }}">
                 <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                     #ID
                 </div>
@@ -89,7 +89,8 @@
                 <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                     <a
                         href="{{ path('restricted_domain', {'domainId':domain.id} ) }}"
-                        class="float-end open-tag-modal"
+                        class="float-end open-tag-modal edit-link"
+                        data-domain-id="{{ domain.id }}"
                     >
                         <i class="fa-solid fa-pen-to-square edit-icon"></i>
                     </a>
@@ -150,7 +151,24 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('domain-scroll-height') ? $.session.get('domain-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('domain-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('domain-scroll-height', scrollHeight);
+                $.session.set('domain-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('domain-id', $(this).attr('data-domain-id'));
+            });
 
             $(document).on('click', '#search_btn', function (e) {
 
@@ -171,6 +189,11 @@
 
                             $('#domains').empty().append(response.html);
                             $('.custom-pagination').hide();
+
+                            if(lastOpened != '' || lastOpened != 'undefined')
+                            {
+                                $('#row_'+ lastOpened).addClass('row-hover');
+                            }
                         }
                     });
                 }

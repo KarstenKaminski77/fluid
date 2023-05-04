@@ -141,149 +141,179 @@
 
     $(document).ready(function ()
     {
-        let uri = window.location.pathname.split('/');
-        let pageNo = uri[3];
-        let itemsPerPage = $.session.get('items-per-page') ? $.session.get('items-per-page') : 100;
+        let redirect = false;
 
-        $('#search_string').val($.session.get('search-string'));
-        $('#manufacturers').val($.session.get('manufacturer'));
-        $('#items_per_page option')
-            .removeAttr('selected')
-            .filter('[value='+ itemsPerPage +']')
-            .attr('selected', true)
-
-        getProducts(pageNo);
-
-        $(document).on('click', '#search_btn', function ()
+        if($.session.get('page-no') > 1)
         {
-            getProducts(1);
-        });
-
-        $(document).on('change', '#manufacturers, #items_per_page', function ()
-        {
-            let uri = window.location.pathname.split('/');
-            pageNo = uri[3];
-
-            getProducts(pageNo);
-        });
-
-        $(document).on('click', '.address-pagination', function (e)
-        {
-            e.preventDefault();
-
-            getProducts($(this).attr('data-page-id'));
-        });
-
-        function getProducts(pageNo)
-        {
-            let searchString = $('#search_string').val();
-            let manufacturer = $('#manufacturers').val();
-            let itemsPerPage = $('#items_per_page').val();
-
-            $.session.set('page-no', pageNo);
-
-            if(searchString != '' || searchString != 'undefined')
+            if('{{ app.request.get('page_id')}}' != $.session.get('page-no'))
             {
-                $.ajax({
-                    url: "/admin/product-search",
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        'search-string': searchString,
-                        'manufacturer': manufacturer,
-                        'items-per-page': itemsPerPage,
-                        'page_id': pageNo,
-                    },
-                    beforeSend: function ()
-                    {
-                        isLoading(true);
-                    },
-                    success: function (response)
-                    {
-                        $('#products').empty().append(response.html);
-                        isLoading(false);
-                        $.session.set('search-string', searchString);
-                        $.session.set('manufacturer', manufacturer);
-                        $.session.set('items-per-page', itemsPerPage);
-
-                        window.history.pushState(null, "Fluid", '/admin/products/'+ response.currentPage);
-
-                        popOver();
-                    }
-                });
+                redirect = true;
+                window.location.href = '/admin/products/'+ $.session.get('page-no');
             }
         }
 
-        $(document).on('click', '#reset_filters', function (e)
+        if(!redirect)
         {
-            e.preventDefault();
+            let uri = window.location.pathname.split('/');
+            let pageNo = uri[3];
+            let itemsPerPage = $.session.get('items-per-page') ? $.session.get('items-per-page') : 100;
 
-            $.session.set('search-string', '');
-            $.session.set('manufacturer', '');
+            $('#search_string').val($.session.get('search-string'));
+            $('#manufacturers').val($.session.get('manufacturer'));
+            $('#items_per_page option')
+                .removeAttr('selected')
+                .filter('[value='+ itemsPerPage +']')
+                .attr('selected', true)
 
-            $('#search_string').val('');
-            $('#manufacturers').val('');
+            getProducts(pageNo);
 
-            getProducts(1);
-        })
+            $(document).on('click', '#search_btn', function ()
+            {
+                getProducts(1);
+            });
 
-        $(document).on('change', '.is-published', function (e){
+            $(document).on('change', '#manufacturers, #items_per_page', function ()
+            {
+                let uri = window.location.pathname.split('/');
+                pageNo = uri[3];
 
-            let product_id = $(this).data('product-id');
-            let is_published = '';
+                getProducts(pageNo);
+            });
 
-            if ($(this).is(':checked')) {
+            $(document).on('click', '.address-pagination', function (e)
+            {
+                e.preventDefault();
 
-                is_published = 1;
+                getProducts($(this).attr('data-page-id'));
+            });
 
-            } else {
+            function getProducts(pageNo)
+            {
+                let searchString = $('#search_string').val();
+                let manufacturer = $('#manufacturers').val();
+                let itemsPerPage = $('#items_per_page').val();
+                let scrollTo = $.session.get('scroll-height') ? $.session.get('scroll-height') : 0;
 
-                is_published = 0;
+                $.session.set('page-no', pageNo);
+
+                if(searchString != '' || searchString != 'undefined')
+                {
+                    $.ajax({
+                        url: "/admin/product-search",
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            'search-string': searchString,
+                            'manufacturer': manufacturer,
+                            'items-per-page': itemsPerPage,
+                            'page_id': pageNo,
+                        },
+                        beforeSend: function ()
+                        {
+                            isLoading(true);
+                        },
+                        success: function (response)
+                        {
+                            $('#products').empty().append(response.html);
+                            isLoading(false);
+                            $.session.set('search-string', searchString);
+                            $.session.set('manufacturer', manufacturer);
+                            $.session.set('items-per-page', itemsPerPage);
+                            let lastOpened = $.session.get('last-opened');
+
+                            if(lastOpened != '' || lastOpened != 'undefined')
+                            {
+                                $('#row_'+ lastOpened).addClass('row-hover');
+                            }
+
+                            window.scrollTo(0, scrollTo);
+                            window.history.pushState(null, "Fluid", '/admin/products/'+ response.currentPage);
+
+                            popOver();
+                        }
+                    });
+                }
             }
 
-            $.ajax({
-                url: "{{ path('product_is_published') }}",
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    is_published:is_published,
-                    product_id:product_id
-                },
-                success: function (response) {
+            $(document).on('click', '#reset_filters', function (e)
+            {
+                e.preventDefault();
 
-                }
-            });
-        });
-        $(document).on('click', '.delete-icon', function (e){
+                $.session.set('search-string', '');
+                $.session.set('manufacturer', '');
 
-            $('#delete_product').attr('data-product-id', $(this).data('product-id'));
-        });
-        $(document).on('click', '#delete_product', function (e){
+                $('#search_string').val('');
+                $('#manufacturers').val('');
 
-            let productId = $(this).attr('data-product-id');
-
-            $.ajax({
-                url: "{{ path('product_crud') }}",
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    'delete':productId,
-                },
-                success: function (response) {
-
-                    getFlash(response);
-                    $('#modal_delete_product').modal('toggle');
-                    $('#row_'+ productId).remove();
-                }
-            });
-        });
-
-        function popOver()
-        {
-            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                return new bootstrap.Popover(popoverTriggerEl)
+                getProducts(1);
             })
+
+            $(document).on('change', '.is-published', function (e){
+
+                let product_id = $(this).data('product-id');
+                let is_published = '';
+
+                if ($(this).is(':checked')) {
+
+                    is_published = 1;
+
+                } else {
+
+                    is_published = 0;
+                }
+
+                $.ajax({
+                    url: "{{ path('product_is_published') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        is_published:is_published,
+                        product_id:product_id
+                    },
+                    success: function (response) {
+
+                    }
+                });
+            });
+            $(document).on('click', '.delete-icon', function (e){
+
+                $('#delete_product').attr('data-product-id', $(this).data('product-id'));
+            });
+
+            $(document).on('click', '.edit-product', function ()
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('scroll-height', scrollHeight);
+                $.session.set('last-opened', $(this).attr('data-product-id'));
+            })
+
+            $(document).on('click', '#delete_product', function (e){
+
+                let productId = $(this).attr('data-product-id');
+
+                $.ajax({
+                    url: "{{ path('product_crud') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        'delete':productId,
+                    },
+                    success: function (response) {
+
+                        getFlash(response);
+                        $('#modal_delete_product').modal('toggle');
+                        $('#row_'+ productId).remove();
+                    }
+                });
+            });
+
+            function popOver()
+            {
+                var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl)
+                })
+            }
         }
     });
 </script>

@@ -89,8 +89,12 @@
                             {% set dosage = product.size ~ product.unit %}
                         {% endif %}
                         {% if product.size > 0 %}
+                            {% set priceFrom = 0.00 %}
+                            {% if product.priceFrom is not null %}
+                                {% set priceFrom = product.priceFrom %}
+                            {% endif %}
                             {% set dosage = product.dosage ~ product.unit ~ ', ' ~ product.size ~ ' Count' %}
-                            {% set from = 'From ' ~  product.priceFrom|format_currency('AED') ~ ' per ' ~ per %}
+                            {% set from = 'From ' ~  priceFrom|format_currency('AED') ~ ' per ' ~ per %}
                         {% endif %}
                         {% set image = asset('images/products/image-not-found.jpg') %}
                         {% if product.productImages[0].image is not empty %}

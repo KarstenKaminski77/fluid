@@ -60,7 +60,7 @@
         </div>
         <div id="manufacturers">
         {% for manufacturer in manufacturers %}
-        <div class="row py-3 border-bottom-dashed" id="row_{{ manufacturer.id }}">
+        <div class="row py-3 border-bottom-dashed admin-row" id="row_{{ manufacturer.id }}">
             <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                 #ID
             </div>
@@ -88,7 +88,8 @@
             <div class="col-12 col-md-1 text-truncate mt-3 mt-md-0">
                 <a
                     href="{{ path('manufacturers', {'manufacturerId':manufacturer.id} ) }}"
-                    class="float-end open-user-modal"
+                    class="float-end open-user-modal edit-link"
+                    data-manufacturer-id="{{ manufacturer.id }}"
                 >
                     <i class="fa-solid fa-pen-to-square edit-icon"></i>
                 </a>
@@ -142,7 +143,24 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('manufacturer-scroll-height') ? $.session.get('manufacturer-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('manufacturer-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
+
+            $(document).on('click', '.edit-link', function (e)
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('manufacturer-scroll-height', scrollHeight);
+                $.session.set('manufacturer-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('manufacturer-id', $(this).attr('data-manufacturer-id'));
+            });
 
             $(document).on('click', '#search_btn', function (e) {
 
@@ -163,6 +181,11 @@
 
                             $('#manufacturers').empty().append(response.html);
                             $('.custom-pagination').hide();
+
+                            if(lastOpened != '' || lastOpened != 'undefined')
+                            {
+                                $('#row_'+ lastOpened).addClass('row-hover');
+                            }
                         }
                     });
                 }

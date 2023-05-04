@@ -59,7 +59,7 @@
                 {% if i == count %}
                     {% set class = 'pt-3' %}
                 {% endif %}
-                <div class="row {{ class }}" id="row_{{ banner.id }}">
+                <div class="row admin-row {{ class }}" id="row_{{ banner.id }}">
                     <div class="col-4 fw-bold ps-4 d-block d-md-none text-truncate">
                         #ID
                     </div>
@@ -113,7 +113,8 @@
                     <div class="col-12 col-md-1 mt-3 mt-md-0 text-truncate">
                         <a
                             href="{{ path('banners', {'bannerId':banner.id} ) }}"
-                            class="float-end open-user-modal"
+                            class="float-end open-user-modal edit-link"
+                            data-banner-id="{{ banner.id }}"
                         >
                             <i class="fa-solid fa-pen-to-square edit-icon"></i>
                         </a>
@@ -162,7 +163,16 @@
 
     <script>
 
-        $(document).ready(function (){
+        $(document).ready(function ()
+        {
+            let scrollTo = $.session.get('banner-scroll-height') ? $.session.get('banner-scroll-height') : 0;
+            window.scrollTo(0, scrollTo);
+            let lastOpened = $.session.get('banner-id');
+
+            if(lastOpened != '' || lastOpened != 'undefined')
+            {
+                $('#row_'+ lastOpened).addClass('row-hover');
+            }
 
             $(document).on('change', '.is-published', function (e){
 
@@ -214,6 +224,14 @@
                         }
                     });
                 }
+            });
+
+            $(document).on('click', '.edit-link', function ()
+            {
+                let scrollHeight = window.scrollY;
+                $.session.set('banner-scroll-height', scrollHeight);
+                $.session.set('banner-last-page', '{{ app.request.get('page_id') }}');
+                $.session.set('banner-id', $(this).attr('data-banner-id'));
             });
 
             $(document).on('click', '.open-delete-banner-modal', function (e){

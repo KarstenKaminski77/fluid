@@ -38,6 +38,16 @@
                             Save
                         </span>
                     </button>
+                    <button
+                        class="btn btn-primary w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="button"
+                        name="go-back"
+                        id="go_back"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon far fa-chevron-double-left"></i>
+                        </span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -71,6 +81,16 @@
     <script>
 
         $(document).ready(function (){
+
+            // Back button
+            $(document).on('click', '#go_back', function (e)
+            {
+                e.preventDefault();
+
+                let pageNo = $.session.get('active-ingredient-last-page') ? $.session.get('active-ingredient-last-page') : 1;
+
+                window.location.href = '/admin/active-ingredients/'+ pageNo;
+            });
 
             {# Save Tag #}
             $(document).on('submit', '#ingredients_form', function (e){
@@ -111,7 +131,11 @@
 
                             if(btn == 'save_return'){
 
-                                window.location.assign('{{ path('active_ingredients_list',{ 'page_id':1 }) }}');
+                                let pageNo = $.session.get('active-ingredient-last-page');
+
+                                pageNo = pageNo ? pageNo : 1;
+
+                                window.location.assign('/admin/active-ingredients/'+ pageNo);
                             }
                         }
                     });

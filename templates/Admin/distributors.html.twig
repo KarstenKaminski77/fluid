@@ -67,6 +67,16 @@
                             Approve
                         </span>
                     </button>
+                    <button
+                        class="btn btn-primary w-sm-100 mb-3 mb-sm-0 me-0 me-md-3 float-end text-truncate"
+                        type="button"
+                        name="go-back"
+                        id="go_back"
+                    >
+                        <span class="btn-label">
+                            <i class="action-icon far fa-chevron-double-left"></i>
+                        </span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -491,6 +501,16 @@
 
         $(document).ready(function ()
         {
+            // Back button
+            let pageNo = $.session.get('distributor-last-page') ? $.session.get('distributor-last-page') : 1;
+
+            $(document).on('click', '#go_back', function (e)
+            {
+                e.preventDefault();
+
+                window.location.href = '/admin/distributors/'+ pageNo;
+            });
+
             {# Save Products #}
             $(document).on('submit', '#distributors_form', function (e){
 
