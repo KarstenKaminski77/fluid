@@ -240,6 +240,7 @@ class ProductsRepository extends ServiceEntityRepository
             ->andWhere('p.isActive = 1')
             ->andWhere('p.isPublished = 1')
             ->andWhere('dp.unitPrice > 0')
+            ->andWhere('p.priceFrom > 0')
             //->groupBy('dp.id')
             ->orderBy('rand')
             ->setMaxResults(10);
